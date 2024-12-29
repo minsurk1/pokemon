@@ -1,0 +1,139 @@
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #2c3e50;
+}
+
+.deck-header {
+    background-color: #1f3a4c;
+    color: #fff;
+    text-align: center;
+    padding: 40px 0;
+    font-size: 3em;
+    font-weight: bold;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-bottom: 4px solid #f39c12;
+    text-transform: uppercase;
+}
+
+/* 선택된 카드 */
+.selected-cards-container {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: #fff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 25px 0;
+    border-top: 4px solid #1f3a4c;
+}
+
+.selected-cards {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 20px;
+    padding: 25px;
+}
+
+/* 카드 디자인 */
+.selected-card {
+    background-color: #3498db;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.selected-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.selected-card img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+/* 카드 목록 (6줄로 표시) */
+.card-list {
+    padding: 30px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 15px;
+    background-color: #fff;
+}
+
+.card {
+    width: 100%;
+    height: auto;
+    background-color: #2980b9;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.card img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+.card.disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+.card.disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* 메인페이지 버튼 스타일 */
+.go-main {
+    display: inline-block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #1f3a4c;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.go-main:hover {
+    background-color: #f39c12;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.go-main:active {
+    background-color: #e67e22;
+    transform: scale(0.95);
+}

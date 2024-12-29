@@ -1,0 +1,110 @@
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: url('./assets/images/waitbg.jpg') no-repeat center center;
+    background-size: cover;
+    color: #333;
+}
+
+.wait-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+.room-info {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.room-info h2 {
+    font-size: 2.5rem;
+    color: #1d3557;
+    margin-bottom: 0.5rem;
+}
+
+.room-info p {
+    font-size: 1.2rem;
+    color: #fd0000;
+    font-weight: bold;
+}
+
+.players {
+    display: flex;
+    justify-content: space-around;
+    width: 80%;
+    max-width: 600px;
+    margin-bottom: 2rem;
+    gap: 1rem;
+}
+
+.player {
+    text-align: center;
+    padding: 1rem;
+    background: linear-gradient(145deg, #ffffff, #d1d9e6);
+    border-radius: 12px;
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.5);
+    flex: 1;
+    max-width: 280px;
+    transition: transform 0.3s ease;
+}
+
+.player:hover {
+    transform: translateY(-5px);
+}
+
+.player p:first-child {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #0067f8;
+}
+
+.player p:last-child {
+    font-size: 1rem;
+    color: #6c757d;
+}
+
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 300px;
+}
+
+.buttons button {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-weight: bold;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.buttons button:hover {
+    transform: scale(1.05);
+}
+
+.ready-button {
+    background-color: #4caf50;
+    color: white;
+}
+
+.ready-button.ready {
+    background-color: #3e8e41;
+}
+
+.start-button {
+    background-color: #2196f3;
+    color: white;
+}
+
+.return-button {
+    background-color: #f44336;
+    color: white;
+}

@@ -1,0 +1,98 @@
+.signup-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #ffffff, #333333); /* 흰색에서 검은색 그라데이션 */
+    font-family: 'Roboto', sans-serif;
+  }
+
+  .signup-page h1 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 2rem;
+    font-weight: 500;
+  }
+
+  .signup-page form {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .signup-page input {
+    margin-bottom: 1.5rem;
+    padding: 12px 15px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    transition: all 0.3s ease;
+  }
+
+  .signup-page input:focus {
+    border-color: #61dafb;
+    box-shadow: 0 0 0 2px rgba(97, 218, 251, 0.3);
+    outline: none;
+  }
+
+  .signup-page button {
+    margin-top: 1rem;
+    padding: 12px;
+    font-size: 1.1rem;
+    background-color: #61dafb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s;
+    font-weight: 500;
+  }
+
+  .signup-page button:hover {
+    background-color: #4fa3e2;
+    transform: translateY(-2px);
+  }
+
+  .signup-page button:last-of-type {
+    background-color: transparent;
+    color: #333;
+    border: 1px solid #ddd;
+    width: auto;
+    padding: 10px 20px;
+    font-size: 1rem;
+    margin-top: 1.5rem;
+    font-weight: 400;
+  }
+
+  .signup-page button:last-of-type:hover {
+    background-color: #f1f1f1;
+    color: #61dafb;
+    border-color: #61dafb;
+  }
+
+  @media (max-width: 480px) {
+    .signup-page h1 {
+      font-size: 2rem;
+    }
+
+    .signup-page form {
+      padding: 1.5rem;
+      width: 90%;
+    }
+
+    .signup-page input {
+      padding: 10px;
+    }
+
+    .signup-page button {
+      padding: 10px;
+      font-size: 1rem;
+    }
+  }

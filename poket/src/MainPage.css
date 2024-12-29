@@ -1,0 +1,219 @@
+:root {
+    --color-primary: #352350;
+    --color-primary-dark: #352350;
+    --color-secondary: #352350;
+    --color-secondary-dark: #352350;
+    --color-text: #333;
+    --color-text-light: #fff;
+    --color-background: #e0c3fc;
+    --color-card: #dcd6f7;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
+    --transition-default: 0.3s ease;
+    --border-radius-sm: 10px;
+    --border-radius-md: 15px;
+    --border-radius-lg: 20px;
+}
+
+body {
+    margin: 0;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: var(--color-text);
+}
+
+.main-container {
+    display: flex;
+    height: 100vh;
+    background: url('./assets/images/mainbg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    overflow: hidden;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    padding: 5rem 1rem;
+    width: 200px;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    z-index: 2;
+    gap: 1.5rem;
+}
+
+.menu-button {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    font-size: 1.2rem;
+    color: var(--color-text-light);
+    background: var(--color-secondary);
+    border: none;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-md);
+    transition: background var(--transition-default), transform var(--transition-default);
+    cursor: pointer;
+}
+
+.menu-button:hover {
+    background: var(--color-secondary-dark);
+    transform: translateY(-3px);
+}
+
+.code-input,
+.create-room {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    color: var(--color-text-light);
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: background var(--transition-default), transform var(--transition-default);
+    margin-bottom: 1.5rem;
+}
+
+.code-input:hover,
+.create-room:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-3px);
+}
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 2rem;
+}
+
+/* MainPage의 header 클래스명을 main-header로 변경 */
+.main-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    z-index: 10;
+}
+
+.money {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: rgba(106, 90, 205, 0.7);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.money:hover {
+    background-color: rgba(106, 90, 205, 0.9);
+}
+
+.logout-button {
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    color: #fff;
+    background-color: rgba(165, 105, 255, 0.7);
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+    background-color: rgba(146, 83, 226, 0.9);
+}
+
+.monster-card {
+    width: 350px;
+    height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    background-color: var(--color-card);
+    transition: transform var(--transition-default);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 2rem;
+}
+
+.monster-card:hover {
+    transform: scale(1.05);
+}
+
+.monster-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.room-tab {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+  }
+  
+  .room-tab h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: var(--color-primary);
+  }
+  
+  .create-room {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .create-room:hover {
+    background-color: var(--color-primary-dark);
+  }
+  
+  .join-room {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .join-room input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .join-room button {
+    padding: 10px;
+    background-color: var(--color-secondary);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .join-room button:hover {
+    background-color: var(--color-secondary-dark);
+  }
+  
+  

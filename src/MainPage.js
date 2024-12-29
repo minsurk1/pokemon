@@ -20,6 +20,10 @@ function MainPage({ currency }) {
     navigate('/deck');
   };
 
+  const handleBattle = () => {
+    navigate('/battle');
+  };
+
   const toggleRoomTab = () => {
     setShowRoomTab(!showRoomTab);
   };
@@ -43,6 +47,7 @@ function MainPage({ currency }) {
       <div className="sidebar">
         <button className="menu-button" onClick={handleStore}>상점</button>
         <button className="menu-button" onClick={handleDeck}>내카드</button>
+        <button className="menu-button" onClick={handleBattle}>배틀</button>
         <button className="menu-button" onClick={toggleRoomTab}>
           {showRoomTab ? '탭 닫기' : '방 만들기/입장'}
         </button>

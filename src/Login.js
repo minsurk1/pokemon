@@ -8,6 +8,7 @@ import Inventory from './Inventory';
 import StorePage from './StorePage';
 import DeckPage from './DeckPage';
 import WaitPage from './WaitPage';  
+import BattlePage from './BattlePage';
 
 function LoginPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -84,6 +85,10 @@ function Login() {
         <Route
           path="/deck"
           element={<DeckPage DeckPage={DeckPage} setDeckPage={DeckPage} />}
+        />
+      <Route 
+          path="/battle"  
+          element={<BattlePage />}
         />
         <Route path="/wait" element={<WaitPage />} />  {/* 새로 추가 */}
       </Routes>

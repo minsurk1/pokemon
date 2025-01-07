@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './WaitPage.css';
+import backgroundImage from './assets/images/waitbg.jpg';
 
 function WaitPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isReady, setIsReady] = useState(false);
   const [opponentReady, setOpponentReady] = useState(false);
+  const [backgroundStyle, setBackgroundStyle] = useState({});
 
   const roomCode = location.state?.roomCode || 'UNKNOWN';
+
+  useEffect(() => {
+    setBackgroundStyle({
+      backgroundImage: `url(${backgroundImage})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    });
+  }, []);
 
   const handleReady = () => {
     setIsReady(!isReady);
@@ -27,37 +37,40 @@ function WaitPage() {
   };
 
   return (
-    <div className="wait-page">
-      <div className="room-info">
-        <h2>대기실</h2>
-        <p>방 코드: {roomCode}</p>
-      </div>
-      <div className="players">
-        <div className="player">
-          <p>나</p>
-          <p>{isReady ? '준비 완료' : '준비 중'}</p>
+    <div className="wait-body">
+      <div className="wait-page" style={backgroundStyle}>
+        <div className="room-info">
+          <h2>대기실</h2>
+          <p>방 코드: {roomCode}</p>
         </div>
-        <div className="player">
-          <p>상대방</p>
-          <p>{opponentReady ? '준비 완료' : '대기 중'}</p>
+        <div className="players">
+          <div className="player">
+            <p>나</p>
+            <p>{isReady ? '준비 완료' : '준비 중'}</p>
+          </div>
+          <div className="player">
+            <p>상대방</p>
+            <p>{opponentReady ? '준비 완료' : '대기 중'}</p>
+          </div>
         </div>
-      </div>
-      <div className="buttons">
-        <button
-          className={`ready-button ${isReady ? 'ready' : ''}`}
-          onClick={handleReady}
-        >
-          {isReady ? '준비 완료' : '준비하기'}
-        </button>
-        <button className="start-button" onClick={handleStart}>
-          시작하기
-        </button>
-        <button className="return-button" onClick={handleReturn}>
-          메인으로 돌아가기
-        </button>
+        <div className="buttons">
+          <button
+            className={`ready-button ${isReady ? 'ready' : ''}`}
+            onClick={handleReady}
+          >
+            {isReady ? '준비 완료' : '준비하기'}
+          </button>
+          <button className="start-button" onClick={handleStart}>
+            시작하기
+          </button>
+          <button className="return-button" onClick={handleReturn}>
+            메인으로 돌아가기
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
 export default WaitPage;
+

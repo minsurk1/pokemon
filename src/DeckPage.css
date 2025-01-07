@@ -1,4 +1,4 @@
-body {
+deck-body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
     padding: 0;
@@ -113,6 +113,8 @@ body {
 .go-main {
     display: inline-block;
     margin: 20px auto;
+    margin-left: 10px;
+    margin-right: 20px;
     padding: 10px 20px;
     background-color: #1f3a4c;
     color: #fff;
@@ -127,6 +129,21 @@ body {
     text-align: center;
 }
 
+.go-store {
+    display: inline-block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    background-color: #1f3a4c;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
 .go-main:hover {
     background-color: #f39c12;
     transform: scale(1.1);
@@ -134,6 +151,16 @@ body {
 }
 
 .go-main:active {
+    background-color: #e67e22;
+    transform: scale(0.95);
+}
+.go-store:hover {
+    background-color: #f39c12;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.go-store:active {
     background-color: #e67e22;
     transform: scale(0.95);
 }

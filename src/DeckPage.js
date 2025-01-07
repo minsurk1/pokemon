@@ -42,6 +42,9 @@ const DeckPage = () => {
   const handleMain = () => {
     navigate('/main');
   };
+  const handleStore = () => {
+    navigate('/store');
+  };
   const selectCard = (card) => {
     if (selectedCards.length >= maxSelectedCards || selectedCards.includes(card)) return;
     setSelectedCards([...selectedCards, card]);
@@ -57,6 +60,7 @@ const DeckPage = () => {
     <div className="deck-page">
       <header className="deck-header">내 덱 설정</header>
       <button className="go-main" onClick={handleMain}>메인페이지</button>
+      <button className="go-store" onClick={handleStore}>상점페이지</button>
 
       <div className="selected-cards-container">
         <div className="selected-cards">

@@ -33,7 +33,7 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }) 
             setShowMessage(true);
         }
     };
-
+    
     // 메시지 박스 닫기 함수
     const closeMessage = () => {
         setShowMessage(false);

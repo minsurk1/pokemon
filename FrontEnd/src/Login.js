@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
 import './Login.css';
 import logo from './assets/images/logo.png';
+import backgroundImage from './assets/images/loginbg.png';
 import MainPage from './MainPage';
 import SignUpPage from './SignUpPage';
 import Inventory from './Inventory';
@@ -13,6 +14,16 @@ import BattlePage from './BattlePage';
 function LoginPanel() {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const [backgroundStyle, setBackgroundStyle] = useState({});
+
+ useEffect(() => {
+      setBackgroundStyle({
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      });
+    }, []);
+
 
   const togglePanel = () => {
     setIsOpen(!isOpen);
@@ -27,8 +38,8 @@ function LoginPanel() {
   };
 
   return (
-    <div>
-      <div className="fullscreen-background"></div>
+    
+      <div className="login-main" style={backgroundStyle}>
       <img src={logo} alt="Logo" className="top-right-logo" />
 
       <div className={`login-panel ${isOpen ? 'open' : ''}`}>

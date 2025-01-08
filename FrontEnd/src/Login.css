@@ -1,15 +1,10 @@
-.Login {
-  text-align: center;
-}
-
-/* 전체 화면 배경 */
-.fullscreen-background {
+/*기본화면*/
+.login-main {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('./assets/images/loginbg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

@@ -4,7 +4,7 @@
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background: linear-gradient(135deg, #ffffff, #333333); /* 흰색에서 검은색 그라데이션 */
+    background: linear-gradient(135deg, #ffffff, #333333);
     font-family: 'Roboto', sans-serif;
   }
 

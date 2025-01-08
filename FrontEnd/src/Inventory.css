@@ -1,3 +1,4 @@
+/*배경화면 디자인*/
 .inventory-page {
     background: linear-gradient(135deg, #e0e0ff 0%, #b19cd9 50%, #8e24aa 100%);
     min-height: 100vh;
@@ -6,7 +7,7 @@
     flex-direction: column;
     align-items: center;
   }
-  
+  /*내 인벤토리 텍스트*/
   .inventory-page h2 {
     color: #333;
     margin-bottom: 30px;
@@ -23,7 +24,7 @@
     max-width: 1200px;
     padding: 20px;
   }
-  
+  /*카드팩 호버*/
   .inventory-item {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -37,7 +38,7 @@
     transform: translateY(-5px);
     box-shadow: 0 12px 40px rgba(31, 38, 135, 0.25);
   }
-  
+    
   .card-pack {
     position: relative;
     display: flex;
@@ -58,7 +59,7 @@
   .card-pack:hover .card-pack-image {
     transform: scale(1.05);
   }
-  
+  /*카드팩 이름 텍스트 부분*/
   .card-pack p {
     color: white;
     font-size: 1.2rem;
@@ -66,11 +67,11 @@
     margin: 10px 0;
     text-align: center;
   }
-  
+  /*카드팩 개봉*/
   .open-button {
     width: 80%;
     padding: 12px;
-    background: linear-gradient(45deg, #7c4dff, #448aff);
+    background: linear-gradient(45deg,  #651fff, #448aff);
     color: white;
     border: none;
     border-radius: 10px;
@@ -79,12 +80,12 @@
     cursor: pointer;
     transition: all 0.3s ease;
   }
-  
+  /*카드팩 개봉에 커서올렸을때 호버*/
   .open-button:hover {
-    background: linear-gradient(45deg, #651fff, #2979ff);
+    background: linear-gradient(45deg, #000000, #2979ff);
     transform: translateY(-2px);
   }
-  
+  /*카드 개봉시 배경색 + 투명도*/
   .modal-overlay {
     position: fixed;
     top: 0;
@@ -98,7 +99,7 @@
     z-index: 1000;
     backdrop-filter: blur(5px);
   }
-  
+  /*개봉시 카드 나오는 창*/
   .modal-content {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 25px;
@@ -108,9 +109,9 @@
     position: relative;
     animation: modalFadeIn 0.5s ease;
   }
-  
+  /*카드 오픈했을때 새로운 카드가 나왔습니다 부분*/
   .modal-card-message {
-    background: linear-gradient(45deg, #7c4dff, #448aff);
+    background: linear-gradient(45deg, #651fff, #448aff);
     color: white;
     padding: 15px 30px;
     border-radius: 15px;
@@ -120,7 +121,7 @@
     text-align: center;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   }
-  
+  /*카드 5개 나오게*/
   .modal-cards {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -128,7 +129,7 @@
     margin: 20px 0;
     padding: 20px;
   }
-  
+  /*카드 구역*/
   .modal-card {
     display: flex;
     flex-direction: column;
@@ -140,18 +141,18 @@
     transition: transform 0.3s ease;
     animation: cardReveal 0.5s ease;
   }
-  
+  /*카드 호버*/
   .modal-card:hover {
     transform: translateY(-10px);
   }
-  
+  /*카드 크기*/
   .modal-card-image {
     width: 100%;
     height: auto;
     border-radius: 10px;
     margin-bottom: 10px;
   }
-  
+  /*카드 텍스트*/
   .modal-card p {
     color: #333;
     font-size: 1rem;
@@ -159,7 +160,7 @@
     text-align: center;
     margin: 10px 0;
   }
-  
+ /*카드 개봉창 닫기*/
   .close-modal {
     position: absolute;
     top: -20px;
@@ -178,12 +179,12 @@
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   }
-  
+  /*닫기 호버*/
   .close-modal:hover {
     background: #f50057;
     transform: rotate(90deg);
   }
-  
+  /*상점으로 돌아가기 버튼*/
   .back-button {
     position: fixed;
     bottom: 30px;
@@ -199,12 +200,12 @@
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
   }
-  
+  /*상점버튼 호버*/
   .back-button:hover {
     background: linear-gradient(45deg, #651fff, #2979ff);
     transform: translate(-50%, -5px);
   }
-  
+  /*카드팩 없을때*/
   .inventory-empty {
     text-align: center;
     color: #fff;
@@ -215,7 +216,7 @@
     border-radius: 15px;
     backdrop-filter: blur(10px);
   }
-  
+  /*여기부터 밑에는 창크기에 따라 카드팩 레이아웃 배치 변경*/
   @keyframes modalFadeIn {
     from {
       opacity: 0;

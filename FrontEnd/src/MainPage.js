@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MainPage.css';
 import legendTestImage from './assets/images/legendtier6.png';
+import backgroundImage from './assets/images/mainbg.jpg';
 
 function MainPage({ currency }) {
   const navigate = useNavigate();
   const [showRoomTab, setShowRoomTab] = useState(false);
   const [roomCode, setRoomCode] = useState('');
+  const [backgroundStyle, setBackgroundStyle] = useState({});
+
+ useEffect(() => {
+      setBackgroundStyle({
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      });
+    }, []);
 
   const handleLogout = () => {
     navigate('/');
@@ -42,7 +52,7 @@ function MainPage({ currency }) {
   };
 
   return (
-    <div className="main-container">
+  <div className="main-container" style={backgroundStyle}>
       {/* 사이드바 */}
       <div className="sidebar">
         <button className="menu-button" onClick={handleStore}>상점</button>

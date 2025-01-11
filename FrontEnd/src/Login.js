@@ -63,9 +63,14 @@ function LoginPanel() {
     </div>
   );
 }
+
 function Login() {
   const [inventory, setInventory] = useState([]);
   const [currency, setCurrency] = useState(10000);
+  const [selectedDeck, setSelectedDeck] = useState(() => {
+    const savedDeck = localStorage.getItem('selectedDeck');
+    return savedDeck ? JSON.parse(savedDeck) : [];
+  });
 
   const buyCardPack = (card) => {
     if (currency >= card.price) {
@@ -79,15 +84,30 @@ function Login() {
     setInventory((prevInventory) => [...prevInventory, newCardPack]);
   };
 
+  const handleDeckChange = (newDeck) => {
+    setSelectedDeck(newDeck);
+    localStorage.setItem('selectedDeck', JSON.stringify(newDeck));
+  };
+
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LoginPanel />} />
-        <Route path="/main" element={<MainPage currency={currency} />} />
+        <Route
+          path="/main"
+          element={<MainPage currency={currency} selectedDeck={selectedDeck} />}
+        />
         <Route path="/signup" element={<SignUpPage />} />
         <Route
           path="/store"
-          element={<StorePage buyCardPack={buyCardPack} currency={currency} addCardsToInventory={addCardsToInventory} setCurrency={setCurrency} />}
+          element={
+            <StorePage
+              buyCardPack={buyCardPack}
+              currency={currency}
+              addCardsToInventory={addCardsToInventory}
+              setCurrency={setCurrency}
+            />
+          }
         />
         <Route
           path="/inventory"
@@ -95,16 +115,14 @@ function Login() {
         />
         <Route
           path="/deck"
-          element={<DeckPage DeckPage={DeckPage} setDeckPage={DeckPage} />}
+          element={<DeckPage onDeckChange={handleDeckChange} selectedDeck={selectedDeck} />}
         />
-      <Route 
-          path="/battle"  
-          element={<BattlePage />}
-        />
-        <Route path="/wait" element={<WaitPage />} />  {/* 새로 추가 */}
+        <Route path="/battle" element={<BattlePage />} />
+        <Route path="/wait" element={<WaitPage />} />
       </Routes>
     </Router>
   );
 }
 
 export default Login;
+

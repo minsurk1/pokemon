@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import './DeckPage.css';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import './DeckPage.css';
 import fireTier1 from './assets/images/firetier1.png';
 import fireTier2 from './assets/images/firetier2.png';
 import fireTier3 from './assets/images/firetier3.png';
@@ -97,8 +97,8 @@ import legendTier5 from './assets/images/legendtier5.png';
 import legendTier6 from './assets/images/legendtier6.png';
 import legendTier7 from './assets/images/legendtier7.png';
 
-const DeckPage = () => {
-  const [selectedCards, setSelectedCards] = useState([]);
+const DeckPage = ({ onDeckChange, selectedDeck }) => {
+  const [selectedCards, setSelectedCards] = useState(selectedDeck);
   const maxSelectedCards = 8;
   const navigate = useNavigate();
   const cards = [
@@ -116,6 +116,10 @@ const DeckPage = () => {
     legendTier1, legendTier2, legendTier3, legendTier4, legendTier5, legendTier6, legendTier7
   ];
 
+  useEffect(() => {
+    setSelectedCards(selectedDeck);
+  }, [selectedDeck]);
+
   const handleMain = () => {
     navigate('/main');
   };
@@ -124,13 +128,16 @@ const DeckPage = () => {
   };
   const selectCard = (card) => {
     if (selectedCards.length >= maxSelectedCards || selectedCards.includes(card)) return;
-    setSelectedCards([...selectedCards, card]);
+    const newSelectedCards = [...selectedCards, card];
+    setSelectedCards(newSelectedCards);
+    onDeckChange(newSelectedCards);
   };
 
   const removeCard = (index) => {
     const updatedCards = [...selectedCards];
     updatedCards.splice(index, 1);
     setSelectedCards(updatedCards);
+    onDeckChange(updatedCards);
   };
   
   return (
@@ -173,3 +180,4 @@ const DeckPage = () => {
 };
 
 export default DeckPage;
+

@@ -1,10 +1,6 @@
-main-body {
-    margin: 0;
-    font-family: 'Noto Sans KR', sans-serif;
-    color:  #333;
-}
 
 .main-container {
+    
     display: flex;
     height: 100vh;
     background-size: cover;
@@ -14,6 +10,7 @@ main-body {
 }
 
 .sidebar {
+    
     display: flex;
     flex-direction: column;
     padding: 5rem 1rem;
@@ -25,6 +22,7 @@ main-body {
 }
 
 .menu-button {
+    
     margin-bottom: 1.5rem;
     padding: 1rem;
     font-size: 1.2rem;
@@ -60,7 +58,8 @@ main-body {
     transform: translateY(-3px);
 }
 
-.main-content {
+.main-content {    
+    font-family: 'Noto Sans KR', sans-serif;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -83,6 +82,7 @@ main-body {
 }
 
 .money {
+    font-family: 'Noto Sans KR', sans-serif;
     font-size: 1.2rem;
     font-weight: 600;
     color: #fff;

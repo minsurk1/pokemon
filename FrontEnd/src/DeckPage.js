@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './DeckPage.css';
+
 import fireTier1 from './assets/images/firetier1.png';
 import fireTier2 from './assets/images/firetier2.png';
 import fireTier3 from './assets/images/firetier3.png';
@@ -105,8 +106,8 @@ const DeckPage = ({ onDeckChange, selectedDeck }) => {
     fireTier1, fireTier2, fireTier3, fireTier4, fireTier5, fireTier6, fireTier7,
     waterTier1, waterTier2, waterTier3, waterTier4, waterTier5, waterTier6, waterTier7,
     forestTier1, forestTier2, forestTier3, forestTier4, forestTier5, forestTier6, forestTier7,
-    electricTier1,electricTier2,electricTier3,electricTier4,electricTier5,electricTier6,electricTier7,
-    esperTier1,esperTier2,esperTier3,esperTier4,esperTier5,esperTier6,esperTier7,
+    electricTier1, electricTier2, electricTier3, electricTier4, electricTier5, electricTier6, electricTier7,
+    esperTier1, esperTier2, esperTier3, esperTier4, esperTier5, esperTier6, esperTier7,
     flyTier1, flyTier2, flyTier3, flyTier4, flyTier5, flyTier6, flyTier7,
     iceTier1, iceTier2, iceTier3, iceTier4, iceTier5, iceTier6, iceTier7,
     landTier1, landTier2, landTier3, landTier4, landTier5, landTier6, landTier7,
@@ -123,9 +124,11 @@ const DeckPage = ({ onDeckChange, selectedDeck }) => {
   const handleMain = () => {
     navigate('/main');
   };
+  
   const handleStore = () => {
     navigate('/store');
   };
+
   const selectCard = (card) => {
     if (selectedCards.length >= maxSelectedCards || selectedCards.includes(card)) return;
     const newSelectedCards = [...selectedCards, card];
@@ -143,8 +146,11 @@ const DeckPage = ({ onDeckChange, selectedDeck }) => {
   return (
     <div className="deck-page">
       <header className="deck-header">내 덱 설정</header>
-      <button className="go-main" onClick={handleMain}>메인페이지</button>
-      <button className="go-store" onClick={handleStore}>상점페이지</button>
+      
+      <div className="navigation-section">
+        <button className="nav-button" onClick={handleMain}>메인페이지</button>
+        <button className="nav-button" onClick={handleStore}>상점페이지</button>
+      </div>
 
       <div className="selected-cards-container">
         <div className="selected-cards">

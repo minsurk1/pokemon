@@ -1,4 +1,4 @@
-deck-body {
+.deck-body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
     padding: 0;
@@ -19,7 +19,33 @@ deck-body {
     text-transform: uppercase;
 }
 
-/* 선택된 카드 */
+.navigation-section {
+    background-image: url('./assets/images/deckheader.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    padding: 40px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.nav-button {
+    padding: 10px 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #fff;
+    background-color: rgba(31, 58, 76, 0.8);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.nav-button:hover {
+    background-color: rgba(31, 58, 76, 1);
+    transform: scale(1.05);
+}
+
 .selected-cards-container {
     position: sticky;
     top: 0;
@@ -37,7 +63,6 @@ deck-body {
     padding: 25px;
 }
 
-/* 카드 디자인 */
 .selected-card {
     background-color: #3498db;
     color: #fff;
@@ -64,7 +89,6 @@ deck-body {
     object-fit: contain;
 }
 
-/* 카드 목록 (6줄로 표시) */
 .card-list {
     padding: 30px;
     display: grid;
@@ -109,58 +133,3 @@ deck-body {
     box-shadow: none;
 }
 
-/* 메인페이지 버튼 스타일 */
-.go-main {
-    display: inline-block;
-    margin: 20px auto;
-    margin-left: 10px;
-    margin-right: 20px;
-    padding: 10px 20px;
-    background-color: #1f3a4c;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 1.5em;
-    font-weight: bold;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
-}
-
-.go-store {
-    display: inline-block;
-    margin: 20px auto;
-    padding: 10px 20px;
-    background-color: #1f3a4c;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 1.5em;
-    font-weight: bold;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-.go-main:hover {
-    background-color: #f39c12;
-    transform: scale(1.1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.go-main:active {
-    background-color: #e67e22;
-    transform: scale(0.95);
-}
-.go-store:hover {
-    background-color: #f39c12;
-    transform: scale(1.1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.go-store:active {
-    background-color: #e67e22;
-    transform: scale(0.95);
-}

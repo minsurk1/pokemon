@@ -145,8 +145,6 @@ const DeckPage = ({ onDeckChange, selectedDeck }) => {
   
   return (
     <div className="deck-page">
-      <header className="deck-header">내 덱 설정</header>
-      
       <div className="navigation-section">
         <button className="nav-button" onClick={handleMain}>메인페이지</button>
         <button className="nav-button" onClick={handleStore}>상점페이지</button>

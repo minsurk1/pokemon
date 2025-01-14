@@ -12,9 +12,9 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }) 
     const [showMessage, setShowMessage] = useState(false); // 메시지 박스 표시 여부
     const [backgroundStyle, setBackgroundStyle] = useState({});
     const [cards] = useState([
-        { image: bCard, name: "카드 B", price: 10, packImage: bCard },
-        { image: sCard, name: "카드 S", price: 30, packImage: sCard },
-        { image: aCard, name: "카드 A", price: 20, packImage: aCard },
+        { image: bCard, name: "카드 B", price: 100, packImage: bCard },
+        { image: sCard, name: "카드 S", price: 500, packImage: sCard },
+        { image: aCard, name: "카드 A", price: 300, packImage: aCard },
     ]);
 
     useEffect(() => {

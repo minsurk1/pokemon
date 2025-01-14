@@ -116,7 +116,7 @@ function Inventory({ inventory, setInventory }) {
       5: 0.10,
       6: 0.07,
       7: 0.03,
-      8:0.01
+      8: 0.01
     };
 
     for (let i = 0; i < 5; i++) {

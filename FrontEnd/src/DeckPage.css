@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap');
+
 .deck-body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
@@ -19,19 +21,22 @@
 }
 
 .nav-button {
-    padding: 20px 30px;
-    font-size: 1.2em;
-    font-weight: bold;
-    color: #fff;
-    background-color: rgba(31, 58, 76, 0.8);
-    border: none;
-    border-radius: 5px;
+    padding: 15px 10px;
+    font-size: 1.7em;
+    text-align: center;
+    font-family: 'Do Hyeon',serif;
+    letter-spacing:3px ;
+    font-weight: bold;   
+    color: #145179;
+    background-color: #f4cd4d;
+    border:5px solid #145179;
+    border-radius: 20px;
     cursor: pointer;
     transition: background-color 0.3s, transform 0.2s;
 }
 
 .nav-button:hover {
-    background-color: rgb(150, 174, 190);
+    background-color: rgb(236, 244, 78);
     transform: scale(1.05);
 }
 
@@ -53,7 +58,7 @@
 }
 
 .selected-card {
-    background-color: #3498db;
+    background-color: #145179;
     color: #fff;
     display: flex;
     justify-content: center;

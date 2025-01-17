@@ -1,24 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './BattlePage.css';
-import legendTier1 from './assets/images/legendtier1.png';
-import legendTier2 from './assets/images/legendtier2.png';
-import legendTier3 from './assets/images/legendtier3.png';
-import legendTier4 from './assets/images/legendtier4.png';
-import legendTier5 from './assets/images/legendtier5.png';
-import legendTier6 from './assets/images/legendtier6.png';
-import legendTier7 from './assets/images/legendtier7.png';
-import fireTier7 from './assets/images/firetier7.png';
+import defaultImage from './assets/images/default.png'
 
-const myDeck = [
-  legendTier1, legendTier2, legendTier3, legendTier4,
-  legendTier5, legendTier6, legendTier7, fireTier7
-];
-
-export default function BattlePage() {
+function BattlePage({selectedDeck}) {
   const [turn, setTurn] = useState(1);
   const [timeLeft, setTimeLeft] = useState(30);
   const [myCardsInZone, setMyCardsInZone] = useState([]);
-  const [remainingCards, setRemainingCards] = useState(myDeck);
+  const [remainingCards, setRemainingCards] = useState(selectedDeck || []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -35,7 +24,8 @@ export default function BattlePage() {
     return () => clearInterval(timer);
   }, [turn]);
 
-  const handleCardClick = (card, fromZone) => {
+  
+ const handleCardClick = (card, fromZone) => {
     if (fromZone) {
       setMyCardsInZone(myCardsInZone.filter((c) => c !== card));
       setRemainingCards([...remainingCards, card]);
@@ -115,3 +105,6 @@ export default function BattlePage() {
     </div>
   );
 }
+
+export default BattlePage;
+

@@ -7,28 +7,29 @@
   flex-direction: column;
   padding: 20px;
   font-family: 'Arial', sans-serif;
+  box-sizing: border-box;
 }
 
 /* 게임 정보 표시 영역 */
 .game-info {
   display: flex;
   justify-content: space-between;
-  padding: 5px 10px;
+  padding: 10px;
   background: #f0f0f0;
   border-radius: 5px;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 }
 
 /* 플레이어 섹션 공통 스타일 */
 .player-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 10px 0;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
 /* 상대방 영역 스타일 */
-.enemy-selection {
+.enemy-section {
   align-items: flex-start;
 }
 
@@ -41,17 +42,13 @@
 .opponent-area, .my-area {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-
-.my-area {
-  flex-direction: row;
+  gap: 20px;
 }
 
 /* 플레이어 아바타 스타일 */
 .player-avatar {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background-color: #4a90e2;
 }
@@ -59,12 +56,13 @@
 /* 카드 행 스타일 */
 .cards-row {
   display: flex;
-  gap: 15px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 /* 카드 슬롯 스타일 */
 .card-slot {
-  width: 100px;
+  width: 80px;
   height: 120px;
   flex-shrink: 0;
 }
@@ -72,16 +70,15 @@
 /* 내 카드 스타일 */
 .my-card {
   width: 100%;
-  height: 115%;
+  height: 100%;
   position: relative;
   cursor: pointer;
-  gap: 3px;
   transition: transform 0.2s;
 }
 
 /* 내 카드 호버 효과 */
 .my-card:hover {
-  transform: translateY(-15px);
+  transform: translateY(-10px);
 }
 
 /* 상대방 카드 스타일 */
@@ -90,15 +87,13 @@
   height: 100%;
   position: relative;
 }
-.enemy-card:hover {
-  transform:  translateY(-5px);
-}
 
 /* 카드 뒷면 스타일 */
 .card-back {
-  width: 100%;
+  background-image: url('./assets/images/default.png');
+  background-size: cover;
+  width: 110%;
   height: 100%;
-  background-color: #4a90e2;
   border-radius: 5px;
 }
 
@@ -118,44 +113,39 @@
 
 /* 카드존 공통 스타일 */
 .card-zone {
-  width: 95%;
-  height: 200px;
+  width: 100%;
+  height: 190px;
   border-radius: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
+  font-size: 24px;
 }
 
 /* 상대방 카드존 스타일 */
 .opponent-zone {
-  background-color: #4a90e2;
+  background-color: #3c0101;
   color: white;
 }
 
 /* 내 카드존 스타일 */
 .my-zone {
-  background-color: #ffd700;
+  background-color: #ccbe70;
   color: black;
 }
 
 /* 카드존 내 카드 스타일 */
 .my-card.in-zone,
 .enemy-card.in-zone {
-  width: 120px;
-  height: 160px;
-}
-
-.my-card.in-zone img,
-.enemy-card.in-zone img {
-  object-fit: contain;
+  width: 100px;
+  height: 145px;
 }
 
 /* 덱 스타일 */
 .card-deck {
   position: relative;
-  height: 80px;
-  width: 60px;
+  height: 120px;
+  width: 80px;
   margin-left: 20px;
 }
 
@@ -175,10 +165,11 @@
   align-items: center;
 }
 
+
 /* 반응형 스타일 */
 @media (max-width: 768px) {
   .card-zone {
-    width: 90%;
+    height: 120px;
   }
 
   .cards-row {
@@ -186,8 +177,29 @@
   }
 
   .card-slot {
+    width: 60px;
+    height: 90px;
+  }
+
+  .my-card.in-zone,
+  .enemy-card.in-zone {
     width: 50px;
     height: 75px;
+  }
+
+  .player-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .myDeck {
+    top: 10px;
+    right: 10px;
+  }
+
+  .my-deck {
+    width: 60px;
+    height: 90px;
   }
 }
 

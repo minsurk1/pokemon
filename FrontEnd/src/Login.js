@@ -40,7 +40,7 @@ function LoginPanel() {
   return (
     
       <div className="login-main" style={backgroundStyle}>
-      <img src={logo} alt="Logo" className="top-right-logo" />
+      <img src={logo || "/placeholder.svg"} alt="Logo" className="top-right-logo" />
 
       <div className={`login-panel ${isOpen ? 'open' : ''}`}>
         {isOpen && (
@@ -48,7 +48,7 @@ function LoginPanel() {
         )}
 
         <div className="login-content">
-          <img src={logo} alt="Logo" className="login-logo" />
+          <img src={logo || "/placeholder.svg"} alt="Logo" className="login-logo" />
           <h2>로그인</h2>
           <input type="text" placeholder="아이디" />
           <input type="password" placeholder="비밀번호" />
@@ -117,7 +117,10 @@ function Login() {
           path="/deck"
           element={<DeckPage onDeckChange={handleDeckChange} selectedDeck={selectedDeck} />}
         />
-        <Route path="/battle" element={<BattlePage />} />
+        <Route
+          path="/battle"
+          element={<BattlePage selectedDeck={selectedDeck} />}
+        />
         <Route path="/wait" element={<WaitPage />} />
       </Routes>
     </Router>

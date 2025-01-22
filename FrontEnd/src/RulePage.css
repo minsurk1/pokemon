@@ -1,0 +1,12 @@
+.mainbutton{
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    font-size: 1.2rem;
+    color: #fff;
+    background: #352350;
+    border: none;
+    border-radius: 15px;
+    box-shadow:  0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.3s ease,transform 0.3s ease;
+    cursor: pointer;
+}

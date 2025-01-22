@@ -33,6 +33,10 @@ function MainPage({ currency, selectedDeck }) {
   const handleBattle = () => {
     navigate('/battle');
   };
+  
+  const handleReadme = () => {
+    navigate('/rule');
+  };
 
   const toggleRoomTab = () => {
     setShowRoomTab(!showRoomTab);
@@ -58,6 +62,7 @@ function MainPage({ currency, selectedDeck }) {
         <button className="menu-button" onClick={handleStore}>상점</button>
         <button className="menu-button" onClick={handleDeck}>내카드</button>
         <button className="menu-button" onClick={handleBattle}>배틀테스트</button>
+        <button className="menu-button" onClick={handleReadme}>룰 설명</button>
         <button className="menu-button" onClick={toggleRoomTab}>
           {showRoomTab ? '탭 닫기' : '방 만들기/입장'}
         </button>

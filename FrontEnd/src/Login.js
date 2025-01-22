@@ -10,6 +10,7 @@ import StorePage from './StorePage';
 import DeckPage from './DeckPage';
 import WaitPage from './WaitPage';  
 import BattlePage from './BattlePage';
+import RulePage from './RulePage'; 
 
 function LoginPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -122,6 +123,7 @@ function Login() {
           element={<BattlePage selectedDeck={selectedDeck} />}
         />
         <Route path="/wait" element={<WaitPage />} />
+        <Route path="/rule" element={<RulePage />} />
       </Routes>
     </Router>
   );

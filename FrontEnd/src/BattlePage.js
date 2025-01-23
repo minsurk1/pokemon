@@ -27,7 +27,7 @@ function BattlePage({selectedDeck}) {
   
  const handleCardClick = (card, fromZone) => {
     if (fromZone) {
-      setMyCardsInZone(myCardsInZone.filter((c) => c !== card));
+      setMyCardsInZone(myCardsInZone.filter((_,c) => c !== card));
       setRemainingCards([...remainingCards, card]);
     } else {
       setRemainingCards(remainingCards.filter((c) => c !== card));
@@ -57,7 +57,7 @@ function BattlePage({selectedDeck}) {
 
       <div className="player-section enemy-section">
         <div className="opponent-area">
-          <div className="player-avatar" />
+          <div className="enemy-avatar" />
           <div className="cards-row">
             {[...Array(8)].map((_, index) => (
               <div key={`opponent-card-${index}`} className="card-slot">

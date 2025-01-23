@@ -52,7 +52,7 @@
   white-space: nowrap;
 }
 .selected-cards-container::-webkit-scrollbar {
-    height: 8px;
+    height: 12px;
   }
   
   .selected-cards-container::-webkit-scrollbar-track {

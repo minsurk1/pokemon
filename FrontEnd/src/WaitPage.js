@@ -27,6 +27,7 @@ function WaitPage() {
   const handleStart = () => {
     if (isReady && opponentReady) {
       alert('게임을 시작합니다!');
+      navigate('/battle')
     } else {
       alert('양쪽 모두 준비가 완료되어야 게임을 시작할 수 있습니다.');
     }

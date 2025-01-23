@@ -1,30 +1,8 @@
-:root {
-    --color-primary: #352350;
-    --color-primary-dark: #352350;
-    --color-secondary: #352350;
-    --color-secondary-dark: #352350;
-    --color-text: #333;
-    --color-text-light: #fff;
-    --color-background: #e0c3fc;
-    --color-card: #dcd6f7;
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.15);
-    --transition-default: 0.3s ease;
-    --border-radius-sm: 10px;
-    --border-radius-md: 15px;
-    --border-radius-lg: 20px;
-}
-
-body {
-    margin: 0;
-    font-family: 'Noto Sans KR', sans-serif;
-    color: var(--color-text);
-}
 
 .main-container {
+    
     display: flex;
     height: 100vh;
-    background: url('./assets/images/mainbg.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -32,6 +10,7 @@ body {
 }
 
 .sidebar {
+    
     display: flex;
     flex-direction: column;
     padding: 5rem 1rem;
@@ -43,44 +22,44 @@ body {
 }
 
 .menu-button {
+    
     margin-bottom: 1.5rem;
     padding: 1rem;
     font-size: 1.2rem;
-    color: var(--color-text-light);
-    background: var(--color-secondary);
+    color: #fff;
+    background: #352350;
     border: none;
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-md);
-    transition: background var(--transition-default), transform var(--transition-default);
+    border-radius: 15px;
+    box-shadow:  0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.3s ease,transform 0.3s ease;
     cursor: pointer;
 }
 
 .menu-button:hover {
-    background: var(--color-secondary-dark);
+    background: #352350;
     transform: translateY(-3px);
 }
 
-.code-input,
 .create-room {
     padding: 1rem 2rem;
     font-size: 1.1rem;
-    color: var(--color-text-light);
-    background-color: var(--color-primary);
+    color: #fff;
+    background-color:  #352350;
     border: none;
-    border-radius: var(--border-radius-sm);
-    box-shadow: var(--shadow-md);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     cursor: pointer;
-    transition: background var(--transition-default), transform var(--transition-default);
+    transition: background 0.3s ease, transform 0.3s ease;
     margin-bottom: 1.5rem;
 }
 
-.code-input:hover,
 .create-room:hover {
-    background-color: var(--color-primary-dark);
+    background-color:  #352350;
     transform: translateY(-3px);
 }
 
-.main-content {
+.main-content {    
+    font-family: 'Noto Sans KR', sans-serif;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -90,7 +69,6 @@ body {
     padding: 2rem;
 }
 
-/* MainPage의 header 클래스명을 main-header로 변경 */
 .main-header {
     display: flex;
     justify-content: flex-end;
@@ -104,6 +82,7 @@ body {
 }
 
 .money {
+    font-family: 'Noto Sans KR', sans-serif;
     font-size: 1.2rem;
     font-weight: 600;
     color: #fff;
@@ -138,11 +117,11 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: var(--border-radius-lg);
+    border-radius: 20px;
     overflow: hidden;
-    background-color: var(--color-card);
-    transition: transform var(--transition-default);
-    box-shadow: var(--shadow-md);
+    background-color: #dcd6f7;
+    transition: transform  0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     margin-bottom: 2rem;
 }
 
@@ -171,14 +150,14 @@ body {
   .room-tab h3 {
     margin-top: 0;
     margin-bottom: 15px;
-    color: var(--color-primary);
+    color: #352350;
   }
   
   .create-room {
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
-    background-color: var(--color-primary);
+    background-color: #352350;
     color: white;
     border: none;
     border-radius: 5px;
@@ -187,7 +166,7 @@ body {
   }
   
   .create-room:hover {
-    background-color: var(--color-primary-dark);
+    background-color:  #352350;
   }
   
   .join-room {
@@ -204,7 +183,7 @@ body {
   
   .join-room button {
     padding: 10px;
-    background-color: var(--color-secondary);
+    background-color:  #352350;
     color: white;
     border: none;
     border-radius: 5px;
@@ -213,7 +192,7 @@ body {
   }
   
   .join-room button:hover {
-    background-color: var(--color-secondary-dark);
+    background-color: #352350;
   }
   
   

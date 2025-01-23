@@ -1,66 +1,84 @@
+@import url('https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap');
+
+
+/* 기본 컨테이너 스타일 */
 .battle-container {
   width: 100%;
-  height: 100vh;
-  background: white;
+  height: 150vh;
+  background: rgb(0, 0, 0);
   display: flex;
   flex-direction: column;
   padding: 20px;
   font-family: 'Arial', sans-serif;
+  box-sizing: border-box;
 }
 
+/* 게임 정보 표시 영역 */
 .game-info {
   display: flex;
   justify-content: space-between;
-  padding: 5px 10px;
+  padding: 10px;
+  font-family: 'Do Hyeon',serif;
   background: #f0f0f0;
   border-radius: 5px;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
 }
 
+/* 플레이어 섹션 공통 스타일 */
 .player-section {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  margin: 10px 0;
+  margin-bottom: 20px;
 }
 
-.opponent {
+/* 상대방 영역 스타일 */
+.enemy-section {
   align-items: flex-start;
 }
 
+/* 내 영역 스타일 */
 .my-section {
-  align-items: flex-end;
-  margin-top: auto;
+  margin-top: inherit;
 }
 
+/* 플레이어 영역 레이아웃 */
 .opponent-area, .my-area {
   display: flex;
   align-items: center;
   gap: 20px;
 }
 
-.my-area {
-  flex-direction: row-reverse;
-}
-
+/* 플레이어 아바타 스타일 */
 .player-avatar {
-  width: 100px;
-  height: 100px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background-color: #4a90e2;
 }
-
+.enemy-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #ff0000;
+}
+/* 카드 행 스타일 */
 .cards-row {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
+/* 카드 슬롯 스타일 */
 .card-slot {
-  width: 60px;
-  height: 80px;
+  width: 80px;
+  height: 120px;
+  flex-shrink: 0;
+  margin-left: 25px;
 }
 
-.card {
+/* 내 카드 스타일 */
+.my-card {
   width: 100%;
   height: 100%;
   position: relative;
@@ -68,17 +86,30 @@
   transition: transform 0.2s;
 }
 
-.card:hover {
-  transform: translateY(-5px);
+/* 내 카드 호버 효과 */
+.my-card:hover {
+  transform:scale(2.5);
+  transition: transform .5s;  
+  z-index: 100;
 }
 
-.card-back {
+/* 상대방 카드 스타일 */
+.enemy-card {
   width: 100%;
   height: 100%;
-  background-color: #4a90e2;
+  position: relative;
+}
+
+/* 카드 뒷면 스타일 */
+.card-back {
+  background-image: url('./assets/images/default.png');
+  background-size: cover;
+  width: 110%;
+  height: 100%;
   border-radius: 5px;
 }
 
+/* 카드 앞면 스타일 */
 .card-front {
   width: 100%;
   height: 100%;
@@ -92,57 +123,83 @@
   object-fit: cover;
 }
 
-/* 카드존 스타일 */
+/* 카드존 공통 스타일 */
 .card-zone {
-  width: 80%;
-  height: 100px;
+  width: 100%;
+  height: 220px;
   border-radius: 15px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 18px;
+  justify-content: center; 
+  font-size: 24px;
+  gap: 60px; 
+  overflow-x: auto; /*카드가 많을 경우 스크롤*/
 }
 
+/* 스크롤바 스타일링 */
+.card-zone::-webkit-scrollbar {
+  height: 8px;
+}
+
+.card-zone::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.card-zone::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+/* 상대방 카드존 스타일 */
 .opponent-zone {
-  background-color: #4a90e2;
+  background-color: #ff0000;
   color: white;
 }
 
+/* 내 카드존 스타일 */
 .my-zone {
-  background-color: #ffd700;
+  background-color: #0800ff;
   color: black;
 }
 
-/* 카드존 내의 카드 스타일 */
-.card.in-zone {
-  width: 50px; /* 카드 크기 */
-  height: 70px;
+/* 카드존 내 카드 스타일 */
+.my-card.in-zone,
+.enemy-card.in-zone {
+  width: 120px;
+  height: 165px;
+  
 }
 
-.card.in-zone img {
-  object-fit: contain;
-}
-
-/* 덱 카드 스타일 */
+/* 덱 스타일 */
 .card-deck {
   position: relative;
-  height: 80px;
-  width: 60px;
-  margin-left: 20px;
+  height: 120px;
+  width: 80px;
+  margin-left: 60px;
 }
 
 .deck-card {
   position: absolute;
   width: 100%;
   height: 100%;
-  background-color: #ffd700;
-  border: 2px solid #ccc;
+  background-image: url('./assets/images/default.png');
+  background-size: cover;
+  border: 2px solid ;
   border-radius: 5px;
 }
 
+/* 플레이어 정보 영역 */
+.player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+/* 반응형 스타일 */
 @media (max-width: 768px) {
   .card-zone {
-    width: 90%;
+    height: 120px;
   }
 
   .cards-row {
@@ -150,7 +207,29 @@
   }
 
   .card-slot {
+    width: 60px;
+    height: 90px;
+  }
+
+  .my-card.in-zone,
+  .enemy-card.in-zone {
     width: 50px;
     height: 75px;
   }
+
+  .player-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .myDeck {
+    top: 10px;
+    right: 10px;
+  }
+
+  .my-deck {
+    width: 60px;
+    height: 90px;
+  }
 }
+

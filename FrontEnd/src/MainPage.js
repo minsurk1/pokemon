@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MainPage.css';
-import legendTestImage from './assets/images/legendtier6.png';
+import mainImage from './assets/images/default.png';
+import backgroundImage from './assets/images/mainbg.jpg';
 
-function MainPage({ currency }) {
+function MainPage({ currency, selectedDeck }) {
   const navigate = useNavigate();
   const [showRoomTab, setShowRoomTab] = useState(false);
   const [roomCode, setRoomCode] = useState('');
+  const [backgroundStyle, setBackgroundStyle] = useState({});
+
+ useEffect(() => {
+      setBackgroundStyle({
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      });
+    }, []);
 
   const handleLogout = () => {
     navigate('/');
@@ -22,6 +32,10 @@ function MainPage({ currency }) {
 
   const handleBattle = () => {
     navigate('/battle');
+  };
+  
+  const handleReadme = () => {
+    navigate('/rule');
   };
 
   const toggleRoomTab = () => {
@@ -42,12 +56,13 @@ function MainPage({ currency }) {
   };
 
   return (
-    <div className="main-container">
+  <div className="main-container" style={backgroundStyle}>
       {/* 사이드바 */}
       <div className="sidebar">
         <button className="menu-button" onClick={handleStore}>상점</button>
         <button className="menu-button" onClick={handleDeck}>내카드</button>
-        <button className="menu-button" onClick={handleBattle}>배틀</button>
+        <button className="menu-button" onClick={handleBattle}>배틀테스트</button>
+        <button className="menu-button" onClick={handleReadme}>룰 설명</button>
         <button className="menu-button" onClick={toggleRoomTab}>
           {showRoomTab ? '탭 닫기' : '방 만들기/입장'}
         </button>
@@ -62,7 +77,11 @@ function MainPage({ currency }) {
 
         {/* 대표 몬스터 카드 */}
         <div className="monster-card">
-          <img src={legendTestImage} alt="대표 몬스터 카드" className="monster-image" />
+          {selectedDeck && selectedDeck.length > 0 ? (
+            <img src={selectedDeck[0]} alt="대표 몬스터 카드" className="monster-image" />
+          ) : (
+            <img src={mainImage} alt="기본 대표 몬스터 카드" className="monster-image" />
+          )}
         </div>
 
         {/* 방 만들기/입장 탭 */}
@@ -88,3 +107,4 @@ function MainPage({ currency }) {
 }
 
 export default MainPage;
+

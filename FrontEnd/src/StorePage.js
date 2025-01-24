@@ -29,7 +29,7 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }) 
     const handleBuyCard = (index) => {
         const selectedCard = cards[index];
         if (buyCardPack(selectedCard)) {
-            setCurrency(prevCurrency => prevCurrency - selectedCard.price);
+            setCurrency(prevCurrency => currency - selectedCard.price);
             addCardsToInventory({
                 name: selectedCard.name,
                 packImage: selectedCard.packImage,

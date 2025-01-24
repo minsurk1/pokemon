@@ -109,9 +109,9 @@ function Inventory({ inventory, setInventory }) {
     const packCards = cardsData;
 
  const probabilities = {
-      1: 0.27,
-      2: 0.22,
-      3: 0.20,
+      1: 0.25,
+      2: 0.21,
+      3: 0.18,
       4: 0.15,
       5: 0.10,
       6: 0.07,

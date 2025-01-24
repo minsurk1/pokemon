@@ -86,10 +86,10 @@
   transition: transform 0.2s;
 }
 
-/* 내 카드 호버 효과 */
-.my-card:hover {
-  transform:scale(2.5);
-  transition: transform .5s;  
+/* 내 카드 우클릭시 호버 효과 */
+.my-card.righthover {
+  transform: scale(2.5);
+  transition: transform .5s;
   z-index: 100;
 }
 

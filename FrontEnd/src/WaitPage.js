@@ -9,8 +9,15 @@ function WaitPage() {
   const [isReady, setIsReady] = useState(false);
   const [opponentReady, setOpponentReady] = useState(false);
   const [backgroundStyle, setBackgroundStyle] = useState({});
+  const [message, setMessage] = useState(''); // 메시지 상태 추가
+  const [showMessage, setShowMessage] = useState(false); // 메시지 박스 표시 여부
 
   const roomCode = location.state?.roomCode || 'UNKNOWN';
+
+  const closeMessage = () => {
+    setShowMessage(false);
+    setMessage('');
+  };
 
   useEffect(() => {
     setBackgroundStyle({
@@ -26,10 +33,12 @@ function WaitPage() {
 
   const handleStart = () => {
     if (isReady && opponentReady) {
-      alert('게임을 시작합니다!');
+      setMessage(`게임을 시작합니다!`);
+      setShowMessage(true);
       navigate('/battle')
     } else {
-      alert('양쪽 모두 준비가 완료되어야 게임을 시작할 수 있습니다.');
+      setMessage(`양쪽 모두 준비가 완료되어야 게임을 시작할 수 있습니다.`);
+      setShowMessage(true);
     }
   };
 
@@ -40,6 +49,14 @@ function WaitPage() {
   return (
     <div className="wait-body">
       <div className="wait-page" style={backgroundStyle}>
+      {showMessage && (
+                <div className="message-box">
+                    <p>{message}</p>
+                    <button className="close-button" onClick={closeMessage}>
+                        확인
+                    </button>
+                </div>
+              )}
         <div className="room-info">
           <h2>대기실</h2>
           <p>방 코드: {roomCode}</p>

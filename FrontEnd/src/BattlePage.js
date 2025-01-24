@@ -1,52 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './BattlePage.css';
-import defaultImage from './assets/images/default.png'
+import React, { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import "./BattlePage.css"
+import defaultImage from "./assets/images/default.png"
 
-function BattlePage({selectedDeck}) {
-  const [turn, setTurn] = useState(1);
-  const [timeLeft, setTimeLeft] = useState(30);
-  const [myCardsInZone, setMyCardsInZone] = useState([]);
-  const [remainingCards, setRemainingCards] = useState(selectedDeck || []);
+function BattlePage({ selectedDeck }) {
+  const [turn, setTurn] = useState(1)
+  const [timeLeft, setTimeLeft] = useState(30)
+  const [myCardsInZone, setMyCardsInZone] = useState([])
+  const [remainingCards, setRemainingCards] = useState(
+    selectedDeck.map((card, index) => ({
+      id: `card-${index}`,
+      image: card,
+    })),
+  )
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 0) {
-          clearInterval(timer);
-          setTurn((prevTurn) => prevTurn + 1);
-          return 30;
+          clearInterval(timer)
+          setTurn((prevTurn) => prevTurn + 1)
+          return 30
         }
-        return prevTime - 1;
-      });
-    }, 1000);
+        return prevTime - 1
+      })
+    }, 1000)
 
-    return () => clearInterval(timer);
-  }, [turn]);
+    return () => clearInterval(timer)
+  }, [turn])
 
-  
- const handleCardClick = (card, fromZone) => {
+  const handleCardClick = (cardId, fromZone) => {
     if (fromZone) {
-      setMyCardsInZone(myCardsInZone.filter((_,c) => c !== card));
-      setRemainingCards([...remainingCards, card]);
+      const cardToMove = myCardsInZone.find((c) => c.id === cardId)
+      setMyCardsInZone(myCardsInZone.filter((c) => c.id !== cardId))
+      setRemainingCards([...remainingCards, cardToMove])
     } else {
-      setRemainingCards(remainingCards.filter((c) => c !== card));
-      setMyCardsInZone([...myCardsInZone, card]);
+      const cardToMove = remainingCards.find((c) => c.id === cardId)
+      setRemainingCards(remainingCards.filter((c) => c.id !== cardId))
+      setMyCardsInZone([...myCardsInZone, cardToMove])
     }
-  };
+  }
 
-  const renderMyCard = (card, fromZone, index) => (
-    <div key={`${card}-${index}`} className="card-slot">
-      <div
-        className={`my-card ${fromZone ? 'in-zone' : ''}`}
-        onClick={() => handleCardClick(card, fromZone)}
-      >
-        <div className="card-front">
-          <img src={card || "/placeholder.svg"} alt="My Card" />
+  const renderMyCard = (card, fromZone, index) => {
+    const handleRightClick = (e) => {
+      e.preventDefault()
+      e.currentTarget.classList.toggle("righthover")
+    }
+
+    return (
+      <div key={card.id} className="card-slot">
+        <div
+          className={`my-card ${fromZone ? "in-zone" : ""}`}
+          onClick={() => handleCardClick(card.id, fromZone)}
+          onContextMenu={handleRightClick}
+        >
+          <div className="card-front">
+            <img src={card.image || "/placeholder.svg"} alt="My Card" />
+          </div>
         </div>
       </div>
-    </div>
-  );
+    )
+  }
 
   return (
     <div className="battle-container">
@@ -97,14 +111,12 @@ function BattlePage({selectedDeck}) {
               ))}
             </div>
           </div>
-          <div className="cards-row">
-            {remainingCards.map((card, index) => renderMyCard(card, false, index))}
-          </div>
+          <div className="cards-row">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-export default BattlePage;
+export default BattlePage
 

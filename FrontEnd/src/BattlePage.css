@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap');
 
-
 /* 기본 컨테이너 스타일 */
 .battle-container {
   width: 100%;
@@ -18,10 +17,19 @@
   display: flex;
   justify-content: space-between;
   padding: 10px;
-  font-family: 'Do Hyeon',serif;
+  font-family: 'Do Hyeon', serif;
   background: #f0f0f0;
   border-radius: 5px;
   margin-bottom: 20px;
+}
+
+/* 게임 존 영역 */
+.game-zones {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 20px;
+  position: relative;
 }
 
 /* 플레이어 섹션 공통 스타일 */
@@ -56,12 +64,14 @@
   border-radius: 50%;
   background-color: #4a90e2;
 }
+
 .enemy-avatar {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   background-color: #ff0000;
 }
+
 /* 카드 행 스타일 */
 .cards-row {
   display: flex;
@@ -125,35 +135,41 @@
 
 /* 카드존 공통 스타일 */
 .card-zone {
-  width: 100%;
+  width: 95%;
   height: 220px;
   border-radius: 15px;
   display: flex;
   align-items: center;
-  justify-content: center; 
+  justify-content: center;
   font-size: 24px;
-  gap: 60px; 
-  overflow-x: auto; /*카드가 많을 경우 스크롤*/
+  gap: 60px;
+  overflow-x: auto;
+  position: relative;
 }
 
-/* 스크롤바 스타일링 */
-.card-zone::-webkit-scrollbar {
-  height: 8px;
+/* cost-zone 스타일 */
+.cost-zone {
+  position: absolute;
+  right: 0;
+  width: 5%;
+  height: 220px;
+  border-radius: 5px;
+  background-color: aquamarine;
 }
 
-.card-zone::-webkit-scrollbar-track {
-  background: transparent;
+.opponent-cost {
+  top: 0;
 }
 
-.card-zone::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
+.my-cost {
+  bottom: 0;
 }
 
 /* 상대방 카드존 스타일 */
 .opponent-zone {
   background-color: #ff0000;
   color: white;
+  margin-bottom: 20px;
 }
 
 /* 내 카드존 스타일 */
@@ -167,7 +183,6 @@
 .enemy-card.in-zone {
   width: 120px;
   height: 165px;
-  
 }
 
 /* 덱 스타일 */
@@ -184,7 +199,7 @@
   height: 100%;
   background-image: url('./assets/images/default.png');
   background-size: cover;
-  border: 2px solid ;
+  border: 2px solid;
   border-radius: 5px;
 }
 
@@ -195,6 +210,19 @@
   align-items: center;
 }
 
+/* 스크롤바 스타일링 */
+.card-zone::-webkit-scrollbar {
+  height: 8px;
+}
+
+.card-zone::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.card-zone::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
 
 /* 반응형 스타일 */
 @media (max-width: 768px) {
@@ -232,4 +260,3 @@
     height: 90px;
   }
 }
-

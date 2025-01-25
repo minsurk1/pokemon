@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import "./BattlePage.css"
-import defaultImage from "./assets/images/default.png"
 
 function BattlePage({ selectedDeck }) {
   const [turn, setTurn] = useState(1)
@@ -11,7 +9,7 @@ function BattlePage({ selectedDeck }) {
     selectedDeck.map((card, index) => ({
       id: `card-${index}`,
       image: card,
-    })),
+    }))
   )
 
   useEffect(() => {
@@ -27,7 +25,7 @@ function BattlePage({ selectedDeck }) {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [turn])
+  }, [])
 
   const handleCardClick = (cardId, fromZone) => {
     if (fromZone) {
@@ -55,7 +53,7 @@ function BattlePage({ selectedDeck }) {
           onContextMenu={handleRightClick}
         >
           <div className="card-front">
-            <img src={card.image || "/placeholder.svg"} alt="My Card" />
+            <img src={card.image || "/placeholder.svg"} alt="내 카드" />
           </div>
         </div>
       </div>
@@ -65,10 +63,10 @@ function BattlePage({ selectedDeck }) {
   return (
     <div className="battle-container">
       <div className="game-info">
-        <div className="turn-indicator">Turn: {turn}</div>
-        <div className="timer">Time: {timeLeft}s</div>
+        <div className="turn-indicator">턴: {turn}</div>
+        <div className="timer">시간: {timeLeft}초</div>
       </div>
-
+      
       <div className="player-section enemy-section">
         <div className="opponent-area">
           <div className="enemy-avatar" />
@@ -82,12 +80,14 @@ function BattlePage({ selectedDeck }) {
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="game-zones">
         <div className="card-zone opponent-zone">
           <span>상대방 카드존</span>
         </div>
-      </div>
+        <div className="cost-zone opponent-cost"></div>
 
-      <div className="player-section my-section">
         <div className="card-zone my-zone">
           {myCardsInZone.length > 0 ? (
             myCardsInZone.map((card, index) => renderMyCard(card, true, index))
@@ -95,7 +95,11 @@ function BattlePage({ selectedDeck }) {
             <span>내 카드존</span>
           )}
         </div>
+        <div className="cost-zone my-cost"></div>
+      </div>
 
+      
+      <div className="player-section my-section">
         <div className="my-area">
           <div className="player-info">
             <div className="player-avatar" />
@@ -111,7 +115,9 @@ function BattlePage({ selectedDeck }) {
               ))}
             </div>
           </div>
-          <div className="cards-row">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
+          <div className="cards-row">
+            {remainingCards.map((card, index) => renderMyCard(card, false, index))}
+          </div>
         </div>
       </div>
     </div>
@@ -119,4 +125,3 @@ function BattlePage({ selectedDeck }) {
 }
 
 export default BattlePage
-

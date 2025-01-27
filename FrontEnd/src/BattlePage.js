@@ -9,23 +9,36 @@ function BattlePage({ selectedDeck }) {
     selectedDeck.map((card, index) => ({
       id: `card-${index}`,
       image: card,
-    }))
+    })),
   )
+  const [costIcons, setCostIcons] = useState([1])
+
+  const endTurn = () => {
+    setTurn((prevTurn) => {
+      const newTurn = prevTurn + 1
+      setCostIcons((prev) => [...prev, newTurn].slice(-7))
+      setTimeLeft(30) 
+      return newTurn
+    })
+  }
+
+  const handleendturn = () => {
+    setTurn(turn +1);
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 0) {
-          clearInterval(timer)
-          setTurn((prevTurn) => prevTurn + 1)
-          return 30
+          endTurn()
+          return 30 // 타이머 리셋
         }
         return prevTime - 1
       })
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [])
+  }, [turn]) // turn을 의존성 배열에 추가
 
   const handleCardClick = (cardId, fromZone) => {
     if (fromZone) {
@@ -66,7 +79,7 @@ function BattlePage({ selectedDeck }) {
         <div className="turn-indicator">턴: {turn}</div>
         <div className="timer">시간: {timeLeft}초</div>
       </div>
-      
+
       <div className="player-section enemy-section">
         <div className="opponent-area">
           <div className="enemy-avatar" />
@@ -86,7 +99,11 @@ function BattlePage({ selectedDeck }) {
         <div className="card-zone opponent-zone">
           <span>상대방 카드존</span>
         </div>
-        <div className="cost-zone opponent-cost"></div>
+        <div className="cost-zone opponent-cost">
+          {costIcons.map((_, index) => (
+            <div key={`opponent-cost-${index}`} className="cost-icon" />
+          ))}
+        </div>
 
         <div className="card-zone my-zone">
           {myCardsInZone.length > 0 ? (
@@ -95,14 +112,18 @@ function BattlePage({ selectedDeck }) {
             <span>내 카드존</span>
           )}
         </div>
-        <div className="cost-zone my-cost"></div>
+        <div className="cost-zone my-cost">
+          {costIcons.map((_, index) => (
+            <div key={`my-cost-${index}`} className="cost-icon" />
+          ))}
+        </div>
       </div>
 
-      
       <div className="player-section my-section">
         <div className="my-area">
           <div className="player-info">
             <div className="player-avatar" />
+            <button className="endturn-button" onClick={handleendturn}/>
           </div>
           <div className="deck-area">
             <div className="card-deck">
@@ -115,9 +136,7 @@ function BattlePage({ selectedDeck }) {
               ))}
             </div>
           </div>
-          <div className="cards-row">
-            {remainingCards.map((card, index) => renderMyCard(card, false, index))}
-          </div>
+          <div className="cards-row">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
         </div>
       </div>
     </div>
@@ -125,3 +144,4 @@ function BattlePage({ selectedDeck }) {
 }
 
 export default BattlePage
+

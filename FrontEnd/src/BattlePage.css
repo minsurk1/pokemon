@@ -71,6 +71,12 @@
   border-radius: 50%;
   background-color: #ff0000;
 }
+.endturn-button {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #ff0073;
+}
 
 /* 카드 행 스타일 */
 .cards-row {
@@ -152,17 +158,35 @@
   position: absolute;
   right: 0;
   width: 5%;
-  height: 220px;
+  height: 360px;
   border-radius: 5px;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 5px 0;
+}
+
+
+.opponent-cost {
+  top: -145px;
   background-color: aquamarine;
 }
 
-.opponent-cost {
-  top: 0;
+.my-cost {
+  bottom: -145px;
+  background-color: #4a90e2;
 }
 
-.my-cost {
-  bottom: 0;
+.cost-icon {
+  background-image: url("./assets/images/cost.png");
+  background-size: cover;
+  display: block;
+  border-radius: 50px;
+  z-index: 1000;
+  height: 45px;
+  width: 45px;
+  margin-bottom: 5px;
 }
 
 /* 상대방 카드존 스타일 */

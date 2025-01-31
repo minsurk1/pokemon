@@ -3,8 +3,8 @@
 /* 기본 컨테이너 스타일 */
 .battle-container {
   width: 100%;
-  height: 150vh;
-  background: rgb(0, 0, 0);
+  height: 200vh;
+  background: rgb(204, 222, 168);
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -71,11 +71,26 @@
   border-radius: 50%;
   background-color: #ff0000;
 }
+
+.hp-bar{
+  width: 300px;
+  height: 30px;
+  background-color: #ff0000;
+}
+
 .endturn-button {
   width: 80px;
   height: 80px;
   border-radius: 50%;
   background-color: #ff0073;
+}
+
+.deck-area {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 40px;
+  gap: 20px;
+  margin-left : 80px
 }
 
 /* 카드 행 스타일 */
@@ -212,18 +227,18 @@
 /* 덱 스타일 */
 .card-deck {
   position: relative;
-  height: 120px;
-  width: 80px;
-  margin-left: 60px;
+  height: 140px;
+  width: 100px;
+  margin-left:100px;
 }
 
 .deck-card {
   position: absolute;
-  width: 100%;
-  height: 100%;
+  width: 100px;
+  height: 140px;
   background-image: url('./assets/images/default.png');
   background-size: cover;
-  border: 2px solid;
+  border: 1.6px solid;
   border-radius: 5px;
 }
 

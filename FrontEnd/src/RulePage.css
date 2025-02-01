@@ -1,7 +1,9 @@
+/* 전체 배경 스타일 */
 .rule-page {
-    height: 100vh;
+    height: 110vh;
 }
 
+/* 레이아웃과 폰트 설정 */
 .rule-body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
@@ -9,16 +11,84 @@
     color: #000000;
 }
 
+/* 배경 이미지 적용 */
+.rule-page {
+    background-image: url('./assets/images/rulebg.png');
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding-top: 1.5rem;
+}
 
-.mainbutton{
+/* 메인 버튼 스타일 */
+.mainbutton {
     margin-bottom: 1.5rem;
     padding: 1rem;
     font-size: 1.2rem;
-    color: #fff;
+    font-weight: bold;
+    color: white;
     background: #352350;
     border: none;
     border-radius: 15px;
-    box-shadow:  0 4px 6px rgba(0, 0, 0, 0.15);
-    transition: background 0.3s ease,transform 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.3s ease, transform 0.3s ease;
     cursor: pointer;
+}
+
+/* 버튼 hover 상태 */
+.mainbutton:hover {
+    background: #5a4f72;
+    transform: scale(1.05);
+}
+
+/* 버튼 그룹 스타일 */
+.rule-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-bottom: -1rem;
+    justify-content: center; /* 버튼을 가운데 정렬 */
+}
+
+/* 각 버튼 스타일 */
+.rule-buttons button {
+    padding: 1rem;
+    font-size: 1.1rem;
+    color: #fff;
+    font-weight: bold;
+    background: #352350;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.3s ease, transform 0.3s ease;
+    cursor: pointer;
+}
+
+/* 버튼 hover 상태 */
+.rule-buttons button:hover {
+    background: #5a4f72;
+    transform: scale(1.05);
+}
+
+/* 룰 텍스트 표시 영역 스타일 */
+.rule-display {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #352350;
+    border-radius: 15px;
+    width: 80%;
+    max-width: 800px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* 룰 텍스트 스타일 */
+.rule-display p {
+    font-size: 1.3rem;
+    line-height: 1.6;
+    color: #87CEFA;
+    text-align: center;
+    font-weight: bold;
 }

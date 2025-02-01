@@ -1,40 +1,60 @@
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import "./BattlePage.css"
+import CardMenu from "./CardMenu"
 
 function BattlePage({ selectedDeck }) {
   const [turn, setTurn] = useState(1)
   const [playerHP, setPlayerHP] = useState(1000)
-  const [opponentHP, setOpponentHP] = useState(1000)
+  const [enemyHP, setenemyHP] = useState(1000)
   const [timeLeft, setTimeLeft] = useState(30)
   const [myCardsInZone, setMyCardsInZone] = useState([])
   const [remainingCards, setRemainingCards] = useState(
     selectedDeck.map((card, index) => ({
       id: `card-${index}`,
       image: card,
-    }))
+    })),
   )
+
   const [costIcons, setCostIcons] = useState([1])
+  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
+  const [showMenu, setShowMenu] = useState(false)
 
   const handleendturn = () => {
-    setTurn(turn + 1);
+    setTurn(turn + 1)
     setCostIcons((prev) => [...prev, turn].slice(-7))
-    setTimeLeft(30) 
+    setTimeLeft(30)
+  }
+
+  const handleCardRightClick = (e, cardId) => {
+    e.preventDefault()
+    e.currentTarget.classList.toggle("righthover")
+  }
+
+  /*내 카드존에서 우클릭 이벤트*/
+  const handleZoneRightClick = (e, cardId) => {
+    e.preventDefault()
+    setMenuPosition({ x: e.clientX, y: e.clientY })
+    setShowMenu(true)
+  }
+
+  const closeMenu = () => {
+    setShowMenu(false)
   }
 
   const endTurn = () => {
     setTurn((prevTurn) => {
       const turn = prevTurn + 1
       setCostIcons((prev) => [...prev, turn].slice(-7))
-      setTimeLeft(30) 
+      setTimeLeft(30)
       return turn
     })
   }
 
   const updateHP = (player, amount) => {
-    if (player === 'player') {
-      setPlayerHP(prevHP => Math.max(0, Math.min(1000, prevHP + amount)))
+    if (player === "player") {
+      setPlayerHP((prevHP) => Math.max(0, Math.min(1000, prevHP + amount)))
     } else {
-      setOpponentHP(prevHP => Math.max(0, Math.min(1000, prevHP + amount)))
+      setenemyHP((prevHP) => Math.max(0, Math.min(1000, prevHP + amount)))
     }
   }
 
@@ -43,29 +63,23 @@ function BattlePage({ selectedDeck }) {
       setTimeLeft((prevTime) => {
         if (prevTime <= 0) {
           endTurn()
-          return 30;
+          return 30
         }
         return prevTime - 1
       })
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [endTurn]) 
+  }, [endTurn])
 
   const handleCardClick = (cardId, fromZone) => {
     if (fromZone) {
-   
-      return;
+      return
     } else {
       const cardToMove = remainingCards.find((c) => c.id === cardId)
       setRemainingCards(remainingCards.filter((c) => c.id !== cardId))
       setMyCardsInZone([...myCardsInZone, cardToMove])
     }
-  }
-
-  const handleCardRightClick = (e, cardId) => {
-    e.preventDefault();
-    e.currentTarget.classList.toggle("righthover");
   }
 
   const renderMyCard = (card, fromZone, index) => {
@@ -74,7 +88,7 @@ function BattlePage({ selectedDeck }) {
         <div
           className={`my-card ${fromZone ? "in-zone" : ""} hoverable`}
           onClick={() => handleCardClick(card.id, fromZone)}
-          onContextMenu={(e) => handleCardRightClick(e, card.id)}
+          onContextMenu={(e) => (fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id))}
         >
           <div className="card-front">
             <img src={card.image || "/placeholder.svg"} alt="내 카드" />
@@ -84,10 +98,8 @@ function BattlePage({ selectedDeck }) {
     )
   }
 
-
   return (
     <div className="battle-container">
-      {/* 기존 코드는 그대로 유지 */}
       <div className="game-info">
         <div className="turn-indicator">턴: {turn}</div>
         <div className="timer">시간: {timeLeft}초</div>
@@ -95,10 +107,10 @@ function BattlePage({ selectedDeck }) {
 
       <div className="player-section enemy-section">
         <div className="opponent-area">
-          <div className="enemy-avatar"/>
+          <div className="enemy-avatar" />
           <div className="hp-bar">
-            <div className="hp-bar-inner" style={{width: `${opponentHP / 10}%`}}></div>
-            <div className="hp-text">{opponentHP}/1000</div>
+            <div className="hp-bar-inner" style={{ width: `${enemyHP / 10}%` }}></div>
+            <div className="hp-text">{enemyHP}/1000</div>
           </div>
           <div className="cards-row">
             {[...Array(8)].map((_, index) => (
@@ -142,29 +154,33 @@ function BattlePage({ selectedDeck }) {
             <div className="player-avatar" />
           </div>
           <div className="hp-bar">
-            <div className="hp-bar-inner" style={{width: `${playerHP / 10}%`}}></div>
+            <div className="hp-bar-inner" style={{ width: `${playerHP / 10}%` }}></div>
             <div className="hp-text">{playerHP}/1000</div>
           </div>
           <div>
-            <button className="endturn-button" onClick={handleendturn}>턴끝</button>
-          </div>    
+            <button className="endturn-button" onClick={handleendturn}>
+              턴끝
+            </button>
+          </div>
         </div>
       </div>
-     
+
       <div className="deck-area">
-         <div className="card-deck">
-              {remainingCards.map((_, index) => (
-                <div
-                  key={`deck-card-${index}`}
-                  className="deck-card"
-                  style={{ right: `${index * 2}px`, bottom: `${index * 1}px` }}
-                /> 
-              ))}
-          </div>
-          <div className="cards-row">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
+        <div className="card-deck">
+          {remainingCards.map((_, index) => (
+            <div
+              key={`deck-card-${index}`}
+              className="deck-card"
+              style={{ right: `${index * 2}px`, bottom: `${index * 1}px` }}
+            />
+          ))}
+        </div>
+        <div className="cards-row">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
       </div>
+      {showMenu && <CardMenu x={menuPosition.x} y={menuPosition.y} onClose={closeMenu} />}
     </div>
   )
 }
 
 export default BattlePage
+

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
 
 /* 기본 컨테이너 스타일 */
 .battle-container {
@@ -8,7 +8,7 @@
   display: flex;
   flex-direction: column;
   padding: 20px;
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
   box-sizing: border-box;
 }
 
@@ -17,7 +17,7 @@
   display: flex;
   justify-content: space-between;
   padding: 10px;
-  font-family: 'Do Hyeon', serif;
+  font-family: "Do Hyeon", serif;
   background: #f0f0f0;
   border-radius: 5px;
   margin-bottom: 20px;
@@ -51,7 +51,8 @@
 }
 
 /* 플레이어 영역 레이아웃 */
-.opponent-area, .my-area {
+.opponent-area,
+.my-area {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -72,7 +73,7 @@
   background-color: #ff0000;
 }
 
-.hp-bar{
+.hp-bar {
   width: 300px;
   height: 30px;
   background-color: #ff0000;
@@ -90,7 +91,7 @@
   align-items: flex-start;
   margin-top: 40px;
   gap: 20px;
-  margin-left : 80px
+  margin-left: 80px;
 }
 
 /* 카드 행 스타일 */
@@ -118,11 +119,11 @@
 }
 
 /* 내 카드 우클릭시 호버 효과 */
-.my-card.righthover {
+/* .my-card.righthover {
   transform: scale(2.5);
   transition: transform .5s;
   z-index: 100;
-}
+} */
 
 /* 상대방 카드 스타일 */
 .enemy-card {
@@ -133,7 +134,7 @@
 
 /* 카드 뒷면 스타일 */
 .card-back {
-  background-image: url('./assets/images/default.png');
+  background-image: url("./assets/images/default.png");
   background-size: cover;
   width: 110%;
   height: 100%;
@@ -182,7 +183,6 @@
   padding: 5px 0;
 }
 
-
 .opponent-cost {
   top: -145px;
   background-color: aquamarine;
@@ -229,14 +229,14 @@
   position: relative;
   height: 140px;
   width: 100px;
-  margin-left:100px;
+  margin-left: 100px;
 }
 
 .deck-card {
   position: absolute;
   width: 100px;
   height: 140px;
-  background-image: url('./assets/images/default.png');
+  background-image: url("./assets/images/default.png");
   background-size: cover;
   border: 1.6px solid;
   border-radius: 5px;
@@ -299,3 +299,8 @@
     height: 90px;
   }
 }
+
+.my-card.in-zone:hover {
+  transform: none;
+}
+

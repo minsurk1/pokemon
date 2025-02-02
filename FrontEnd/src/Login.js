@@ -1,5 +1,7 @@
 import React, { useState , useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-router-dom';
+import { DndProvider } from 'react-dnd'; 
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import './Login.css';
 import logo from './assets/images/logo.png';
 import backgroundImage from './assets/images/loginbg.png';
@@ -91,6 +93,8 @@ function Login() {
   };
 
   return (
+    
+    
     <Router>
       <Routes>
         <Route path="/" element={<LoginPanel />} />
@@ -120,7 +124,11 @@ function Login() {
         />
         <Route
           path="/battle"
-          element={<BattlePage selectedDeck={selectedDeck} />}
+          element={
+            <DndProvider backend={HTML5Backend}>
+              <BattlePage selectedDeck={selectedDeck} />
+            </DndProvider>
+          }
         />
         <Route path="/wait" element={<WaitPage />} />
         <Route path="/rule" element={<RulePage />} />

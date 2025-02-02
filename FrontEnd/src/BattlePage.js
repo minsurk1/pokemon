@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useDrag, useDrop, DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import "./BattlePage.css"
 import CardMenu from "./CardMenu"
 
@@ -12,12 +14,13 @@ function BattlePage({ selectedDeck }) {
     selectedDeck.map((card, index) => ({
       id: `card-${index}`,
       image: card,
-    })),
+    }))
   )
 
   const [costIcons, setCostIcons] = useState([1])
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
   const [showMenu, setShowMenu] = useState(false)
+  const [selectedCardId, setSelectedCardId] = useState(null)
 
   const handleendturn = () => {
     setTurn(turn + 1)
@@ -30,25 +33,26 @@ function BattlePage({ selectedDeck }) {
     e.currentTarget.classList.toggle("righthover")
   }
 
-  /*내 카드존에서 우클릭 이벤트*/
   const handleZoneRightClick = (e, cardId) => {
     e.preventDefault()
     setMenuPosition({ x: e.clientX, y: e.clientY })
+    setSelectedCardId(cardId)
     setShowMenu(true)
   }
 
   const closeMenu = () => {
     setShowMenu(false)
+    setSelectedCardId(null)
   }
 
-  const endTurn = () => {
+  const endTurn = useCallback(() => {
     setTurn((prevTurn) => {
       const turn = prevTurn + 1
       setCostIcons((prev) => [...prev, turn].slice(-7))
       setTimeLeft(30)
       return turn
     })
-  }
+  }, [])
 
   const updateHP = (player, amount) => {
     if (player === "player") {
@@ -82,18 +86,40 @@ function BattlePage({ selectedDeck }) {
     }
   }
 
+  const moveCardInZone = useCallback((fromIndex, toIndex) => {
+    setMyCardsInZone(prevCards => {
+      const newCards = [...prevCards];
+      const [movedCard] = newCards.splice(fromIndex, 1);
+      newCards.splice(toIndex, 0, movedCard);
+      return newCards;
+    });
+  }, []);
+
+  const [, drop] = useDrop({
+    accept: "CARD",
+    drop: (item, monitor) => {
+      const dropResult = monitor.getDropResult();
+      if (item.fromZone) {
+        const fromIndex = myCardsInZone.findIndex(card => card.id === item.id);
+        const toIndex = myCardsInZone.length - 1; // 항상 맨 뒤로 이동
+        moveCardInZone(fromIndex, toIndex);
+      }
+    },
+  });
+
   const renderMyCard = (card, fromZone, index) => {
     return (
       <div key={card.id} className="card-slot">
-        <div
-          className={`my-card ${fromZone ? "in-zone" : ""} hoverable`}
+        <Card
+          card={card}
+          fromZone={fromZone}
+          index={index}
+          moveCard={moveCardInZone}
           onClick={() => handleCardClick(card.id, fromZone)}
-          onContextMenu={(e) => (fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id))}
-        >
-          <div className="card-front">
-            <img src={card.image || "/placeholder.svg"} alt="내 카드" />
-          </div>
-        </div>
+          onContextMenu={(e) =>
+            fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id)
+          }
+        />
       </div>
     )
   }
@@ -134,7 +160,7 @@ function BattlePage({ selectedDeck }) {
           ))}
         </div>
 
-        <div className="card-zone my-zone">
+        <div ref={drop} className="card-zone my-zone">
           {myCardsInZone.length > 0 ? (
             myCardsInZone.map((card, index) => renderMyCard(card, true, index))
           ) : (
@@ -175,12 +201,63 @@ function BattlePage({ selectedDeck }) {
             />
           ))}
         </div>
-        <div className="cards-row">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
+        <div className="cards-row">
+          {remainingCards.map((card, index) => renderMyCard(card, false, index))}
+        </div>
       </div>
-      {showMenu && <CardMenu x={menuPosition.x} y={menuPosition.y} onClose={closeMenu} />}
+
+      {showMenu && (
+        <CardMenu
+          x={menuPosition.x}
+          y={menuPosition.y}
+          onClose={closeMenu}
+          cardId={selectedCardId}
+        />
+      )}
+    </div>
+  )
+}
+
+const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu }) => {
+  const [{ isDragging }, drag] = useDrag({
+    type: "CARD",
+    item: { id: card.id, fromZone, index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+    canDrag: fromZone, // 카드존에 있는 카드만 드래그 가능
+  })
+
+  const [, drop] = useDrop({
+    accept: "CARD",
+    hover(item, monitor) {
+      if (!fromZone) {
+        return;
+      }
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      if (dragIndex === hoverIndex) {
+        return;
+      }
+
+      moveCard(dragIndex, hoverIndex);
+      item.index = hoverIndex;
+    },
+  });
+
+  return (
+    <div
+      ref={(node) => drag(drop(node))}
+      className={`my-card ${fromZone ? "in-zone" : ""} ${isDragging ? "dragging" : ""}`}
+      onClick={onClick}
+      onContextMenu={onContextMenu}
+    >
+      <div className="card-front">
+        <img src={card.image || "/placeholder.svg"} alt="내 카드" />
+      </div>
     </div>
   )
 }
 
 export default BattlePage
-

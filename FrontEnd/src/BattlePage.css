@@ -224,6 +224,11 @@
   height: 165px;
 }
 
+.my-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
 /* 덱 스타일 */
 .card-deck {
   position: relative;

@@ -48,7 +48,7 @@ function RulePage(){
   return(
   <div className="rule-body">
     <div className="rule-page" style={backgroundStyle}>
-    <button className="mainbutton" onClick={handleMain}>메인페이지</button>
+    <button className="rule-mainbutton" onClick={handleMain}>메인페이지</button>
     
     <div className="rule-buttons">
       <button onClick={() => setRuleText(rules.battle)}>배틀 설명 </button>

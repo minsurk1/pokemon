@@ -10,6 +10,7 @@ const CardMenu = ({ x, y, onClose }) => {
         top: `${y}px`,
       }}
     >
+      <div>cardId</div>
       <button onClick={() => { console.log('동작 1'); onClose(); }}>동작 1</button>
       <button onClick={() => { console.log('동작 2'); onClose(); }}>동작 2</button>
       <button onClick={onClose}>닫기</button>

@@ -12,9 +12,9 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }) 
     const [showMessage, setShowMessage] = useState(false); // 메시지 박스 표시 여부
     const [backgroundStyle, setBackgroundStyle] = useState({});
     const [cards] = useState([
-        { image: bCard, name: "카드 B", price: 100, packImage: bCard },
-        { image: sCard, name: "카드 S", price: 500, packImage: sCard },
-        { image: aCard, name: "카드 A", price: 300, packImage: aCard },
+        { image: bCard, name: "B급 카드팩", price: 100, packImage: bCard },
+        { image: sCard, name: "S급 카드팩", price: 500, packImage: sCard },
+        { image: aCard, name: "A급 카드팩", price: 300, packImage: aCard },
     ]);
 
     useEffect(() => {
@@ -30,12 +30,22 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }) 
         const selectedCard = cards[index];
         if (buyCardPack(selectedCard)) {
             setCurrency(prevCurrency => currency - selectedCard.price);
+            
+            // 카드 이름에서 타입 추출
+            let type = 'B'; // 기본값
+            if (selectedCard.name.includes('S급')) {
+                type = 'S';
+            } else if (selectedCard.name.includes('A급')) {
+                type = 'A';
+            }
+            
             addCardsToInventory({
                 name: selectedCard.name,
                 packImage: selectedCard.packImage,
-                isOpened: false
+                isOpened: false,
+                type: type  // type 정보 추가
             });
-            // alert 대신 메시지 박스 사용
+            
             setMessage(`${selectedCard.name} 카드팩을 구매했습니다!`);
             setShowMessage(true);
         } else {

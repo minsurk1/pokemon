@@ -1,6 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
 /*배경화면 디자인*/
 .inventory-page {
-    background: linear-gradient(135deg, #e0e0ff 0%, #b19cd9 50%, #8e24aa 100%);
+    background-image:url('./assets/images/inventory.png') ;
+    background-size: cover;
+    font-family: "Do Hyeon", serif;
     min-height: 100vh;
     padding: 40px 20px;
     display: flex;
@@ -9,9 +13,11 @@
   }
   /*내 인벤토리 텍스트*/
   .inventory-page h2 {
-    color: #333;
+    color: #f6ff00;
+    -webkit-text-stroke-width: 1.5px;
+    -webkit-text-stroke-color: black;
     margin-bottom: 30px;
-    font-size: 2.5rem;
+    font-size: 3.5rem;
     font-weight: bold;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
   }

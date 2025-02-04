@@ -2,8 +2,9 @@
 
 /*배경화면 디자인*/
 .inventory-page {
+    
     background-image:url('./assets/images/inventory.png') ;
-    background-size: cover;
+    background-size: 100%;
     font-family: "Do Hyeon", serif;
     min-height: 100vh;
     padding: 40px 20px;
@@ -30,6 +31,7 @@
     max-width: 1200px;
     padding: 20px;
   }
+  
   /*카드팩 호버*/
   .inventory-item {
     background: rgba(255, 255, 255, 0.1);

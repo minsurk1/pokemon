@@ -1,6 +1,6 @@
 import React from 'react';
 import './CardMenu.css';
-
+import './BattlePage.js';
 const CardMenu = ({ x, y, onClose }) => {
   return (
     <div 

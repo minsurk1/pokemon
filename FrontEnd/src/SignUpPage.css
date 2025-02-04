@@ -1,21 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Dongle&family=Gaegu&family=Gamja+Flower&family=Gugi&family=Jua&family=Yeon+Sung&display=swap');
+
 .signup-page {
+    background-image:url('./assets/images/signup.png') ;
+    background-size: 90%;
+    background-repeat: no-repeat;
+    font-family: "Gaegu", serif;
+    background-size: cover;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background: linear-gradient(135deg, #ffffff, #333333);
-    font-family: 'Roboto', sans-serif;
   }
 
   .signup-page h1 {
-    font-size: 2.5rem;
-    color: #333;
+    font-size: 4.5rem;
+    color: #496a85;
     margin-bottom: 2rem;
-    font-weight: 500;
   }
 
   .signup-page form {
+    opacity: 0.7;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -27,9 +32,10 @@
   }
 
   .signup-page input {
+    font-family: "Gaegu", serif;
     margin-bottom: 1.5rem;
     padding: 12px 15px;
-    font-size: 1rem;
+    font-size: 1.4rem;
     border: 1px solid #ddd;
     border-radius: 8px;
     background-color: #f9f9f9;
@@ -43,9 +49,10 @@
   }
 
   .signup-page button {
+    font-family: "Gaegu", serif;
     margin-top: 1rem;
     padding: 12px;
-    font-size: 1.1rem;
+    font-size: 1.4rem;
     background-color: #61dafb;
     color: #fff;
     border: none;
@@ -61,12 +68,12 @@
   }
 
   .signup-page button:last-of-type {
-    background-color: transparent;
+    background-color: #b6d8e2;
+    border: 3px solid #00c4f5;
     color: #333;
-    border: 1px solid #ddd;
     width: auto;
     padding: 10px 20px;
-    font-size: 1rem;
+    font-size: 1.3rem;
     margin-top: 1.5rem;
     font-weight: 400;
   }

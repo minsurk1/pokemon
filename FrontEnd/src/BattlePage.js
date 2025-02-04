@@ -24,7 +24,7 @@ function BattlePage({ selectedDeck }) {
 
   const handleendturn = () => {
     setTurn(turn + 1)
-    setCostIcons((prev) => [...prev, turn].slice(-7))
+    setCostIcons((prev) => [...prev, turn].slice(-8))
     setTimeLeft(30)
   }
 

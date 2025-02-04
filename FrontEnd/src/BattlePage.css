@@ -119,11 +119,11 @@
 }
 
 /* 내 카드 우클릭시 호버 효과 */
-/* .my-card.righthover {
+ .my-card.righthover {
   transform: scale(2.5);
   transition: transform .5s;
   z-index: 100;
-} */
+} 
 
 /* 상대방 카드 스타일 */
 .enemy-card {
@@ -174,7 +174,7 @@
   position: absolute;
   right: 0;
   width: 5%;
-  height: 360px;
+  height: 370px;
   border-radius: 5px;
   display: flex;
   flex-direction: column-reverse;
@@ -184,12 +184,12 @@
 }
 
 .opponent-cost {
-  top: -145px;
+  top: -155px;
   background-color: aquamarine;
 }
 
 .my-cost {
-  bottom: -145px;
+  bottom: -155px;
   background-color: #4a90e2;
 }
 

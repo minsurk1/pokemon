@@ -66,7 +66,7 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }) 
                 <div className="store-currency">보유 재화: {currency} G</div>
                 <div>
                     <button className="inventory-button" onClick={() => navigate('/inventory')}>인벤토리</button>
-                    <button className="main-button" onClick={() => navigate('/main')}>메인으로 돌아가기</button>
+                    <button className="main-button" onClick={() => navigate('/main')}>메인페이지</button>
                 </div>
             </div>
             <br /><br /><br /><br /><br />

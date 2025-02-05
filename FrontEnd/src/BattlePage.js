@@ -3,6 +3,7 @@ import { useDrag, useDrop, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import "./BattlePage.css"
 import CardMenu from "./CardMenu"
+import inventory from "./Inventory"
 
 function BattlePage({ selectedDeck }) {
   const [turn, setTurn] = useState(1)
@@ -11,9 +12,10 @@ function BattlePage({ selectedDeck }) {
   const [timeLeft, setTimeLeft] = useState(30)
   const [myCardsInZone, setMyCardsInZone] = useState([])
   const [remainingCards, setRemainingCards] = useState(
-    selectedDeck.map((card, index) => ({
-      id: `card-${index}`,
-      image: card,
+    selectedDeck.map((cardsData, index) => ({
+      id: `cardsData-${index}`,
+      image: cardsData,
+      attack:cardsData,
     }))
   )
 
@@ -107,6 +109,15 @@ function BattlePage({ selectedDeck }) {
     },
   });
 
+  const [, dropEnemy] = useDrop({
+    accept: "CARD",
+    drop: (item, monitor) => {
+      const droppedCard = myCardsInZone.find((card) => card.id === item.id)
+      updateHP("enemy", -droppedCard.attack)  
+    },
+  })
+  
+
   const renderMyCard = (card, fromZone, index) => {
     return (
       <div key={card.id} className="card-slot">
@@ -133,7 +144,7 @@ function BattlePage({ selectedDeck }) {
 
       <div className="player-section enemy-section">
         <div className="opponent-area">
-          <div className="enemy-avatar" />
+          <div ref={dropEnemy} className="enemy-avatar" />
           <div className="hp-bar">
             <div className="hp-bar-inner" style={{ width: `${enemyHP / 10}%` }}></div>
             <div className="hp-text">{enemyHP}/1000</div>

@@ -1,6 +1,6 @@
 /* 전체 배경 스타일 */
 .rule-page {
-    height: 110vh;
+    height: 95vh;
 }
 
 /* 레이아웃과 폰트 설정 */
@@ -82,7 +82,22 @@
     width: 80%;
     max-width: 800px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    margin-bottom: 40px;
 }
+
+.rule-display::-webkit-scrollbar {
+    height: 12px;
+  }
+  
+  .rule-display::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .rule-display::-webkit-scrollbar-thumb {
+    background: rgba(123, 121, 159, 0.3);
+    border-radius: 4px;
+  }
 
 /* 룰 텍스트 스타일 */
 .rule-display p {

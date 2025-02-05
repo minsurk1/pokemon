@@ -33,7 +33,7 @@ function RulePage(){
     - 턴 종료 버튼을 누를경우 다음턴으로 1증가합니다.
     - 배틀에서 승리시 300원, 패배시 100원 획득합니다.`,
     
-    cardDraw:` 
+    economy:` 
     - 회원가입 시 초기 금액 1200원을 획득합니다.
     - 상점 카드팩의 가격은 S카드팩 500원, A카드팩 300원, B카드팩 100원입니다.`,
     
@@ -42,7 +42,7 @@ function RulePage(){
     - 손패 8장의 카드가 꽉차면 드로우는 불가능합니다.
     - 만약 들고 있는 패 중에 필요가 없는 카드는 버릴 수 있습니다.`,
     
-    economy:``,
+    developer:`배틀페이지 내 핸드에서 카드 좌클릭->카드존으로 카드올라감. 우클릭->확대 카드존에서 우클릭->메뉴오픈 , 좌클릭->드래그 가능`,
   };
 
   return(
@@ -52,9 +52,9 @@ function RulePage(){
     
     <div className="rule-buttons">
       <button onClick={() => setRuleText(rules.battle)}>배틀 설명 </button>
-      <button onClick={() => setRuleText(rules.cardDraw)}>카드깡 설명 </button>
+      <button onClick={() => setRuleText(rules.economy)}>상점 설명 </button>
       <button onClick={() => setRuleText(rules.deckSetting)}>덱 설정 설명 </button>
-      <button onClick={() => setRuleText(rules.economy)}>? </button>
+      <button onClick={() => setRuleText(rules.developer)}>개발자 주석 </button>
     </div>
 
     <div className="rule-display">

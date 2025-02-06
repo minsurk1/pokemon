@@ -163,7 +163,7 @@ function BattlePage({ selectedDeck }) {
 
       <div className="game-zones">
         <div className="card-zone opponent-zone">
-          <span>상대방 카드존</span>
+          <span></span>
         </div>
         <div className="cost-zone opponent-cost">
           {costIcons.map((_, index) => (
@@ -175,7 +175,7 @@ function BattlePage({ selectedDeck }) {
           {myCardsInZone.length > 0 ? (
             myCardsInZone.map((card, index) => renderMyCard(card, true, index))
           ) : (
-            <span>내 카드존</span>
+            <span></span>
           )}
         </div>
         <div className="cost-zone my-cost">
@@ -196,7 +196,7 @@ function BattlePage({ selectedDeck }) {
           </div>
           <div>
             <button className="endturn-button" onClick={handleendturn}>
-              턴끝
+              턴 종료
             </button>
           </div>
         </div>

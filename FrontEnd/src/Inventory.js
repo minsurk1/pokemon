@@ -101,7 +101,7 @@ function Inventory({ inventory, setInventory }) {
     { name: "제크로무", tier: 8, image: require("./assets/images/legendtier4.png"), attack: 400 },
     { name: "큐레무", tier: 8, image: require("./assets/images/legendtier5.png"), attack: 400 },
     { name: "레쿠자", tier: 8, image: require("./assets/images/legendtier6.png"), attack: 400 },
-    { name: "아르세우스", tier: 8, image: require("./assets/images/legendtier7.png"), attack: 400 },
+    { name: "아르세우스", tier: 8, image: require("./assets/images/legendtier7.png"), attack: 400 }
   ]
 
   const drawCards = (cardPack) => {

@@ -1,4 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
 .card-menu {
+    color: white;
+    text-align: center;
+    font-weight:900;
+    font-family: "Do-Hyeon" ,serif;
     position: absolute;
     background-color: rgba(0, 0, 0, 0.8);
     border: 2px solid #4a90e2;

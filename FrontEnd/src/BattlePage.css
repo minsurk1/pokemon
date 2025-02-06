@@ -3,8 +3,9 @@
 /* 기본 컨테이너 스타일 */
 .battle-container {
   width: 100%;
-  height: 200vh;
-  background: rgb(204, 222, 168);
+  height: 180vh;
+  background-image:url('./assets/images/mainbg.jpg');
+  background-size: cover;
   display: flex;
   flex-direction: column;
   padding: 20px;
@@ -83,7 +84,10 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: #ff0073;
+  background-color: aquamarine;
+  border: 0.2rem solid,rgb(255, 0, 0);
+  font-weight: 900;
+  
 }
 
 .deck-area {
@@ -206,15 +210,13 @@
 
 /* 상대방 카드존 스타일 */
 .opponent-zone {
-  background-color: #ff0000;
-  color: white;
+  background:linear-gradient(135deg,#4a90e2,#0b0b39,#3021bd);
   margin-bottom: 20px;
 }
 
 /* 내 카드존 스타일 */
 .my-zone {
-  background-color: #0800ff;
-  color: black;
+  background:linear-gradient(135deg,#480c0c,#ff0000,#510b03);
 }
 
 /* 카드존 내 카드 스타일 */

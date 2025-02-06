@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
 
 .main-container {
     
@@ -22,10 +23,10 @@
 }
 
 .menu-button {
-    
+    font-family: "Do hyeon",serif;
     margin-bottom: 1.5rem;
     padding: 1rem;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     color: #fff;
     background: #352350;
     border: none;
@@ -59,7 +60,7 @@
 }
 
 .main-content {    
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: "Do hyeon",serif;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
@@ -82,7 +83,7 @@
 }
 
 .money {
-    font-family: 'Noto Sans KR', sans-serif;
+    font-family: "Do hyeon",serif;
     font-size: 1.2rem;
     font-weight: 600;
     color: #fff;
@@ -97,6 +98,7 @@
 }
 
 .logout-button {
+    font-family: "Do hyeon",serif;
     padding: 0.5rem 1.5rem;
     font-size: 1rem;
     color: #fff;

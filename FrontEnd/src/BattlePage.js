@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback } from "react"
 import { useDrag, useDrop, DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import "./BattlePage.css"
-import CardMenu from "./CardMenu"
 import inventory from "./Inventory"
+import CardMenu from "./CardMenu";
 
 function BattlePage({ selectedDeck }) {
   const [turn, setTurn] = useState(1)
@@ -55,6 +55,7 @@ function BattlePage({ selectedDeck }) {
       return turn
     })
   }, [])
+
 
   const updateHP = (player, amount) => {
     if (player === "player") {

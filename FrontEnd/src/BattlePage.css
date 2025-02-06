@@ -4,7 +4,7 @@
 .battle-container {
   width: 100%;
   height: 180vh;
-  background-image:url('./assets/images/mainbg.jpg');
+  background-image: url("./assets/images/mainbg.jpg");
   background-size: cover;
   display: flex;
   flex-direction: column;
@@ -75,19 +75,46 @@
 }
 
 .hp-bar {
-  width: 300px;
-  height: 30px;
-  background-color: #ff0000;
+  width: 200px;
+  height: 20px;
+  background: #ddd;
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bar {
+  width: 100%;
+  height: 10px;
+  position: relative;
+}
+
+.hp-bar-inner {
+  background: #c54;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: width 0.5s linear;
+}
+
+.hp-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #000;
+  font-weight: bold;
 }
 
 .endturn-button {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: aquamarine;
-  border: 0.2rem solid,rgb(255, 0, 0);
+  color: #ffffff;
+  background: radial-gradient(#6871d7, #0a032b, #270834);
+  border: 0.2rem solid, rgb(31, 27, 48);
   font-weight: 900;
-  
 }
 
 .deck-area {
@@ -123,11 +150,11 @@
 }
 
 /* 내 카드 우클릭시 호버 효과 */
- .my-card.righthover {
+.my-card.righthover {
   transform: scale(2.5);
   transition: transform .5s;
   z-index: 100;
-} 
+}
 
 /* 상대방 카드 스타일 */
 .enemy-card {
@@ -179,22 +206,23 @@
   right: 0;
   width: 5%;
   height: 370px;
-  border-radius: 5px;
+  border-radius: 15px;
   display: flex;
   flex-direction: column-reverse;
   justify-content: flex-start;
   align-items: center;
   padding: 5px 0;
+  border: 0.3rem, black, solid;
 }
 
 .opponent-cost {
   top: -155px;
-  background-color: aquamarine;
+  background: linear-gradient(135deg, #4a90e2, #0b0b39, #3021bd);
 }
 
 .my-cost {
   bottom: -155px;
-  background-color: #4a90e2;
+  background: linear-gradient(135deg, #480c0c, #ff0000, #510b03);
 }
 
 .cost-icon {
@@ -210,13 +238,15 @@
 
 /* 상대방 카드존 스타일 */
 .opponent-zone {
-  background:linear-gradient(135deg,#4a90e2,#0b0b39,#3021bd);
+  background: linear-gradient(135deg, #4a90e2, #0b0b39, #3021bd);
+  border: 0.3rem, black, solid;
   margin-bottom: 20px;
 }
 
 /* 내 카드존 스타일 */
 .my-zone {
-  background:linear-gradient(135deg,#480c0c,#ff0000,#510b03);
+  background: linear-gradient(135deg, #480c0c, #ff0000, #510b03);
+  border: 0.3rem, black, solid;
 }
 
 /* 카드존 내 카드 스타일 */

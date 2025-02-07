@@ -1,10 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Dongle&family=Gaegu&family=Gamja+Flower&family=Gugi&family=Jua&family=Yeon+Sung&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
 
 .signup-page {
     background-image:url('./assets/images/signup.png') ;
     background-size: 90%;
     background-repeat: no-repeat;
-    font-family: "Gaegu", serif;
+    font-family: "Do hyeon", serif;
     background-size: cover;
     display: flex;
     flex-direction: column;
@@ -32,7 +32,7 @@
   }
 
   .signup-page input {
-    font-family: "Gaegu", serif;
+    font-family: "Do Hyeon", serif;
     margin-bottom: 1.5rem;
     padding: 12px 15px;
     font-size: 1.4rem;
@@ -49,7 +49,7 @@
   }
 
   .signup-page button {
-    font-family: "Gaegu", serif;
+    font-family: "Do Hyeon", serif;
     margin-top: 1rem;
     padding: 12px;
     font-size: 1.4rem;
@@ -83,6 +83,28 @@
     color: #61dafb;
     border-color: #61dafb;
   }
+
+  .message-box {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffffff;
+    border: 2px solid #9c27b0;
+    padding: 15px 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    animation: slideDown 0.5s ease-out;
+}
+
+.message-box p {
+    font-size: 1.2rem;
+    color: #4a148c;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
 
   @media (max-width: 480px) {
     .signup-page h1 {

@@ -1,22 +1,27 @@
+"use client"
+
 import { useState, useEffect, useCallback } from "react"
-import { useDrag, useDrop, DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
+import { useDrag, useDrop } from "react-dnd"
 import "./BattlePage.css"
-import inventory from "./Inventory"
-import CardMenu from "./CardMenu";
+import CardMenu from "./CardMenu"
+import { cardsData } from "./Inventory"
 
 function BattlePage({ selectedDeck }) {
   const [turn, setTurn] = useState(1)
-  const [playerHP, setPlayerHP] = useState(1000)
-  const [enemyHP, setenemyHP] = useState(1000)
+  const [playerHP, setPlayerHP] = useState(2000)
+  const [enemyHP, setenemyHP] = useState(2000)
   const [timeLeft, setTimeLeft] = useState(30)
   const [myCardsInZone, setMyCardsInZone] = useState([])
   const [remainingCards, setRemainingCards] = useState(
-    selectedDeck.map((cardsData, index) => ({
-      id: `cardsData-${index}`,
-      image: cardsData,
-      attack:cardsData,
-    }))
+    selectedDeck.map((cardImage, index) => {
+      const cardData = cardsData.find((card) => card.image === cardImage)
+      return {
+        id: `card-${index}`,
+        image: cardImage,
+        name: cardData ? cardData.name : "Unknown Card",
+        attack: cardData ? cardData.attack : 0,
+      }
+    }),
   )
 
   const [costIcons, setCostIcons] = useState([1])
@@ -56,12 +61,11 @@ function BattlePage({ selectedDeck }) {
     })
   }, [])
 
-
   const updateHP = (player, amount) => {
     if (player === "player") {
-      setPlayerHP((prevHP) => Math.max(0, Math.min(1000, prevHP + amount)))
+      setPlayerHP((prevHP) => Math.max(0, Math.min(2000, prevHP + amount)))
     } else {
-      setenemyHP((prevHP) => Math.max(0, Math.min(1000, prevHP + amount)))
+      setenemyHP((prevHP) => Math.max(0, Math.min(2000, prevHP + amount)))
     }
   }
 
@@ -90,34 +94,37 @@ function BattlePage({ selectedDeck }) {
   }
 
   const moveCardInZone = useCallback((fromIndex, toIndex) => {
-    setMyCardsInZone(prevCards => {
-      const newCards = [...prevCards];
-      const [movedCard] = newCards.splice(fromIndex, 1);
-      newCards.splice(toIndex, 0, movedCard);
-      return newCards;
-    });
-  }, []);
+    setMyCardsInZone((prevCards) => {
+      const newCards = [...prevCards]
+      const [movedCard] = newCards.splice(fromIndex, 1)
+      newCards.splice(toIndex, 0, movedCard)
+      return newCards
+    })
+  }, [])
 
   const [, drop] = useDrop({
     accept: "CARD",
     drop: (item, monitor) => {
-      const dropResult = monitor.getDropResult();
+      const dropResult = monitor.getDropResult()
       if (item.fromZone) {
-        const fromIndex = myCardsInZone.findIndex(card => card.id === item.id);
-        const toIndex = myCardsInZone.length - 1; // 항상 맨 뒤로 이동
-        moveCardInZone(fromIndex, toIndex);
+        const fromIndex = myCardsInZone.findIndex((card) => card.id === item.id)
+        const toIndex = myCardsInZone.length - 1 // 항상 맨 뒤로 이동
+        moveCardInZone(fromIndex, toIndex)
       }
     },
-  });
+  })
 
   const [, dropEnemy] = useDrop({
     accept: "CARD",
     drop: (item, monitor) => {
       const droppedCard = myCardsInZone.find((card) => card.id === item.id)
-      updateHP("enemy", -droppedCard.attack)  
+      if (droppedCard && typeof droppedCard.attack === "number") {
+        updateHP("enemy", -droppedCard.attack)
+      } else {
+        console.error("Invalid attack value:", droppedCard)
+      }
     },
   })
-  
 
   const renderMyCard = (card, fromZone, index) => {
     return (
@@ -128,9 +135,7 @@ function BattlePage({ selectedDeck }) {
           index={index}
           moveCard={moveCardInZone}
           onClick={() => handleCardClick(card.id, fromZone)}
-          onContextMenu={(e) =>
-            fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id)
-          }
+          onContextMenu={(e) => (fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id))}
         />
       </div>
     )
@@ -147,8 +152,8 @@ function BattlePage({ selectedDeck }) {
         <div className="opponent-area">
           <div ref={dropEnemy} className="enemy-avatar" />
           <div className="hp-bar">
-            <div className="hp-bar-inner" style={{ width: `${enemyHP / 10}%` }}></div>
-            <div className="hp-text">{enemyHP}/1000</div>
+            <div className="hp-bar-inner" style={{ width: `${(enemyHP / 2000) * 100}%` }}></div>
+            <div className="hp-text">{enemyHP}/2000</div>
           </div>
           <div className="cards-row">
             {[...Array(8)].map((_, index) => (
@@ -192,8 +197,8 @@ function BattlePage({ selectedDeck }) {
             <div className="player-avatar" />
           </div>
           <div className="hp-bar">
-            <div className="hp-bar-inner" style={{ width: `${playerHP / 10}%` }}></div>
-            <div className="hp-text">{playerHP}/1000</div>
+            <div className="hp-bar-inner" style={{ width: `${(playerHP / 2000) * 100}%` }}></div>
+            <div className="hp-text">{playerHP}/2000</div>
           </div>
           <div>
             <button className="endturn-button" onClick={handleendturn}>
@@ -213,9 +218,7 @@ function BattlePage({ selectedDeck }) {
             />
           ))}
         </div>
-        <div className="cards-row">
-          {remainingCards.map((card, index) => renderMyCard(card, false, index))}
-        </div>
+        <div className="cards-row">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
       </div>
 
       {showMenu && (
@@ -224,6 +227,10 @@ function BattlePage({ selectedDeck }) {
           y={menuPosition.y}
           onClose={closeMenu}
           cardId={selectedCardId}
+          card={
+            myCardsInZone.find((card) => card.id === selectedCardId) ||
+            remainingCards.find((card) => card.id === selectedCardId)
+          }
         />
       )}
     </div>
@@ -244,19 +251,19 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu }) => {
     accept: "CARD",
     hover(item, monitor) {
       if (!fromZone) {
-        return;
+        return
       }
-      const dragIndex = item.index;
-      const hoverIndex = index;
+      const dragIndex = item.index
+      const hoverIndex = index
 
       if (dragIndex === hoverIndex) {
-        return;
+        return
       }
 
-      moveCard(dragIndex, hoverIndex);
-      item.index = hoverIndex;
+      moveCard(dragIndex, hoverIndex)
+      item.index = hoverIndex
     },
-  });
+  })
 
   return (
     <div
@@ -273,3 +280,4 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu }) => {
 }
 
 export default BattlePage
+

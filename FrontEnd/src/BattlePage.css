@@ -71,7 +71,8 @@
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: #ff0000;
+  background-image: url('./assets/images/enemyavata.png');
+  background-size: cover;
 }
 
 .hp-bar {

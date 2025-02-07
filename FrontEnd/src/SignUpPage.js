@@ -1,17 +1,31 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import './SignUpPage.css';
+"use client"
+
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import "./SignUpPage.css"
 
 function SignUpPage() {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+
+  const [message, setMessage] = useState("")
+  const [showMessage, setShowMessage] = useState(false)
+
+  const closeMessage = () => {
+    setShowMessage(false)
+    setMessage("")
+  }
 
   const handleSignUp = (e) => {
-    e.preventDefault();
+    e.preventDefault()
     // 여기에 실제 회원가입 로직을 추가할 수 있습니다.
-    console.log('회원가입 시도');
-    // 회원가입 후 로그인 페이지로 이동
-    navigate('/');
-  };
+    setMessage("회원가입 완료")
+    setShowMessage(true)
+
+    // 메시지를 시간설정
+    setTimeout(() => {
+      navigate("/")
+    }, 2000) // 
+  }
 
   return (
     <div className="signup-page">
@@ -23,9 +37,19 @@ function SignUpPage() {
         <input type="email" placeholder="이메일" required />
         <button type="submit">가입하기</button>
       </form>
-      <button onClick={() => navigate('/')}>로그인 페이지로 돌아가기</button>
+      <button onClick={() => navigate("/")}>로그인 페이지로 돌아가기</button>
+
+      {showMessage && (
+        <div className="message-box">
+          <p>{message}</p>
+          <button className="close-button" onClick={closeMessage}>
+            확인
+          </button>
+        </div>
+      )}
     </div>
-  );
+  )
 }
 
-export default SignUpPage;
+export default SignUpPage
+

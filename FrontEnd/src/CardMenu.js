@@ -1,21 +1,24 @@
-import React from 'react';
-import './CardMenu.css';
-import './BattlePage.js';
-const CardMenu = ({ x, y, onClose }) => {
+import "./CardMenu.css"
+import "./BattlePage.js"
+
+const CardMenu = ({ x, y, onClose, card }) => {
+  if (!card) return null
+
   return (
-    <div 
-      className="card-menu" 
-      style={{ 
-        left: `${x}px`, 
+    <div
+      className="card-menu"
+      style={{
+        left: `${x}px`,
         top: `${y}px`,
       }}
     >
-      <div>메뉴</div>
-      <button onClick={() => { console.log('동작 1'); onClose(); }}>동작 1</button>
-      <button onClick={() => { console.log('동작 2'); onClose(); }}>동작 2</button>
+      <div className="card-info">
+        <h3>{card.name || "알 수 없는 카드"}</h3>
+        <p>공격력: {card.attack || "알 수 없음"}</p>
+      </div>
       <button onClick={onClose}>닫기</button>
     </div>
-  );
-};
+  )
+}
 
-export default CardMenu;
+export default CardMenu

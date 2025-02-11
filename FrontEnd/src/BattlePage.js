@@ -18,18 +18,24 @@ function BattlePage({ selectedDeck }) {
         image: cardImage,
         name: cardData ? cardData.name : "Unknown Card",
         attack: cardData ? cardData.attack : 0,
+        hp: cardData ? cardData.hp : 0,
+        cost: cardData ? cardData.cost : 0,
       }
     }),
   )
 
-  const [costIcons, setCostIcons] = useState([1])
+  const [playerCostIcons, setPlayerCostIcons] = useState([1])
+  const [opponentCostIcons, setOpponentCostIcons] = useState([1])
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
   const [showMenu, setShowMenu] = useState(false)
   const [selectedCardId, setSelectedCardId] = useState(null)
+  const [playerCost, setPlayerCost] = useState(0)
 
   const handleendturn = () => {
     setTurn(turn + 1)
-    setCostIcons((prev) => [...prev, turn].slice(-8))
+    const newTotal = Math.min(turn + 1, 8)
+    setPlayerCostIcons(Array(newTotal).fill(1))
+    setOpponentCostIcons(Array(newTotal).fill(1))
     setTimeLeft(30)
   }
 
@@ -53,7 +59,7 @@ function BattlePage({ selectedDeck }) {
   const endTurn = useCallback(() => {
     setTurn((prevTurn) => {
       const turn = prevTurn + 1
-      setCostIcons((prev) => [...prev, turn].slice(-7))
+      setPlayerCostIcons((prev) => ({ ...prev, available: Math.min(turn + 1, 8), total: Math.min(turn + 1, 8) }))
       setTimeLeft(30)
       return turn
     })
@@ -86,8 +92,20 @@ function BattlePage({ selectedDeck }) {
       return
     } else {
       const cardToMove = remainingCards.find((c) => c.id === cardId)
-      setRemainingCards(remainingCards.filter((c) => c.id !== cardId))
-      setMyCardsInZone([...myCardsInZone, cardToMove])
+      if (playerCostIcons.length >= cardToMove.cost) {
+        setRemainingCards(remainingCards.filter((c) => c.id !== cardId))
+        setMyCardsInZone([...myCardsInZone, cardToMove])
+        setPlayerCostIcons((prevIcons) => prevIcons.slice(cardToMove.cost))
+      } else {
+        alert("코스트가 부족하여 이 카드를 사용할 수 없습니다!")
+      }
+    }
+  }
+
+  const attackEnemy = (cardId) => {
+    const attackingCard = myCardsInZone.find((card) => card.id === cardId)
+    if (attackingCard && typeof attackingCard.attack === "number") {
+      updateHP("enemy", -attackingCard.attack)
     }
   }
 
@@ -132,8 +150,9 @@ function BattlePage({ selectedDeck }) {
           fromZone={fromZone}
           index={index}
           moveCard={moveCardInZone}
-          onClick={() => handleCardClick(card.id, fromZone)}
+          onClick={() => (fromZone ? attackEnemy(card.id) : handleCardClick(card.id, fromZone))}
           onContextMenu={(e) => (fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id))}
+          costIcons={playerCostIcons}
         />
       </div>
     )
@@ -170,7 +189,7 @@ function BattlePage({ selectedDeck }) {
           <span></span>
         </div>
         <div className="cost-zone opponent-cost">
-          {costIcons.map((_, index) => (
+          {opponentCostIcons.map((_, index) => (
             <div key={`opponent-cost-${index}`} className="cost-icon" />
           ))}
         </div>
@@ -183,7 +202,7 @@ function BattlePage({ selectedDeck }) {
           )}
         </div>
         <div className="cost-zone my-cost">
-          {costIcons.map((_, index) => (
+          {playerCostIcons.map((_, index) => (
             <div key={`my-cost-${index}`} className="cost-icon" />
           ))}
         </div>
@@ -235,7 +254,7 @@ function BattlePage({ selectedDeck }) {
   )
 }
 
-const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu }) => {
+const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIcons }) => {
   const [{ isDragging }, drag] = useDrag({
     type: "CARD",
     item: { id: card.id, fromZone, index },
@@ -272,6 +291,7 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu }) => {
     >
       <div className="card-front">
         <img src={card.image || "/placeholder.svg"} alt="내 카드" />
+        <div className="card-cost">{card.cost}</div>
       </div>
     </div>
   )

@@ -13,6 +13,7 @@ function SignUpPage() {
   const closeMessage = () => {
     setShowMessage(false)
     setMessage("")
+    navigate("/")
   }
 
   const handleSignUp = (e) => {
@@ -20,8 +21,7 @@ function SignUpPage() {
     // 여기에 실제 회원가입 로직을 추가할 수 있습니다.
     setMessage("회원가입 완료")
     setShowMessage(true)
-
-    // 메시지를 시간설정
+    //2초지나면 회원가인 완료 메세지 종료후 로그인 화면으로 이동
     setTimeout(() => {
       navigate("/")
     }, 2000) // 
@@ -42,7 +42,7 @@ function SignUpPage() {
       {showMessage && (
         <div className="message-box">
           <p>{message}</p>
-          <button className="close-button" onClick={closeMessage}>
+          <button className="su-close-button" onClick={closeMessage}>
             확인
           </button>
         </div>

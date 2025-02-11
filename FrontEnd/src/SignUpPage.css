@@ -97,6 +97,17 @@
     z-index: 1000;
     animation: slideDown 0.5s ease-out;
 }
+.su-close-button{
+  background:linear-gradient(#92c4db,#458abc,#4a148c) ;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
 
 .message-box p {
     font-size: 1.2rem;

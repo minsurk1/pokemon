@@ -24,7 +24,7 @@ function SignUpPage() {
     //2초지나면 회원가인 완료 메세지 종료후 로그인 화면으로 이동
     setTimeout(() => {
       navigate("/")
-    }, 2000) // 
+    }, 200000) // 
   }
 
   return (

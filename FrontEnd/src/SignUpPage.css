@@ -91,10 +91,11 @@
     transform: translateX(-50%);
     background-color: #ffffff;
     border: 2px solid #9c27b0;
-    padding: 15px 30px;
+    padding: 15px 15px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     z-index: 1000;
+    text-align: center;
     animation: slideDown 0.5s ease-out;
 }
 .su-close-button{

@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import "./BattlePage.css"
@@ -5,6 +7,8 @@ import CardMenu from "./CardMenu"
 import { cardsData } from "./Inventory"
 
 function BattlePage({ selectedDeck }) {
+  const [message, setMessage] = useState(''); // 메시지 상태 추가
+  const [showMessage, setShowMessage] = useState(false); // 메시지 박스 표시 여부
   const [turn, setTurn] = useState(1)
   const [playerHP, setPlayerHP] = useState(2000)
   const [enemyHP, setenemyHP] = useState(2000)
@@ -24,8 +28,9 @@ function BattlePage({ selectedDeck }) {
     }),
   )
 
-  const [playerCostIcons, setPlayerCostIcons] = useState([1])
-  const [opponentCostIcons, setOpponentCostIcons] = useState([1])
+  // playerCostIcons를 숫자로 변경
+  const [playerCostIcons, setPlayerCostIcons] = useState(1)
+  const [opponentCostIcons, setOpponentCostIcons] = useState(1)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
   const [showMenu, setShowMenu] = useState(false)
   const [selectedCardId, setSelectedCardId] = useState(null)
@@ -34,8 +39,8 @@ function BattlePage({ selectedDeck }) {
   const handleendturn = () => {
     setTurn(turn + 1)
     const newTotal = Math.min(turn + 1, 8)
-    setPlayerCostIcons(Array(newTotal).fill(1))
-    setOpponentCostIcons(Array(newTotal).fill(1))
+    setPlayerCostIcons(newTotal)
+    setOpponentCostIcons(newTotal)
     setTimeLeft(30)
   }
 
@@ -59,7 +64,7 @@ function BattlePage({ selectedDeck }) {
   const endTurn = useCallback(() => {
     setTurn((prevTurn) => {
       const turn = prevTurn + 1
-      setPlayerCostIcons((prev) => ({ ...prev, available: Math.min(turn + 1, 8), total: Math.min(turn + 1, 8) }))
+      setPlayerCostIcons(Math.min(turn + 1, 8))
       setTimeLeft(30)
       return turn
     })
@@ -92,16 +97,24 @@ function BattlePage({ selectedDeck }) {
       return
     } else {
       const cardToMove = remainingCards.find((c) => c.id === cardId)
-      if (playerCostIcons.length >= cardToMove.cost) {
+      if (playerCostIcons >= cardToMove.cost) {
         setRemainingCards(remainingCards.filter((c) => c.id !== cardId))
         setMyCardsInZone([...myCardsInZone, cardToMove])
-        setPlayerCostIcons((prevIcons) => prevIcons.slice(cardToMove.cost))
+        setPlayerCostIcons((prevIcons) => prevIcons - cardToMove.cost)
       } else {
-        alert("코스트가 부족하여 이 카드를 사용할 수 없습니다!")
+        setMessage("코스트가 부족하여 이 카드를 사용할 수 없습니다!");
+        setShowMessage(true);
       }
     }
   }
-
+  
+  // 메시지 박스 닫기 함수
+  const closeMessage = () => {
+    setShowMessage(false);
+    setMessage('');
+  };
+  
+  
   const attackEnemy = (cardId) => {
     const attackingCard = myCardsInZone.find((card) => card.id === cardId)
     if (attackingCard && typeof attackingCard.attack === "number") {
@@ -160,6 +173,14 @@ function BattlePage({ selectedDeck }) {
 
   return (
     <div className="battle-container">
+      {showMessage && (
+    <div className="message-box">
+        <p>{message}</p>
+        <button className="close-button" onClick={closeMessage}>
+            확인
+        </button>
+    </div>
+)}
       <div className="game-info">
         <div className="turn-indicator">턴: {turn}</div>
         <div className="timer">시간: {timeLeft}초</div>
@@ -189,7 +210,7 @@ function BattlePage({ selectedDeck }) {
           <span></span>
         </div>
         <div className="cost-zone opponent-cost">
-          {opponentCostIcons.map((_, index) => (
+          {[...Array(opponentCostIcons)].map((_, index) => (
             <div key={`opponent-cost-${index}`} className="cost-icon" />
           ))}
         </div>
@@ -202,7 +223,7 @@ function BattlePage({ selectedDeck }) {
           )}
         </div>
         <div className="cost-zone my-cost">
-          {playerCostIcons.map((_, index) => (
+          {[...Array(playerCostIcons)].map((_, index) => (
             <div key={`my-cost-${index}`} className="cost-icon" />
           ))}
         </div>

@@ -247,13 +247,6 @@
   width: 45px;
   margin-bottom: 5px;
 }
-.cost-icon.available {
-  opacity: 1;
-}
-
-.cost-icon.used {
-  opacity: 0.5;
-}
 
 /* 상대방 카드존 스타일 */
 .opponent-zone {
@@ -317,6 +310,28 @@
 .card-zone::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
+}
+
+.message-box {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #ffffff;
+  border: 2px solid #9c27b0;
+  padding: 15px 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  text-align: center;
+  animation: slideDown 0.5s ease-out;
+}
+
+.message-box p {
+  font-size: 1.2rem;
+  color: #4a148c;
+  margin-bottom: 15px;
+  font-weight: bold;
 }
 
 /* 반응형 스타일 */

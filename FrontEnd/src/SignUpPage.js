@@ -10,6 +10,7 @@ function SignUpPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
+  const [nickname, setNickname] = useState('');
   const [message, setMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
 
@@ -32,6 +33,7 @@ function SignUpPage() {
       username: username,
       password: password,
       email: email,
+      nickname: nickname,
     };
 
     // 회원가입 API 호출
@@ -76,6 +78,13 @@ function SignUpPage() {
           required
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
+        />
+         <input
+          type="text"
+          placeholder="닉네임"
+          required
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
         />
         <input
           type="email"

@@ -26,6 +26,8 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
   password: { type: String, required: true },
   email: { type: String, required: true },
+  nickname: { type: String, required: true },
+  money: { type: Number, default: 1200},
 });
 
 const User = mongoose.model('User', userSchema);
@@ -33,14 +35,14 @@ const User = mongoose.model('User', userSchema);
 // 회원가입 API
 app.post('/api/signup', async (req, res) => {
   try {
-    const { username, password, email } = req.body;
+    const { username, password, email, nickname } = req.body;
 
-    if (!username || !password || !email) {
+    if (!username || !password || !email || !nickname)  {
       return res.status(400).json({ message: '모든 필드를 입력해주세요' });
     }
 
     // 새 사용자 생성 및 저장
-    const newUser = new User({ username, password, email });
+    const newUser = new User({ username, password, email, nickname});
     await newUser.save();
 
     res.json({ message: '회원가입 성공!' });

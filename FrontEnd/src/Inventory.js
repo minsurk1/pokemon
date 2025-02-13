@@ -123,14 +123,13 @@ function Inventory({ inventory, setInventory }) {
   const getProbabilities = (packType) => {
     switch (packType) {
       case "B":
-        return { 1: 0.3, 2: 0.25, 3: 0.2, 4: 0.15, 5: 0.07, 6: 0.03 }
+        return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 }
       case "A":
-        return { 1: 0.25, 2: 0.22, 3: 0.18, 4: 0.15, 5: 0.1, 6: 0.07, 7: 0.03 }
+        return { 1: 0.23, 2: 0.2, 3: 0.18, 4: 0.15, 5: 0.12, 6: 0.08, 7: 0.04 }
       case "S":
-        return { 1: 0.2, 2: 0.18, 3: 0.16, 4: 0.14, 5: 0.12, 6: 0.1, 7: 0.08, 8: 0.02 }
-    }
+        return { 1: 0.18, 2: 0.16, 3: 0.15, 4: 0.14, 5: 0.12, 6: 0.1, 7: 0.08, 8: 0.07 }
   }
-
+  }
   const getRandomTier = (probabilities, maxTier) => {
     const rand = Math.random()
     let cumulativeProb = 0

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";  // axios 추가
+import axios from "axios";
+import { FaEye, FaEyeSlash } from "react-icons/fa";  
 import "./SignUpPage.css";
 
 function SignUpPage() {
@@ -11,8 +12,18 @@ function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [email, setEmail] = useState('');
   const [nickname, setNickname] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   const closeMessage = () => {
     setShowMessage(false);
@@ -30,21 +41,19 @@ function SignUpPage() {
     }
 
     const data = {
-      username: username,
-      password: password,
-      email: email,
-      nickname: nickname,
+      username,
+      password,
+      email,
+      nickname,
     };
 
-    // 회원가입 API 호출
     axios.post("http://localhost:5000/api/signup", data)
       .then(response => {
-        setMessage(response.data.message);  // 백엔드에서 보내준 메시지
+        setMessage(response.data.message);
         setShowMessage(true);
 
-        // 2초 뒤에 로그인 화면으로 이동
         setTimeout(() => {
-          navigate("/");  // 로그인 페이지로 이동
+          navigate("/");
         }, 2000);
       })
       .catch(error => {
@@ -65,21 +74,34 @@ function SignUpPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
+        
+        <div className="password-container">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="비밀번호"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <span onClick={togglePasswordVisibility}>
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </span>
+        </div>
+
+        <div className="password-container">
+          <input
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="비밀번호 확인"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <span onClick={toggleConfirmPasswordVisibility}>
+            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+          </span>
+        </div>
+
         <input
-          type="password"
-          placeholder="비밀번호"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="비밀번호 확인"
-          required
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
-         <input
           type="text"
           placeholder="닉네임"
           required

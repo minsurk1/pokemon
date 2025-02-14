@@ -117,6 +117,28 @@
     font-weight: bold;
 }
 
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-container input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.password-container span {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: #666;
+  font-size: 1.4rem;
+}
+
+.password-container span:hover {
+  color: #333;
+}
 
   @media (max-width: 480px) {
     .signup-page h1 {

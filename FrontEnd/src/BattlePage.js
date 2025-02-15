@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useCallback } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import "./BattlePage.css"

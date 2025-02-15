@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import './MainPage.css';
 import mainImage from './assets/images/default.png';
 import backgroundImage from './assets/images/mainbg.jpg';
+import { CardAnimation } from '@lasbe/react-card-animation';
+
 
 function MainPage({ currency, selectedDeck }) {
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ function MainPage({ currency, selectedDeck }) {
   const handleLogout = () => {
     navigate('/');
   };
-
+  
   const handleStore = () => {
     navigate('/store');
   };
@@ -41,6 +43,10 @@ function MainPage({ currency, selectedDeck }) {
   const toggleRoomTab = () => {
     setShowRoomTab(!showRoomTab);
   };
+
+  const handleProfile = () => {
+    navigate('/profile')
+  }
 
   const handleCreateRoom = () => {
     const newRoomCode = Math.random().toString(36).substr(2, 6).toUpperCase();
@@ -66,6 +72,7 @@ function MainPage({ currency, selectedDeck }) {
         <button className="menu-button" onClick={toggleRoomTab}>
           {showRoomTab ? '탭 닫기' : '방 만들기/입장'}
         </button>
+        <button className="menu-button" onClick={handleProfile}>마이페이지</button>
       </div>
 
       {/* 메인 콘텐츠 */}
@@ -76,6 +83,7 @@ function MainPage({ currency, selectedDeck }) {
         </div>
 
         {/* 대표 몬스터 카드 */}
+        <CardAnimation angle={35}>
         <div className="monster-card">
           {selectedDeck && selectedDeck.length > 0 ? (
             <img src={selectedDeck[0]} alt="대표 몬스터 카드" className="monster-image" />
@@ -83,6 +91,7 @@ function MainPage({ currency, selectedDeck }) {
             <img src={mainImage} alt="기본 대표 몬스터 카드" className="monster-image" />
           )}
         </div>
+        </CardAnimation>
 
         {/* 방 만들기/입장 탭 */}
         {showRoomTab && (

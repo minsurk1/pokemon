@@ -116,6 +116,7 @@
   background: radial-gradient(#6871d7, #0a032b, #270834);
   border: 0.2rem solid, rgb(31, 27, 48);
   font-weight: 900;
+  cursor: pointer;
 }
 
 .deck-area {

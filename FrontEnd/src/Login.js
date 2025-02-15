@@ -13,6 +13,7 @@ import DeckPage from './DeckPage';
 import WaitPage from './WaitPage';  
 import BattlePage from './BattlePage';
 import RulePage from './RulePage'; 
+import ProfilePage from './ProfilePage';
 
 function LoginPanel() {
   const [isOpen, setIsOpen] = useState(false);
@@ -132,6 +133,7 @@ function Login() {
         />
         <Route path="/wait" element={<WaitPage />} />
         <Route path="/rule" element={<RulePage />} />
+        <Route path='/profile' element={<ProfilePage/>}/>s
       </Routes>
     </Router>
   );

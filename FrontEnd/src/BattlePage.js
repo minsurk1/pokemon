@@ -5,11 +5,11 @@ import CardMenu from "./CardMenu"
 import { cardsData } from "./Inventory"
 
 function BattlePage({ selectedDeck }) {
-  const [message, setMessage] = useState(''); // 메시지 상태 추가
-  const [showMessage, setShowMessage] = useState(false); // 메시지 박스 표시 여부
+  const [message, setMessage] = useState("")
+  const [showMessage, setShowMessage] = useState(false)
   const [turn, setTurn] = useState(1)
   const [playerHP, setPlayerHP] = useState(2000)
-  const [enemyHP, setenemyHP] = useState(2000)
+  const [enemyHP, setEnemyHP] = useState(2000)
   const [timeLeft, setTimeLeft] = useState(30)
   const [myCardsInZone, setMyCardsInZone] = useState([])
   const [remainingCards, setRemainingCards] = useState(
@@ -25,14 +25,24 @@ function BattlePage({ selectedDeck }) {
       }
     }),
   )
-
-  // playerCostIcons를 숫자로 변경
+  const [enemyremainingCards, enemysetRemainingCards] = useState(
+    selectedDeck.map((cardImage, index) => {
+      const enemycardData = cardsData.find((card) => card.image === cardImage)
+      return {
+        id: `card-${index}`,
+        image: cardImage,
+        name: enemycardData ? enemycardData.name : "Unknown Card",
+        attack: enemycardData ? enemycardData.attack : 0,
+        hp: enemycardData ? enemycardData.hp : 0,
+        cost: enemycardData ? enemycardData.cost : 0,
+      }
+    }),
+  )
   const [playerCostIcons, setPlayerCostIcons] = useState(1)
   const [opponentCostIcons, setOpponentCostIcons] = useState(1)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
   const [showMenu, setShowMenu] = useState(false)
   const [selectedCardId, setSelectedCardId] = useState(null)
-  const [playerCost, setPlayerCost] = useState(0)
 
   const handleendturn = () => {
     setTurn(turn + 1)
@@ -72,7 +82,7 @@ function BattlePage({ selectedDeck }) {
     if (player === "player") {
       setPlayerHP((prevHP) => Math.max(0, Math.min(2000, prevHP + amount)))
     } else {
-      setenemyHP((prevHP) => Math.max(0, Math.min(2000, prevHP + amount)))
+      setEnemyHP((prevHP) => Math.max(0, Math.min(2000, prevHP + amount)))
     }
   }
 
@@ -100,19 +110,17 @@ function BattlePage({ selectedDeck }) {
         setMyCardsInZone([...myCardsInZone, cardToMove])
         setPlayerCostIcons((prevIcons) => prevIcons - cardToMove.cost)
       } else {
-        setMessage("코스트가 부족하여 이 카드를 사용할 수 없습니다!");
-        setShowMessage(true);
+        setMessage("코스트가 부족하여 이 카드를 사용할 수 없습니다!")
+        setShowMessage(true)
       }
     }
   }
-  
-  // 메시지 박스 닫기 함수
+
   const closeMessage = () => {
-    setShowMessage(false);
-    setMessage('');
-  };
-  
-  
+    setShowMessage(false)
+    setMessage("")
+  }
+
   const attackEnemy = (cardId) => {
     const attackingCard = myCardsInZone.find((card) => card.id === cardId)
     if (attackingCard && typeof attackingCard.attack === "number") {
@@ -132,11 +140,23 @@ function BattlePage({ selectedDeck }) {
   const [, drop] = useDrop({
     accept: "CARD",
     drop: (item, monitor) => {
-      const dropResult = monitor.getDropResult()
       if (item.fromZone) {
         const fromIndex = myCardsInZone.findIndex((card) => card.id === item.id)
-        const toIndex = myCardsInZone.length - 1 // 항상 맨 뒤로 이동
+        const toIndex = myCardsInZone.length - 1
         moveCardInZone(fromIndex, toIndex)
+      }
+    },
+  })
+  
+  const [, dropEnemyCard] = useDrop({
+    accept: "CARD",
+    drop: (item, moniter) => {
+      const droppedCard = myCardsInZone.find((card) => card.id)
+      if (droppedCard && typeof droppedCard.attack === "number"){
+        updateHP("enemyCard", -droppedCard.attack)
+      }else{
+        console.error("Invalid attack value:", droppedCard)
+
       }
     },
   })
@@ -153,7 +173,7 @@ function BattlePage({ selectedDeck }) {
     },
   })
 
-  const renderMyCard = (card, fromZone, index) => {
+  const renderMyCard = (card, fromZone, index) => {     
     return (
       <div key={card.id} className="card-slot">
         <Card
@@ -161,7 +181,7 @@ function BattlePage({ selectedDeck }) {
           fromZone={fromZone}
           index={index}
           moveCard={moveCardInZone}
-          onClick={() => (fromZone ? attackEnemy(card.id) : handleCardClick(card.id, fromZone))}
+          onClick={() => handleCardClick(card.id, fromZone)}
           onContextMenu={(e) => (fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id))}
           costIcons={playerCostIcons}
         />
@@ -172,13 +192,13 @@ function BattlePage({ selectedDeck }) {
   return (
     <div className="battle-container">
       {showMessage && (
-    <div className="message-box">
-        <p>{message}</p>
-        <button className="close-button" onClick={closeMessage}>
+        <div className="message-box">
+          <p>{message}</p>
+          <button className="close-button" onClick={closeMessage}>
             확인
-        </button>
-    </div>
-)}
+          </button>
+        </div>
+      )}
       <div className="game-info">
         <div className="turn-indicator">턴: {turn}</div>
         <div className="timer">시간: {timeLeft}초</div>
@@ -196,7 +216,7 @@ function BattlePage({ selectedDeck }) {
               <div key={`opponent-card-${index}`} className="card-slot">
                 <div className="enemy-card">
                   <div className="card-back" />
-                </div>
+                </div>  
               </div>
             ))}
           </div>
@@ -308,11 +328,21 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
       onClick={onClick}
       onContextMenu={onContextMenu}
     >
-      <div className="card-front">
-        <img src={card.image || "/placeholder.svg"} alt="내 카드" />
-        <div className="card-cost">{card.cost}</div>
+      
+       <div className="card-front">
+          <img src={card.image || "/placeholder.svg"} alt="내 카드" />
+          <div className="card-cost">{card.cost}</div>
+        </div>
+       {fromZone && (
+            <div className="card-hp-bar">
+            <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.hp) * 100}%` }}></div>
+            <div className="card-hp-text">
+              {card.hp}/{card.hp}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    
   )
 }
 

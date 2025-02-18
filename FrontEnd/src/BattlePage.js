@@ -21,6 +21,7 @@ function BattlePage({ selectedDeck }) {
         name: cardData ? cardData.name : "Unknown Card",
         attack: cardData ? cardData.attack : 0,
         hp: cardData ? cardData.hp : 0,
+        maxhp: cardData ? cardData.hp : 0,
         cost: cardData ? cardData.cost : 0,
       }
     }),
@@ -34,6 +35,7 @@ function BattlePage({ selectedDeck }) {
         name: enemycardData ? enemycardData.name : "Unknown Card",
         attack: enemycardData ? enemycardData.attack : 0,
         hp: enemycardData ? enemycardData.hp : 0,
+        maxhp: enemycardData ? enemycardData.hp : 0,
         cost: enemycardData ? enemycardData.cost : 0,
       }
     }),
@@ -78,7 +80,7 @@ function BattlePage({ selectedDeck }) {
     })
   }, [])
 
-  const updateHP = (player, amount) => {
+  const playerupdateHP = (player, amount) => {
     if (player === "player") {
       setPlayerHP((prevHP) => Math.max(0, Math.min(2000, prevHP + amount)))
     } else {
@@ -124,7 +126,7 @@ function BattlePage({ selectedDeck }) {
   const attackEnemy = (cardId) => {
     const attackingCard = myCardsInZone.find((card) => card.id === cardId)
     if (attackingCard && typeof attackingCard.attack === "number") {
-      updateHP("enemy", -attackingCard.attack)
+      playerupdateHP("enemy", -attackingCard.attack)
     }
   }
 
@@ -153,7 +155,7 @@ function BattlePage({ selectedDeck }) {
     drop: (item, moniter) => {
       const droppedCard = myCardsInZone.find((card) => card.id)
       if (droppedCard && typeof droppedCard.attack === "number"){
-        updateHP("enemyCard", -droppedCard.attack)
+        playerupdateHP("enemyCard", -droppedCard.attack)
       }else{
         console.error("Invalid attack value:", droppedCard)
 
@@ -166,7 +168,7 @@ function BattlePage({ selectedDeck }) {
     drop: (item, monitor) => {
       const droppedCard = myCardsInZone.find((card) => card.id === item.id)
       if (droppedCard && typeof droppedCard.attack === "number") {
-        updateHP("enemy", -droppedCard.attack)
+        playerupdateHP("enemy", -droppedCard.attack)
       } else {
         console.error("Invalid attack value:", droppedCard)
       }
@@ -335,9 +337,9 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
         </div>
        {fromZone && (
             <div className="card-hp-bar">
-            <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.hp) * 100}%` }}></div>
+            <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.maxhp) * 100}%` }}></div>
             <div className="card-hp-text">
-              {card.hp}/{card.hp}
+              {card.hp}/{card.maxhp}
             </div>
           </div>
         )}
@@ -347,4 +349,3 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
 }
 
 export default BattlePage
-

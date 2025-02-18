@@ -1,13 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
 
 /*배경화면 디자인*/
-.inventory-page {
-    
+.inventory-page {    
     background-image:url('./assets/images/inventory.png') ;
     background-size: 100%;
-    overflow-y: auto;
+    background-repeat: no-repeat;
     font-family: "Do Hyeon", serif;
-    min-height: 100vh;
+    min-height: 89vh;
     padding: 40px 20px;
     display: flex;
     flex-direction: column;
@@ -19,10 +18,27 @@
     color: #dfe439;
     -webkit-text-stroke-width: 0.5px;
     -webkit-text-stroke-color: black;
-    margin-bottom: 30px;
-    font-size: 3.5rem;
+    margin-bottom: 10px;
+    font-size: 4rem;
   }
-  
+  .pack-zone{
+    height : 460px;
+    width: 1300px;
+    overflow-y: auto;
+  }
+  /* 스크롤바 스타일링 */
+  .pack-zone::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .pack-zone::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .pack-zone::-webkit-scrollbar-thumb {
+    background: rgba(255, 0, 0, 0.3);
+    border-radius: 4px;
+  }
   .inventory-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -35,7 +51,7 @@
   /*카드팩 호버*/
   .inventory-item {
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(2px);
     border-radius: 20px;
     box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
     overflow: hidden;

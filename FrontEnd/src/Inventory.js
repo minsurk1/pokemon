@@ -177,6 +177,7 @@ function Inventory({ inventory, setInventory }) {
       {inventory && inventory.length === 0 ? (
         <div className="inventory-empty">구매한 카드팩이 없습니다.</div>
       ) : (
+        <div className="pack-zone">
         <div className="inventory-list">
           {inventory &&
             inventory.map((cardPack, index) => (
@@ -202,6 +203,7 @@ function Inventory({ inventory, setInventory }) {
                 </div>
               </div>
             ))}
+        </div>
         </div>
       )}
 

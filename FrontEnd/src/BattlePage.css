@@ -192,6 +192,7 @@
   position: relative;
   cursor: pointer;
   transition: transform 0.2s;
+  margin-top:15px;
 }
 
 /* 내 카드 우클릭시 호버 효과 */
@@ -238,9 +239,7 @@
   height: 220px;
   border-radius: 15px;
   display: flex;
-  
   justify-content: center;
-
   overflow-x: auto;
   position: relative;
 }

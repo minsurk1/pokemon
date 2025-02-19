@@ -7,7 +7,7 @@ const socketIo = require("socket.io");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const authRoutes = require("./routes/authRoutes"); // authRoutes.js 파일 불러오기
-
+const rooms = {};
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {

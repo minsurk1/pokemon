@@ -1,17 +1,20 @@
+// 회원가입 API 요청 기능 추가
+// 추후에 유효성 검사 기능 추가해야 함
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { FaEye, FaEyeSlash } from "react-icons/fa";  
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./SignUpPage.css";
 
 function SignUpPage() {
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [email, setEmail] = useState('');
-  const [nickname, setNickname] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [nickname, setNickname] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState("");
@@ -28,12 +31,12 @@ function SignUpPage() {
   const closeMessage = () => {
     setShowMessage(false);
     setMessage("");
-    navigate("/");
   };
 
   const handleSignUp = (e) => {
     e.preventDefault();
 
+    // 비밀번호 일치 체크
     if (password !== confirmPassword) {
       setMessage("비밀번호가 일치하지 않습니다.");
       setShowMessage(true);
@@ -47,18 +50,24 @@ function SignUpPage() {
       nickname,
     };
 
-    axios.post("http://localhost:5000/api/signup", data)
-      .then(response => {
+    // 상대 경로로 수정: "/api/auth/signup" 사용
+    axios
+      .post("http://localhost:5000/api/auth/signup", data) // 정확한 경로
+      .then((response) => {
         setMessage(response.data.message);
         setShowMessage(true);
 
         setTimeout(() => {
-          navigate("/");
+          navigate("/"); // 로그인 페이지로 리디렉션
         }, 2000);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error("회원가입 에러:", error);
-        setMessage("회원가입에 실패했습니다.");
+        const errorMessage =
+          error.response && error.response.data.message
+            ? error.response.data.message
+            : "회원가입에 실패했습니다."; // 메시지 처리
+        setMessage(errorMessage);
         setShowMessage(true);
       });
   };
@@ -74,7 +83,7 @@ function SignUpPage() {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
-        
+
         <div className="password-container">
           <input
             type={showPassword ? "text" : "password"}

@@ -1,5 +1,3 @@
-// 회원가입 및 로그인 API 요청 추가
-
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -62,6 +60,7 @@ function LoginPanel() {
       }
     } catch (error) {
       alert("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.");
+        navigate("/main");//알아서 지우셈
     }
   };
 

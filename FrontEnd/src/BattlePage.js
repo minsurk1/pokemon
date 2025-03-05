@@ -45,6 +45,8 @@ function BattlePage({ selectedDeck }) {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
   const [showMenu, setShowMenu] = useState(false)
   const [selectedCardId, setSelectedCardId] = useState(null)
+  // 호버된 카드 상태 추가
+  const [hoveredCardId, setHoveredCardId] = useState(null)
 
   const handleendturn = () => {
     setTurn(turn + 1)
@@ -108,9 +110,15 @@ function BattlePage({ selectedDeck }) {
     } else {
       const cardToMove = remainingCards.find((c) => c.id === cardId)
       if (playerCostIcons >= cardToMove.cost) {
-        setRemainingCards(remainingCards.filter((c) => c.id !== cardId))
-        setMyCardsInZone([...myCardsInZone, cardToMove])
-        setPlayerCostIcons((prevIcons) => prevIcons - cardToMove.cost)
+        // 카드 호버 효과 적용
+        setHoveredCardId(cardId)
+
+        setTimeout(() => {
+          setRemainingCards(remainingCards.filter((c) => c.id !== cardId))
+          setMyCardsInZone([...myCardsInZone, cardToMove])
+          setPlayerCostIcons((prevIcons) => prevIcons - cardToMove.cost)
+          setHoveredCardId(null) // 호버 상태 초기화
+        }, 500)
       } else {
         setMessage("코스트가 부족하여 이 카드를 사용할 수 없습니다!")
         setShowMessage(true)
@@ -149,16 +157,15 @@ function BattlePage({ selectedDeck }) {
       }
     },
   })
-  
+
   const [, dropEnemyCard] = useDrop({
     accept: "CARD",
     drop: (item, moniter) => {
       const droppedCard = myCardsInZone.find((card) => card.id)
-      if (droppedCard && typeof droppedCard.attack === "number"){
+      if (droppedCard && typeof droppedCard.attack === "number") {
         playerupdateHP("enemyCard", -droppedCard.attack)
-      }else{
+      } else {
         console.error("Invalid attack value:", droppedCard)
-
       }
     },
   })
@@ -175,7 +182,10 @@ function BattlePage({ selectedDeck }) {
     },
   })
 
-  const renderMyCard = (card, fromZone, index) => {     
+  const renderMyCard = (card, fromZone, index) => {
+    // 호버 효과 적용 여부 확인
+    const isHovered = hoveredCardId === card.id
+
     return (
       <div key={card.id} className="card-slot">
         <Card
@@ -186,6 +196,7 @@ function BattlePage({ selectedDeck }) {
           onClick={() => handleCardClick(card.id, fromZone)}
           onContextMenu={(e) => (fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id))}
           costIcons={playerCostIcons}
+          isHovered={isHovered}
         />
       </div>
     )
@@ -218,7 +229,7 @@ function BattlePage({ selectedDeck }) {
               <div key={`opponent-card-${index}`} className="card-slot">
                 <div className="enemy-card">
                   <div className="card-back" />
-                </div>  
+                </div>
               </div>
             ))}
           </div>
@@ -235,6 +246,14 @@ function BattlePage({ selectedDeck }) {
           ))}
         </div>
 
+        <div className="event-zone">
+        <span>
+        <button className="endturn-button" onClick={handleendturn}>
+              턴 종료
+            </button>
+        </span>
+        </div>
+        
         <div ref={drop} className="card-zone my-zone">
           {myCardsInZone.length > 0 ? (
             myCardsInZone.map((card, index) => renderMyCard(card, true, index))
@@ -259,9 +278,6 @@ function BattlePage({ selectedDeck }) {
             <div className="hp-text">{playerHP}/2000</div>
           </div>
           <div>
-            <button className="endturn-button" onClick={handleendturn}>
-              턴 종료
-            </button>
           </div>
         </div>
       </div>
@@ -295,14 +311,14 @@ function BattlePage({ selectedDeck }) {
   )
 }
 
-const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIcons }) => {
+const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIcons, isHovered }) => {
   const [{ isDragging }, drag] = useDrag({
     type: "CARD",
     item: { id: card.id, fromZone, index },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
-    canDrag: fromZone, // 카드존에 있는 카드만 드래그 가능
+    canDrag: fromZone, 
   })
 
   const [, drop] = useDrop({
@@ -323,29 +339,38 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
     },
   })
 
+  // 호버 효과를 위한 스타일 계산
+  const cardStyle = {
+    position: "relative", 
+    transform: isHovered ? "scale(2.5) translateY(-150px)" : "scale(1)",
+    zIndex: isHovered ? 100 : 1,
+    transition: "transform 0.5s ease-in-out",
+  };
+  
+
   return (
     <div
       ref={(node) => drag(drop(node))}
       className={`my-card ${fromZone ? "in-zone" : ""} ${isDragging ? "dragging" : ""}`}
       onClick={onClick}
       onContextMenu={onContextMenu}
+      style={cardStyle}
     >
-      
-       <div className="card-front">
-          <img src={card.image || "/placeholder.svg"} alt="내 카드" />
-          <div className="card-cost">{card.cost}</div>
-        </div>
-       {fromZone && (
-            <div className="card-hp-bar">
-            <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.maxhp) * 100}%` }}></div>
-            <div className="card-hp-text">
-              {card.hp}/{card.maxhp}
-            </div>
-          </div>
-        )}
+      <div className="card-front">
+        <img src={card.image || "/placeholder.svg"} alt="내 카드" />
+        <div className="card-cost">{card.cost}</div>
       </div>
-    
+      {fromZone && (
+        <div className="card-hp-bar">
+          <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.maxhp) * 100}%` }}></div>
+          <div className="card-hp-text">
+            {card.hp}/{card.maxhp}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 
 export default BattlePage
+

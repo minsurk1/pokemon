@@ -183,7 +183,7 @@ function MainPage({ currency, selectedDeck }) {
         </div>
 
         {/* 서버로 메시지 보내기 */}
-        <button onClick={sendMessageToServer}>서버로 메시지 보내기</button>
+        <button className="menu-button" onClick={sendMessageToServer}>서버로 메시지 보내기</button>
       </div>
     </div>
   );

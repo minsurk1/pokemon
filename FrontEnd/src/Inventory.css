@@ -15,12 +15,17 @@
   /*내 인벤토리 텍스트*/
   .inventory-page h2 {
     font-family: "Do Hyeon", serif;
-    color: #dfe439;
-    -webkit-text-stroke-width: 0.5px;
-    -webkit-text-stroke-color: black;
-    margin-bottom: 10px;
+    color: #dfe439; /* 글자 색상 */
     font-size: 4rem;
+    margin-bottom: 10px;
+
+    text-shadow:
+      -1.5px -1.5px 0 black,
+      1.5px -1.5px 0 black,
+      -1.5px 1.5px 0 black,
+      1.5px 1.5px 0 black;
   }
+
   .pack-zone{
     height : 460px;
     width: 1300px;

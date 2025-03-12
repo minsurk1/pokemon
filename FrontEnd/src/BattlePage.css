@@ -67,7 +67,7 @@
   border-radius: 50%;
   background-color: #4a90e2;
 }
-
+/*적 아바타 스타일*/
 .enemy-avatar {
   width: 80px;
   height: 80px;
@@ -75,7 +75,7 @@
   background-image: url("./assets/images/enemyavata.png");
   background-size: cover;
 }
-
+/*HP바 스타일*/
 .hp-bar {
   width: 200px;
   height: 20px;
@@ -143,20 +143,6 @@
   color: #020000;
   font-family: "Do Hyeon", serif;
 }
-.endturn-button {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  color: #ffffff;
-  background: radial-gradient(#6871d7, #0a032b, #270834);
-  border: 0.2rem solid, rgb(31, 27, 48);
-  font-weight: 900;
-  cursor: pointer;
-  position:absolute;
-  transform:translate(0%,15%);
-  right: 0;
-  
-}
 
 .deck-area {
   display: flex;
@@ -170,8 +156,7 @@
 .cards-row {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
-  
+  flex-wrap: wrap;  
 }
 
 /* 카드 슬롯 스타일 */
@@ -180,7 +165,6 @@
   height: 120px;
   flex-shrink: 0;
   margin-left: 25px;
-  
 }
 .card-cost {
   position: absolute;
@@ -294,23 +278,80 @@
   margin-bottom: 5px;
 }
 
-/*공통 존*/
-.event-zone{
+.middle-zone{
   width: 100%;
+  height:110px;
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+}
+
+
+/*이벤트 존*/
+.event-zone{
+  width: 94%;
   height: 110px;
   border-radius: 15px;
   display: flex;
   justify-content: center;
-  overflow-x: auto;
+  overflow-x:auto ;
   position: relative;
-  background-color: white;
+  padding-top: 20px;
+  background: linear-gradient(135deg,#ffffff,#3e3b3b,#ffffff);
+}
+
+
+/* 이벤트 아이템 스타일 */
+.event-item {
+  width: 80px;
+  height: 80px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  animation: eventPulse 2s infinite;
+  transition: transform 0.3s ease;
+}
+/*
+.event-item:hover {
+  transform: scale(1.2);
+}
+*/
+/* 이벤트 아이템 애니메이션 */
+@keyframes eventPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+}
+
+.endturn-button {
+  width: 80px;
+  height: 80px;
+  top:42%;
+  border-radius: 50%;
+  color: #ffffff;
+  background: radial-gradient(#6871d7, #0a032b, #270834);
+  border: 0.2rem solid, rgb(31, 27, 48);
+  font-weight: 900;
+  cursor: pointer;
+  position:absolute;
+  transform:translate(0%,15%);
+  right: 0;
+  vertical-align: baseline; 
+  z-index:100;
 }
 
 /* 상대방 카드존 스타일 */
 .opponent-zone {
   background: linear-gradient(135deg, #4a90e2, #0b0b39, #3021bd);
   border: 0.3rem, black, solid;
-  margin-bottom: 20px;
   gap: 2rem;
 }
 
@@ -442,3 +483,13 @@
   pointer-events: none;
 }
 
+@keyframes slideDown {
+  from {
+    transform: translate(-50%, -20px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}

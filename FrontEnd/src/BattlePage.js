@@ -1,3 +1,4 @@
+'use client'
 import { useState, useEffect, useCallback } from "react"
 import { useDrag, useDrop } from "react-dnd"
 import "./BattlePage.css"
@@ -6,7 +7,7 @@ import { cardsData } from "./Inventory"
 import costImage from "./assets/images/cost.png"
 import healImage from "./assets/images/heal.png"
 import bombImage from "./assets/images/bomb.png"
-import damageImage from "./assets/images/damage.png"
+import EventItem from "./Eventitem"
 
 function BattlePage({ selectedDeck }) {
   const [message, setMessage] = useState("")
@@ -54,6 +55,9 @@ function BattlePage({ selectedDeck }) {
   const [eventMessage, setEventMessage] = useState("")
   const [eventImage, setEventImage] = useState("")
   const [activeEvents, setActiveEvents] = useState([])
+  const [showEventHP, setShowEventHP] = useState(false)
+  const [eventHP, setEventHP] = useState(400)
+  const [eventmaxHP, setEventMaxHP] = useState(400)
 
   // 턴 종료 버튼 핸들러
   const handleendturn = () => {
@@ -105,29 +109,37 @@ function BattlePage({ selectedDeck }) {
     })
   }, [])
 
-  // 이벤트 표시 함수
+  // 이벤트 표시 함수 수정
   const showEvent = () => {
     const event = Math.floor(Math.random() * 3)
     let eventMsg = ""
     let eventImg = null
-    
+    let eventEffect = null
+
     if (event === 0) {
-      eventMsg = "코스트 1 추가"
+      eventMsg = "코스트 1 추가 이벤트"
       eventImg = costImage
-      setPlayerCostIcons((prev) => Math.min(prev + 1, 8))
+      eventEffect = () => setPlayerCostIcons((prev) => Math.min(prev + 1, 8))
     } else if (event === 1) {
-      eventMsg = "체력 200 회복"
+      eventMsg = "체력 200 회복 이벤트"
       eventImg = healImage
-      setPlayerHP((prev) => Math.min(prev + 200, 2000))
+      eventEffect = () => setPlayerHP((prev) => Math.min(prev + 200, 2000))
     } else if (event === 2) {
-      eventMsg = "적에게 200 데미지"
+      eventMsg = "적에게 200 데미지 이벤트"
       eventImg = bombImage
-      setEnemyHP((prev) => Math.max(prev - 200, 0))
+      eventEffect = () => setEnemyHP((prev) => Math.max(prev - 200, 0))
     }
 
-    setMessage(eventMsg)
+    setMessage(`새로운 이벤트가 등장했습니다: ${eventMsg}`)
     setEventImage(eventImg)
     setShowMessage(true)
+
+    //턴 지날떄 마다 이벤트 HP증가
+    const calculateEventHP = () => {
+      const baseHP = 100
+      const turnMultiplier = Math.floor(turn / 5)
+      return baseHP + turnMultiplier * 100
+    }
 
     // 이벤트 존에 이벤트 추가
     const newEvent = {
@@ -135,11 +147,13 @@ function BattlePage({ selectedDeck }) {
       type: event,
       image: eventImg,
       message: eventMsg,
+      hp: calculateEventHP(),
+      maxHp: calculateEventHP(),
+      effect: eventEffect,
     }
 
     setActiveEvents((prev) => [...prev, newEvent])
 
-    // 3초 후 메시지 닫기
     setTimeout(() => {
       setShowMessage(false)
     }, 3000)
@@ -254,6 +268,36 @@ function BattlePage({ selectedDeck }) {
     },
   })
 
+  // 특정 이벤트의 HP를 업데이트하도록 변경합니다.
+  const updateEventHP = (eventId, amount) => {
+    setActiveEvents((prevEvents) =>
+      prevEvents.map((event) =>
+        event.id === eventId ? { ...event, hp: Math.max(0, Math.min(event.maxHp, event.hp + amount)) } : event,
+      ),
+    )
+  }
+
+  // 이벤트 존에 카드를 드롭했을 때 이벤트 HP를 감소함
+  const [, dropEvent] = useDrop({
+    accept: "CARD", // CARD 타입을 받아들입니다 (EVENT가 아님)
+    drop: (item, monitor) => {
+      // 드롭된 카드 찾기
+      const droppedCard = myCardsInZone.find((card) => card.id === item.id)
+
+      // 활성화된 이벤트가 있는지 확인
+      if (activeEvents.length > 0 && droppedCard && typeof droppedCard.attack === "number") {
+        // 가장 최근 이벤트의 HP 감소 (또는 다른 로직으로 대상 이벤트 선택 가능)
+        const targetEvent = activeEvents[activeEvents.length - 1]
+        updateEventHP(targetEvent.id, -droppedCard.attack)
+
+        // 이벤트 HP가 0이 되면 제거하는 로직 추가 (선택사항)
+        if (targetEvent.hp - droppedCard.attack <= 0) {
+          setActiveEvents((prev) => prev.filter((event) => event.id !== targetEvent.id))
+        }
+      }
+    },
+  })
+
   // 내 카드 렌더링 함수
   const renderMyCard = (card, fromZone, index) => {
     // 호버 효과 적용 여부 확인
@@ -322,22 +366,11 @@ function BattlePage({ selectedDeck }) {
         {/* 이벤트 존 */}
         <div className="middle-zone">
           <div className="event-zone">
-            {activeEvents.map((event) => (
-              <div
-                key={event.id}
-                className="event-item"
-                style={{
-                  backgroundImage: `url(${event.image})`,
-                  width: "80px",
-                  height: "80px",
-                  backgroundSize: "contain",
-                  backgroundRepeat: "no-repeat",
-                  margin: "0 10px",
-                  display: "inline-block",
-                }}
-                title={event.message}
-              />
-            ))}
+            <div className="event-items-container">
+              {activeEvents.map((event) => (
+                <EventItem key={event.id} event={event} updateEventHP={updateEventHP} />
+              ))}
+            </div>
           </div>
           <button className="endturn-button" onClick={handleendturn}>
             턴 종료
@@ -404,7 +437,7 @@ function BattlePage({ selectedDeck }) {
 const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIcons, isHovered }) => {
   const [{ isDragging }, drag] = useDrag({
     type: "CARD",
-    item: { id: card.id, fromZone, index },
+    item: { id: card.id, fromZone, index, card }, // card 객체 전체를 item에 포함
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),

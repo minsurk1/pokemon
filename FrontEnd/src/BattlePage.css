@@ -288,23 +288,24 @@
 
 
 /*이벤트 존*/
-.event-zone{
-  width: 94%;
-  height: 110px;
+.event-zone {
+  width: 93%;
+  height: 120px;
   border-radius: 15px;
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  overflow-x:auto ;
+  align-items: center;
+  overflow-x: auto;
   position: relative;
-  padding-top: 20px;
-  background: linear-gradient(135deg,#ffffff,#3e3b3b,#ffffff);
+  padding: 10px;
+  background: linear-gradient(135deg, #ffffff, #3e3b3b, #ffffff);
 }
-
 
 /* 이벤트 아이템 스타일 */
 .event-item {
-  width: 80px;
-  height: 80px;
+  width: 85px;
+  height: 85px;
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -313,6 +314,27 @@
   animation: eventPulse 2s infinite;
   transition: transform 0.3s ease;
 }
+.event-item-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.event-items-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+}
+
+/* 이벤트 HP 컨테이너 스타일 수정 */
+.event-hp-container {
+  width: 120px;
+  display: flex;
+  justify-content: center;
+}
+
 /*
 .event-item:hover {
   transform: scale(1.2);

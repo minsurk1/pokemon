@@ -68,8 +68,7 @@ function LoginPanel() {
       }
     } catch (error) {
       alert("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.")
-      // 개발 중에는 로그인 실패해도 메인으로 이동 (테스트용)
-      // navigate("/main") // 실제 배포 시 이 줄은 제거해야 합니다
+      // navigate("/main") // 이거는 DB로그인 오류 발생시 지우시오~
     }
   }
 

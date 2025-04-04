@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react"
+import React from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import "./DeckPage.css"
 
@@ -98,11 +99,17 @@ import legendTier5 from "./assets/images/legendtier5.png"
 import legendTier6 from "./assets/images/legendtier6.png"
 import legendTier7 from "./assets/images/legendtier7.png"
 
-const DeckPage = ({ onDeckChange, selectedDeck }) => {
-  const [selectedCards, setSelectedCards] = useState(selectedDeck)
+// DeckPage 컴포넌트 props 인터페이스
+interface DeckPageProps {
+  onDeckChange: (deck: string[]) => void
+  selectedDeck: string[]
+}
+
+const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
+  const [selectedCards, setSelectedCards] = useState<string[]>(selectedDeck || [])
   const maxSelectedCards = 30
   const navigate = useNavigate()
-  const cards = [
+  const cards: string[] = [
     fireTier1,
     fireTier2,
     fireTier3,
@@ -190,25 +197,27 @@ const DeckPage = ({ onDeckChange, selectedDeck }) => {
   ]
 
   useEffect(() => {
-    setSelectedCards(selectedDeck)
+    if (selectedDeck) {
+      setSelectedCards(selectedDeck)
+    }
   }, [selectedDeck])
 
-  const handleMain = () => {
+  const handleMain = (): void => {
     navigate("/main")
   }
 
-  const handleStore = () => {
+  const handleStore = (): void => {
     navigate("/store")
   }
 
-  const selectCard = (card) => {
+  const selectCard = (card: string): void => {
     if (selectedCards.length >= maxSelectedCards) return
     const newSelectedCards = [...selectedCards, card]
     setSelectedCards(newSelectedCards)
     onDeckChange(newSelectedCards)
   }
 
-  const removeCard = (index) => {
+  const removeCard = (index: number): void => {
     const updatedCards = [...selectedCards]
     updatedCards.splice(index, 1)
     setSelectedCards(updatedCards)

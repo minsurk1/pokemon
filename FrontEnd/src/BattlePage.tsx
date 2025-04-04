@@ -1,25 +1,88 @@
-'use client'
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
+import React from "react"
+
 import { useDrag, useDrop } from "react-dnd"
 import "./BattlePage.css"
-import CardMenu from "./CardMenu"
-import { cardsData } from "./Inventory"
+import CardMenu from "./CardMenu.tsx"
+import { cardsData } from "./Inventory.tsx"
 import costImage from "./assets/images/cost.png"
 import healImage from "./assets/images/heal.png"
 import bombImage from "./assets/images/bomb.png"
-import EventItem from "./Eventitem"
+import EventItem from "./Eventitem.tsx"
 
-function BattlePage({ selectedDeck }) {
-  const [message, setMessage] = useState("")
-  const [showMessage, setShowMessage] = useState(false)
-  const [turn, setTurn] = useState(1)
-  const [playerHP, setPlayerHP] = useState(2000)
-  const [enemyHP, setEnemyHP] = useState(2000)
-  const [timeLeft, setTimeLeft] = useState(30)
-  const [myCardsInZone, setMyCardsInZone] = useState([])
-  const [remainingCards, setRemainingCards] = useState(
+// 카드 인터페이스 정의
+interface Card {
+  id: string
+  image: string
+  name: string
+  attack: number
+  hp: number
+  maxhp: number
+  cost: number
+}
+
+// 이벤트 인터페이스 정의
+interface Event {
+  id: number
+  type: number
+  image: string
+  message: string
+  hp: number
+  maxHp: number
+  effect: () => void
+}
+
+// 메뉴 위치 인터페이스 정의
+interface Position {
+  x: number
+  y: number
+}
+
+// BattlePage 컴포넌트 props 인터페이스
+interface BattlePageProps {
+  selectedDeck: string[]
+}
+
+// Card 컴포넌트 props 인터페이스
+interface CardProps {
+  card: Card
+  fromZone: boolean
+  index: number
+  moveCard: (fromIndex: number, toIndex: number) => void
+  onClick: () => void
+  onContextMenu: (e: React.MouseEvent<HTMLDivElement>) => void
+  costIcons: number
+  isHovered: boolean
+}
+
+// 드래그 아이템 인터페이스
+interface DragItem {
+  id: string
+  fromZone: boolean
+  index: number
+  card: Card
+}
+
+interface CardData {
+  name: string
+  tier?: number
+  image: string
+  attack: number
+  hp: number
+  cost: number
+}
+
+function BattlePage({ selectedDeck }: BattlePageProps) {
+  const [message, setMessage] = useState<string>("")
+  const [showMessage, setShowMessage] = useState<boolean>(false)
+  const [turn, setTurn] = useState<number>(1)
+  const [playerHP, setPlayerHP] = useState<number>(2000)
+  const [enemyHP, setEnemyHP] = useState<number>(2000)
+  const [timeLeft, setTimeLeft] = useState<number>(30)
+  const [myCardsInZone, setMyCardsInZone] = useState<Card[]>([])
+  const [remainingCards, setRemainingCards] = useState<Card[]>(
     selectedDeck.map((cardImage, index) => {
-      const cardData = cardsData.find((card) => card.image === cardImage)
+      const cardData = (cardsData as any[]).find((card) => card.image === cardImage)
       return {
         id: `card-${index}`,
         image: cardImage,
@@ -31,9 +94,9 @@ function BattlePage({ selectedDeck }) {
       }
     }),
   )
-  const [enemyremainingCards, enemysetRemainingCards] = useState(
+  const [enemyremainingCards, enemysetRemainingCards] = useState<Card[]>(
     selectedDeck.map((cardImage, index) => {
-      const enemycardData = cardsData.find((card) => card.image === cardImage)
+      const enemycardData = (cardsData as any[]).find((card) => card.image === cardImage)
       return {
         id: `card-${index}`,
         image: cardImage,
@@ -46,21 +109,26 @@ function BattlePage({ selectedDeck }) {
     }),
   )
 
-  const [playerCostIcons, setPlayerCostIcons] = useState(1)
-  const [opponentCostIcons, setOpponentCostIcons] = useState(1)
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
-  const [showMenu, setShowMenu] = useState(false)
-  const [selectedCardId, setSelectedCardId] = useState(null)
-  const [hoveredCardId, setHoveredCardId] = useState(null)
-  const [eventMessage, setEventMessage] = useState("")
-  const [eventImage, setEventImage] = useState("")
-  const [activeEvents, setActiveEvents] = useState([])
-  const [showEventHP, setShowEventHP] = useState(false)
-  const [eventHP, setEventHP] = useState(400)
-  const [eventmaxHP, setEventMaxHP] = useState(400)
+  const [playerCostIcons, setPlayerCostIcons] = useState<number>(1)
+  const [opponentCostIcons, setOpponentCostIcons] = useState<number>(1)
+  const [menuPosition, setMenuPosition] = useState<Position>({ x: 0, y: 0 })
+  const [showMenu, setShowMenu] = useState<boolean>(false)
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null)
+  const [eventMessage, setEventMessage] = useState<string>("")
+  const [eventImage, setEventImage] = useState<string>("")
+  const [activeEvents, setActiveEvents] = useState<Event[]>([])
+  const [showEventHP, setShowEventHP] = useState<boolean>(false)
+  const [eventHP, setEventHP] = useState<number>(400)
+  const [eventmaxHP, setEventMaxHP] = useState<number>(400)
+
+  // ref 객체 생성
+  const enemyAvatarRef = useRef<HTMLDivElement>(null)
+  const myZoneRef = useRef<HTMLDivElement>(null)
+  const eventZoneRef = useRef<HTMLDivElement>(null)
 
   // 턴 종료 버튼 핸들러
-  const handleendturn = () => {
+  const handleendturn = (): void => {
     setTurn(turn + 1)
     const newTotal = Math.min(turn + 1, 8)
     setPlayerCostIcons(newTotal)
@@ -74,13 +142,13 @@ function BattlePage({ selectedDeck }) {
   }
 
   // 카드 우클릭 핸들러
-  const handleCardRightClick = (e, cardId) => {
+  const handleCardRightClick = (e: React.MouseEvent<HTMLDivElement>, cardId: string): void => {
     e.preventDefault()
     e.currentTarget.classList.toggle("righthover")
   }
 
   // 존 우클릭 핸들러
-  const handleZoneRightClick = (e, cardId) => {
+  const handleZoneRightClick = (e: React.MouseEvent<HTMLDivElement>, cardId: string): void => {
     e.preventDefault()
     setMenuPosition({ x: e.clientX, y: e.clientY })
     setSelectedCardId(cardId)
@@ -88,13 +156,13 @@ function BattlePage({ selectedDeck }) {
   }
 
   // 메뉴 닫기
-  const closeMenu = () => {
+  const closeMenu = (): void => {
     setShowMenu(false)
     setSelectedCardId(null)
   }
 
   // 턴 종료 함수
-  const endTurn = useCallback(() => {
+  const endTurn = useCallback((): void => {
     setTurn((prevTurn) => {
       const newTurn = prevTurn + 1
       setPlayerCostIcons(Math.min(newTurn + 1, 8))
@@ -110,11 +178,11 @@ function BattlePage({ selectedDeck }) {
   }, [])
 
   // 이벤트 표시 함수 수정
-  const showEvent = () => {
+  const showEvent = (): void => {
     const event = Math.floor(Math.random() * 3)
     let eventMsg = ""
-    let eventImg = null
-    let eventEffect = null
+    let eventImg = ""
+    let eventEffect: () => void = () => {}
 
     if (event === 0) {
       eventMsg = "코스트 1 추가 이벤트"
@@ -135,14 +203,14 @@ function BattlePage({ selectedDeck }) {
     setShowMessage(true)
 
     //턴 지날떄 마다 이벤트 HP증가
-    const calculateEventHP = () => {
+    const calculateEventHP = (): number => {
       const baseHP = 100
       const turnMultiplier = Math.floor(turn / 5)
       return baseHP + turnMultiplier * 100
     }
 
     // 이벤트 존에 이벤트 추가
-    const newEvent = {
+    const newEvent: Event = {
       id: Date.now(),
       type: event,
       image: eventImg,
@@ -160,7 +228,7 @@ function BattlePage({ selectedDeck }) {
   }
 
   // HP 업데이트 함수
-  const playerupdateHP = (player, amount) => {
+  const playerupdateHP = (player: "player" | "enemy" | "enemyCard", amount: number): void => {
     if (player === "player") {
       setPlayerHP((prevHP) => Math.max(0, Math.min(2000, prevHP + amount)))
     } else {
@@ -184,12 +252,12 @@ function BattlePage({ selectedDeck }) {
   }, [endTurn])
 
   // 카드 클릭 핸들러
-  const handleCardClick = (cardId, fromZone) => {
+  const handleCardClick = (cardId: string, fromZone: boolean): void => {
     if (fromZone) {
       return
     } else {
       const cardToMove = remainingCards.find((c) => c.id === cardId)
-      if (playerCostIcons >= cardToMove.cost) {
+      if (cardToMove && playerCostIcons >= cardToMove.cost) {
         // 카드 호버 효과 적용
         setHoveredCardId(cardId)
 
@@ -207,13 +275,13 @@ function BattlePage({ selectedDeck }) {
   }
 
   // 메시지 닫기
-  const closeMessage = () => {
+  const closeMessage = (): void => {
     setShowMessage(false)
     setMessage("")
   }
 
   // 적 공격 함수
-  const attackEnemy = (cardId) => {
+  const attackEnemy = (cardId: string): void => {
     const attackingCard = myCardsInZone.find((card) => card.id === cardId)
     if (attackingCard && typeof attackingCard.attack === "number") {
       playerupdateHP("enemy", -attackingCard.attack)
@@ -221,7 +289,7 @@ function BattlePage({ selectedDeck }) {
   }
 
   // 카드 이동 함수
-  const moveCardInZone = useCallback((fromIndex, toIndex) => {
+  const moveCardInZone = useCallback((fromIndex: number, toIndex: number): void => {
     setMyCardsInZone((prevCards) => {
       const newCards = [...prevCards]
       const [movedCard] = newCards.splice(fromIndex, 1)
@@ -231,7 +299,7 @@ function BattlePage({ selectedDeck }) {
   }, [])
 
   // 드롭 핸들러
-  const [, drop] = useDrop({
+  const [, drop] = useDrop<DragItem, void, {}>({
     accept: "CARD",
     drop: (item, monitor) => {
       if (item.fromZone) {
@@ -243,10 +311,10 @@ function BattlePage({ selectedDeck }) {
   })
 
   // 적 카드 드롭 핸들러
-  const [, dropEnemyCard] = useDrop({
+  const [, dropEnemyCard] = useDrop<DragItem, void, {}>({
     accept: "CARD",
-    drop: (item, moniter) => {
-      const droppedCard = myCardsInZone.find((card) => card.id)
+    drop: (item, monitor) => {
+      const droppedCard = myCardsInZone.find((card) => card.id === item.id)
       if (droppedCard && typeof droppedCard.attack === "number") {
         playerupdateHP("enemyCard", -droppedCard.attack)
       } else {
@@ -256,7 +324,7 @@ function BattlePage({ selectedDeck }) {
   })
 
   // 적 드롭 핸들러
-  const [, dropEnemy] = useDrop({
+  const [, dropEnemy] = useDrop<DragItem, void, {}>({
     accept: "CARD",
     drop: (item, monitor) => {
       const droppedCard = myCardsInZone.find((card) => card.id === item.id)
@@ -269,7 +337,7 @@ function BattlePage({ selectedDeck }) {
   })
 
   // 특정 이벤트의 HP를 업데이트하도록 변경합니다.
-  const updateEventHP = (eventId, amount) => {
+  const updateEventHP = (eventId: number, amount: number): void => {
     setActiveEvents((prevEvents) =>
       prevEvents.map((event) =>
         event.id === eventId ? { ...event, hp: Math.max(0, Math.min(event.maxHp, event.hp + amount)) } : event,
@@ -278,7 +346,7 @@ function BattlePage({ selectedDeck }) {
   }
 
   // 이벤트 존에 카드를 드롭했을 때 이벤트 HP를 감소함
-  const [, dropEvent] = useDrop({
+  const [, dropEvent] = useDrop<DragItem, void, {}>({
     accept: "CARD", // CARD 타입을 받아들입니다 (EVENT가 아님)
     drop: (item, monitor) => {
       // 드롭된 카드 찾기
@@ -299,7 +367,7 @@ function BattlePage({ selectedDeck }) {
   })
 
   // 내 카드 렌더링 함수
-  const renderMyCard = (card, fromZone, index) => {
+  const renderMyCard = (card: Card, fromZone: boolean, index: number) => {
     // 호버 효과 적용 여부 확인
     const isHovered = hoveredCardId === card.id
 
@@ -319,6 +387,25 @@ function BattlePage({ selectedDeck }) {
     )
   }
 
+  // useEffect를 사용하여 ref와 drop 함수 연결
+  useEffect(() => {
+    if (enemyAvatarRef.current) {
+      dropEnemy(enemyAvatarRef.current)
+    }
+  }, [dropEnemy])
+
+  useEffect(() => {
+    if (myZoneRef.current) {
+      drop(myZoneRef.current)
+    }
+  }, [drop])
+
+  useEffect(() => {
+    if (eventZoneRef.current) {
+      dropEvent(eventZoneRef.current)
+    }
+  }, [dropEvent])
+
   return (
     <div className="battle-container">
       {showMessage && (
@@ -336,7 +423,7 @@ function BattlePage({ selectedDeck }) {
 
       <div className="player-section enemy-section">
         <div className="opponent-area">
-          <div ref={dropEnemy} className="enemy-avatar" />
+          <div ref={enemyAvatarRef} className="enemy-avatar" />
           <div className="hp-bar">
             <div className="hp-bar-inner" style={{ width: `${(enemyHP / 2000) * 100}%` }}></div>
             <div className="hp-text">{enemyHP}/2000</div>
@@ -365,7 +452,7 @@ function BattlePage({ selectedDeck }) {
 
         {/* 이벤트 존 */}
         <div className="middle-zone">
-          <div className="event-zone">
+          <div ref={eventZoneRef} className="event-zone">
             <div className="event-items-container">
               {activeEvents.map((event) => (
                 <EventItem key={event.id} event={event} updateEventHP={updateEventHP} />
@@ -377,7 +464,7 @@ function BattlePage({ selectedDeck }) {
           </button>
         </div>
 
-        <div ref={drop} className="card-zone my-zone">
+        <div ref={myZoneRef} className="card-zone my-zone">
           {myCardsInZone.length > 0 ? (
             myCardsInZone.map((card, index) => renderMyCard(card, true, index))
           ) : (
@@ -422,7 +509,6 @@ function BattlePage({ selectedDeck }) {
           x={menuPosition.x}
           y={menuPosition.y}
           onClose={closeMenu}
-          cardId={selectedCardId}
           card={
             myCardsInZone.find((card) => card.id === selectedCardId) ||
             remainingCards.find((card) => card.id === selectedCardId)
@@ -434,8 +520,11 @@ function BattlePage({ selectedDeck }) {
 }
 
 // Card 컴포넌트
-const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIcons, isHovered }) => {
-  const [{ isDragging }, drag] = useDrag({
+const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIcons, isHovered }: CardProps) => {
+  // useRef를 사용하여 ref 객체 생성
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  const [{ isDragging }, drag] = useDrag<DragItem, unknown, { isDragging: boolean }>({
     type: "CARD",
     item: { id: card.id, fromZone, index, card }, // card 객체 전체를 item에 포함
     collect: (monitor) => ({
@@ -444,7 +533,7 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
     canDrag: fromZone,
   })
 
-  const [, drop] = useDrop({
+  const [, drop] = useDrop<DragItem, void, {}>({
     accept: "CARD",
     hover(item, monitor) {
       if (!fromZone) {
@@ -462,9 +551,16 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
     },
   })
 
+  // useEffect를 사용하여 ref와 drag, drop 함수 연결
+  useEffect(() => {
+    if (cardRef.current) {
+      drag(drop(cardRef.current))
+    }
+  }, [drag, drop])
+
   // 호버 효과를 위한 스타일 계산
   const cardStyle = {
-    position: "relative",
+    position: "relative" as const,
     transform: isHovered ? "scale(2.5) translateY(-145px)" : "scale(1)",
     zIndex: isHovered ? 100 : 1,
     transition: "transform 0.7s ease-in-out",
@@ -472,7 +568,7 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
 
   return (
     <div
-      ref={(node) => drag(drop(node))}
+      ref={cardRef}
       className={`my-card ${fromZone ? "in-zone" : ""} ${isDragging ? "dragging" : ""}`}
       onClick={onClick}
       onContextMenu={onContextMenu}

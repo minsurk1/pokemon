@@ -1,6 +1,6 @@
 // 회원가입 API 요청 기능 추가
 // 추후에 유효성 검사 기능 추가해야 함
-
+import React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";

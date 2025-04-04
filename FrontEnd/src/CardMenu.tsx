@@ -1,5 +1,6 @@
+import React from "react"
 import "./CardMenu.css"
-import "./BattlePage.js"
+import "./BattlePage.tsx"
 
 const CardMenu = ({ x, y, onClose, card }) => {
   if (!card) return null

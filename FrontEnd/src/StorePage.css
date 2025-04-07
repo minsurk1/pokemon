@@ -1,17 +1,15 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
 .store-page {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
     z-index: -1;
   }
 .store-container {
     text-align: center;
-    min-height: 100vh;
+    min-height: 94vh;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -21,12 +19,14 @@
 }
 
 .store-header {
+    font-family: "Do hyeon",serif;
+    color: rgb(251, 228, 252);
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
     padding: 10px 20px;
-    background-color: #d1c4e9;
+    background: linear-gradient(135deg, #d02ede 0%, #240a50 50%, #8e24aa 100%);
     position: fixed;
     top: 0;
     left: 0;
@@ -40,8 +40,9 @@
 }
 
 .inventory-button {
+    font-family: "Do hyeon",serif;
     text-decoration: none;
-    color: #4a148c;
+    background:linear-gradient(#ebe3ec,#a879be,#b39ddb) ;
     font-weight: bold;
     font-size: 1.1rem;
     padding: 5px 10px;
@@ -53,8 +54,9 @@
 }
 
 .main-button {
+    font-family: "Do hyeon",serif;
     text-decoration: none;
-    color: #4a148c;
+    background:linear-gradient(#ebe3ec,#a879be,#b39ddb) ;
     font-weight: bold;
     font-size: 1.1rem;
     padding: 5px 10px;
@@ -67,11 +69,15 @@
 }
 
 .inventory-button:hover {
-    background-color: #9575cd;
+    background: #9575cd;
+    transform: scale(1.1);
+    transition: transform 0.2s;
 }
 
 .main-button:hover {
-    background-color: #9575cd;
+    background  : #9575cd;
+    transform: scale(1.1);
+    transition: transform 0.2s;
 }
 
 h2 {
@@ -89,10 +95,11 @@ h2 {
 }
 
 .store-card {
+    font-family: "Do hyeon",serif;
     width: 200px;
     background: linear-gradient(145deg, #7b1fa2, #9c27b0);
     color: white;
-    font-size: 1rem;
+    font-size: 1.2rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -111,11 +118,12 @@ h2 {
 }
 
 .buy-button {
-    background-color: #d1c4e9;
+    font-family: "Do hyeon",serif;
+    background:linear-gradient(#f7ccff,#c07fdb) ;
     color: #4a148c;
     font-size: 1rem;
     font-weight: bold;
-    margin: 10px 0;
+    margin: 5px 0;
     padding: 8px 16px;
     border: none;
     border-radius: 8px;
@@ -139,6 +147,7 @@ h2 {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     z-index: 1000;
+    text-align: center;
     animation: slideDown 0.5s ease-out;
 }
 
@@ -150,7 +159,7 @@ h2 {
 }
 
 .close-button {
-    background-color: #9c27b0;
+    background:linear-gradient(#9c27b0,#380b4b) ;
     color: white;
     font-size: 1rem;
     font-weight: bold;

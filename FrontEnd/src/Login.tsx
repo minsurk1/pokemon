@@ -1,8 +1,12 @@
 "use client"
 
-import React from "react"
-import { useState, useEffect } from "react"
-import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom"
+import React, { useState, useEffect } from "react"
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+} from "react-router-dom"
 import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 import "./Login.css"
@@ -16,14 +20,13 @@ import DeckPage from "./DeckPage.tsx"
 import WaitPage from "./WaitPage.tsx"
 import BattlePage from "./BattlePage.tsx"
 import RulePage from "./RulePage.tsx"
-import ProfilePage from "./ProfilePage.tsx" 
-import axios from "axios" // axios 추가
+import ProfilePage from "./ProfilePage.tsx"
+import axios from "axios"
 
 // 사용자 정보 인터페이스
 interface User {
   username: string
   id: string
-  // 기타 사용자 정보 필드
 }
 
 // API 응답 인터페이스
@@ -32,11 +35,11 @@ interface LoginResponse {
   user: User
 }
 
-// LoginPanel 컴포넌트: 로그인 폼
+// 🔐 로그인 패널
 function LoginPanel() {
-  const [isOpen, setIsOpen] = useState<boolean>(false)
-  const [username, setUsername] = useState<string>("") // 아이디 상태
-  const [password, setPassword] = useState<string>("") // 비밀번호 상태
+  const [isOpen, setIsOpen] = useState(false)
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
   const navigate = useNavigate()
   const [backgroundStyle, setBackgroundStyle] = useState<React.CSSProperties>({})
 
@@ -48,60 +51,54 @@ function LoginPanel() {
     })
   }, [])
 
-  const togglePanel = (): void => {
+  const togglePanel = () => {
     setIsOpen(!isOpen)
   }
 
-  // 로그인 요청 처리
-  const handleLogin = async (): Promise<void> => {
+  const handleLogin = async () => {
     try {
-      const response = await axios.post<LoginResponse>("http://localhost:5000/api/auth/login", {
+      const response = await axios.post<LoginResponse>("http://localhost:5001/api/auth/login", {
         username,
         password,
       })
 
       if (response.data.token) {
-        // 로그인 성공 시: JWT 토큰을 localStorage에 저장
         localStorage.setItem("token", response.data.token)
-        localStorage.setItem("user", JSON.stringify(response.data.user)) // 사용자 정보 저장
-        navigate("/main") // 메인 페이지로 이동
+        localStorage.setItem("user", JSON.stringify(response.data.user))
+        navigate("/main")
       }
     } catch (error) {
       alert("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.")
-   //    navigate("/main") // 이거는 DB로그인 오류 발생시 지우시오~
     }
   }
 
-  // 회원가입 페이지로 이동
-  const handleSignUp = (): void => {
+  const handleSignUp = () => {
     navigate("/signup")
   }
 
   return (
     <div className="login-main" style={backgroundStyle}>
       <img src={logo || "/placeholder.svg"} alt="Logo" className="top-right-logo" />
-
       <div className={`login-panel ${isOpen ? "open" : ""}`}>
         {isOpen && (
           <button className="toggle-button close" onClick={togglePanel}>
             닫기
           </button>
         )}
-
         <div className="login-content">
           <img src={logo || "/placeholder.svg"} alt="Logo" className="login-logo" />
           <h2>로그인</h2>
           <input
             type="text"
             placeholder="아이디"
-            value={username} // 상태값 연결
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)} // 상태 변경
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
           <input
             type="password"
             placeholder="비밀번호"
-            value={password} // 상태값 연결
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} // 상태 변경
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
           />
           <button className="login-button" onClick={handleLogin}>
             로그인
@@ -111,7 +108,6 @@ function LoginPanel() {
           </button>
         </div>
       </div>
-
       {!isOpen && (
         <button className="toggle-button open" onClick={togglePanel}>
           열기
@@ -121,7 +117,7 @@ function LoginPanel() {
   )
 }
 
-// 전체 로그인 및 라우팅 처리 컴포넌트
+// 🔁 전체 라우터 포함하는 메인 컴포넌트
 function Login() {
   const [inventory, setInventory] = useState<CardPack[]>([])
   const [currency, setCurrency] = useState<number>(10000)
@@ -130,21 +126,19 @@ function Login() {
     return savedDeck ? JSON.parse(savedDeck) : []
   })
 
-  // 이 부분을 수정합니다
   const buyCardPack = (card: Card): boolean => {
     if (currency >= card.price) {
-      // 함수형 업데이트 사용
-      setCurrency((prevCurrency) => prevCurrency - card.price)
+      setCurrency((prev) => prev - card.price)
       return true
     }
     return false
   }
 
-  const addCardsToInventory = (newCardPack: CardPack): void => {
-    setInventory((prevInventory) => [...prevInventory, newCardPack])
+  const addCardsToInventory = (newCardPack: CardPack) => {
+    setInventory((prev) => [...prev, newCardPack])
   }
 
-  const handleDeckChange = (newDeck: string[]): void => {
+  const handleDeckChange = (newDeck: string[]) => {
     setSelectedDeck(newDeck)
     localStorage.setItem("selectedDeck", JSON.stringify(newDeck))
   }
@@ -184,4 +178,4 @@ function Login() {
   )
 }
 
-export default Login 
+export default Login

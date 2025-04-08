@@ -9,8 +9,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   nickname: { type: String, required: true },
   money: { type: Number, default: 1200 },
-  cards: [{ type: mongoose.Schema.Types.ObjectId, ref: "Card" }], // 카드 참조 추가
+  cards: [{ type: mongoose.Schema.Types.ObjectId, ref: "Card" }],
 });
 
-// User 모델을 mongoose로 정의
 module.exports = mongoose.model("User", userSchema);

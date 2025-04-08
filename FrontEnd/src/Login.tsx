@@ -68,7 +68,7 @@ function LoginPanel() {
       }
     } catch (error) {
       alert("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.")
-      // navigate("/main") // 이거는 DB로그인 오류 발생시 지우시오~
+   //    navigate("/main") // 이거는 DB로그인 오류 발생시 지우시오~
     }
   }
 

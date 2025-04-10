@@ -10,7 +10,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import "./MainPage.css"
 import mainImage from "./assets/images/default.png"
-import backgroundImage from "./assets/images/mainbg.jpg"
+import backgroundImage from "./assets/images/mainbg.png"
 import { CardAnimation } from "@lasbe/react-card-animation"
 import io, { type Socket } from "socket.io-client" // socket.io-client 임포트 및 Socket 타입 추가
 
@@ -37,7 +37,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     })
 
     // WebSocket 연결 설정
-    const newSocket = io("http://localhost:5000", { withCredentials: true })
+    const newSocket = io("http://localhost:5001", { withCredentials: true })
 
     setSocket(newSocket)
 
@@ -78,7 +78,9 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   const handleDeck = (): void => {
     navigate("/deck")
   }
-
+  const handledex = (): void => {
+    navigate("/dex")
+  }
   const handleBattle = (): void => {
     navigate("/battle")
   }
@@ -125,6 +127,9 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
         </button>
         <button className="menu-button" onClick={handleDeck}>
           내카드
+        </button>
+        <button className="menu-button" onClick={handledex}>
+          도감
         </button>
         <button className="menu-button" onClick={handleBattle}>
           배틀테스트

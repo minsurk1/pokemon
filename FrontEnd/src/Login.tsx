@@ -1,17 +1,11 @@
-"use client"
-
-import React, { useState, useEffect } from "react"
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  useNavigate,
-} from "react-router-dom"
+import  React from "react"
+import { useState } from "react"
+import { BrowserRouter as Router, Route, Routes, useNavigate } from "react-router-dom"
 import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 import "./Login.css"
 import logo from "./assets/images/logo.png"
-import backgroundImage from "./assets/images/loginbg.png"
+import loginVideo from "./assets/videos/loginvideo.mp4" // 비디오 파일 직접 import
 import MainPage from "./MainPage.tsx"
 import SignUpPage from "./SignUpPage.tsx"
 import Inventory, { type Card, type CardPack } from "./Inventory.tsx"
@@ -21,6 +15,7 @@ import WaitPage from "./WaitPage.tsx"
 import BattlePage from "./BattlePage.tsx"
 import RulePage from "./RulePage.tsx"
 import ProfilePage from "./ProfilePage.tsx"
+import Dex from "./Dex.tsx"
 import axios from "axios"
 
 // 사용자 정보 인터페이스
@@ -42,20 +37,14 @@ function LoginPanel() {
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
   const [backgroundStyle, setBackgroundStyle] = useState<React.CSSProperties>({})
-
-  useEffect(() => {
-    setBackgroundStyle({
-      backgroundImage: `url(${backgroundImage})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    })
-  }, [])
+  const [isLoading, setIsLoading] = useState(false)
 
   const togglePanel = () => {
     setIsOpen(!isOpen)
   }
 
   const handleLogin = async () => {
+    setIsLoading(true)
     try {
       const response = await axios.post<LoginResponse>("http://localhost:5001/api/auth/login", {
         username,
@@ -70,6 +59,9 @@ function LoginPanel() {
     } catch (error) {
       alert("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.")
     }
+    finally {
+      setIsLoading(false)
+    }
   }
 
   const handleSignUp = () => {
@@ -77,7 +69,12 @@ function LoginPanel() {
   }
 
   return (
-    <div className="login-main" style={backgroundStyle}>
+    <div className="login-main">
+      <video className="background-video" autoPlay loop muted playsInline>
+        <source src={loginVideo} type="video/mp4" />
+        브라우저가 비디오를 지원하지 않습니다.
+      </video>
+
       <img src={logo || "/placeholder.svg"} alt="Logo" className="top-right-logo" />
       <div className={`login-panel ${isOpen ? "open" : ""}`}>
         {isOpen && (
@@ -88,20 +85,15 @@ function LoginPanel() {
         <div className="login-content">
           <img src={logo || "/placeholder.svg"} alt="Logo" className="login-logo" />
           <h2>로그인</h2>
-          <input
-            type="text"
-            placeholder="아이디"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
+          <input type="text" placeholder="아이디" value={username} onChange={(e) => setUsername(e.target.value)} />
           <input
             type="password"
             placeholder="비밀번호"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button className="login-button" onClick={handleLogin}>
-            로그인
+          <button className="login-button" onClick={handleLogin} disabled={isLoading}>
+            {isLoading ? "로그인 중..." : "로그인"}
           </button>
           <button className="signup-button" onClick={handleSignUp}>
             회원가입
@@ -117,7 +109,7 @@ function LoginPanel() {
   )
 }
 
-// 🔁 전체 라우터 포함하는 메인 컴포넌트
+// 전체 라우터 포함하는 메인 컴포넌트
 function Login() {
   const [inventory, setInventory] = useState<CardPack[]>([])
   const [currency, setCurrency] = useState<number>(10000)
@@ -173,6 +165,7 @@ function Login() {
         <Route path="/wait" element={<WaitPage />} />
         <Route path="/rule" element={<RulePage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/Dex" element={<Dex />} />
       </Routes>
     </Router>
   )

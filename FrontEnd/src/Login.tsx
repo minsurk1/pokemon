@@ -36,7 +36,6 @@ function LoginPanel() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const navigate = useNavigate()
-  const [backgroundStyle, setBackgroundStyle] = useState<React.CSSProperties>({})
   const [isLoading, setIsLoading] = useState(false)
 
   const togglePanel = () => {

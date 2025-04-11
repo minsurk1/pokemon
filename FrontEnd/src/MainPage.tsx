@@ -110,14 +110,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
       alert("올바른 방 코드를 입력해주세요.")
     }
   }
-
-  // 서버로 메시지 보내는 함수
-  const sendMessageToServer = (): void => {
-    if (socket) {
-      socket.emit("message", "클라이언트에서 보낸 메시지")
-    }
-  }
-
+  
   return (
     <div className="main-container" style={backgroundStyle}>
       {/* 사이드바 */}
@@ -184,16 +177,6 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
             </div>
           </div>
         )}
-
-        {/* 서버와의 통신 상태 */}
-        <div className="server-response">
-          <p>서버 응답: {serverResponse}</p>
-        </div>
-
-        {/* 서버로 메시지 보내기 */}
-        <button className="server-button" onClick={sendMessageToServer}>
-          서버로 메시지 보내기
-        </button>
       </div>
     </div>
   )

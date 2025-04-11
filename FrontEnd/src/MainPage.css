@@ -14,7 +14,7 @@
     
     display: flex;
     flex-direction: column;
-    padding: 5rem 1rem;
+    padding: 2.5rem 1rem;
     width: 200px;
     background-color: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -40,20 +40,6 @@
     background: #352350;
     transform: translateY(-3px);
     transform: scale(1.06);
-}
-
-.server-button{
-    font-family: "Do hyeon",serif;
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    font-size: 1.0rem;
-    color: #fff;
-    background: #352350;
-    border: none;
-    border-radius: 15px;
-    box-shadow:  0 4px 6px rgba(0, 0, 0, 0.15);
-    transition: background 0.3s ease,transform 0.3s ease;
-    cursor: pointer;
 }
 
 .create-room {

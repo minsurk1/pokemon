@@ -11,11 +11,18 @@
     color: #000000;
 }
 
+.background-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+  }
+
 /* 배경 이미지 적용 */
 .rule-page {
-    background-image: url('./assets/images/rulebg.png');
-    background-size: cover;
-    background-position: center;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;

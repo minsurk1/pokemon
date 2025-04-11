@@ -12,7 +12,6 @@ import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import io, { type Socket } from "socket.io-client" // Socket 타입 추가
 import "./WaitPage.css"
-import backgroundImage from "./assets/images/waitbg.jpg"
 import waitVideo from "./assets/videos/waitvideo.mp4"
 
 // location.state의 타입 정의
@@ -25,7 +24,6 @@ function WaitPage() {
   const location = useLocation()
   const [isReady, setIsReady] = useState<boolean>(false)
   const [opponentReady, setOpponentReady] = useState<boolean>(false)
-  const [backgroundStyle, setBackgroundStyle] = useState<React.CSSProperties>({})
   const [message, setMessage] = useState<string>("")
   const [showMessage, setShowMessage] = useState<boolean>(false)
   const [socket, setSocket] = useState<Socket | null>(null) // WebSocket 연결 상태에 타입 추가

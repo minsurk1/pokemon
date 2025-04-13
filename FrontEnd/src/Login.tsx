@@ -30,7 +30,7 @@ interface LoginResponse {
   user: User
 }
 
-// 🔐 로그인 패널
+// 로그인 패널
 function LoginPanel() {
   const [isOpen, setIsOpen] = useState(false)
   const [username, setUsername] = useState("")

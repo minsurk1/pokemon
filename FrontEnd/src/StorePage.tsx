@@ -5,7 +5,7 @@ import "./StorePage.css"
 import bCard from "./assets/images/b_card.png"
 import aCard from "./assets/images/a_card.png"
 import sCard from "./assets/images/s_card.png"
-import backgroundImage from "./assets/images/storebg.png"
+import storeVideo from "./assets/videos/storevideo.mp4"
 import type { Card, CardPack } from "./Inventory"
 
 // StorePage 컴포넌트 props 인터페이스
@@ -20,20 +20,12 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
   const navigate = useNavigate()
   const [message, setMessage] = useState<string>("") // 메시지 상태 추가
   const [showMessage, setShowMessage] = useState<boolean>(false) // 메시지 박스 표시 여부
-  const [backgroundStyle, setBackgroundStyle] = useState<React.CSSProperties>({})
   const [cards] = useState<Card[]>([
     { image: bCard, name: "B급 카드팩", price: 100, packImage: bCard },
     { image: sCard, name: "S급 카드팩", price: 500, packImage: sCard },
     { image: aCard, name: "A급 카드팩", price: 300, packImage: aCard },
   ])
 
-  useEffect(() => {
-    setBackgroundStyle({
-      backgroundImage: `url(${backgroundImage})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    })
-  }, [])
 
   const handleBuyCard = (index: number): void => {
     const selectedCard = cards[index]
@@ -71,7 +63,12 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
 
   return (
     <div className="store-container">
-      <div className="store-page" style={backgroundStyle}></div>
+      <div className="store-page">
+      <video className="background-video" autoPlay loop muted playsInline>
+        <source src={storeVideo} type="video/mp4" />
+        브라우저가 비디오를 지원하지 않습니다.
+      </video>
+      </div>
       {showMessage && (
         <div className="message-box">
           <p>{message}</p>

@@ -9,7 +9,24 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes"); // authRoutes.js 파일 불러오기
 const rooms = {};
 const app = express();
+
+// ✅ CORS 설정 (기존 주석은 그대로 유지)
+app.use(cors({
+  origin: ["http://localhost:3000", "http://localhost:3001"],
+  credentials: true
+}));
+
+// ✅ Preflight 요청에 응답 헤더 추가 (중요!)
+app.options("*", cors({
+  origin: ["http://localhost:3000", "http://localhost:3001"],
+  credentials: true
+}));
+
+// ✅ JSON 바디 파싱
+app.use(express.json());
+
 const server = http.createServer(app);
+
 const io = socketIo(server, {
   cors: {
     origin: ["http://localhost:3000", "http://localhost:3001"], // React 앱의 주소 추가
@@ -18,20 +35,12 @@ const io = socketIo(server, {
   },
 });
 
-// MongoDB 연결
-const dbURI = process.env.DB_URI || "mongodb://127.0.0.1:27017/userDB"; // 환경변수에서 DB URI 불러오기
+const dbURI = process.env.DB_URI;
+
 mongoose
   .connect(dbURI)
-  .then(() => console.log("MongoDB 연결 성공"))
-  .catch((err) => console.error("MongoDB 연결 실패", err));
-
-app.use(express.json()); // JSON 형태의 요청 처리
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
-    credentials: true,
-  })
-);
+  .then(() => console.log("✅ MongoDB Atlas 연결 성공"))
+  .catch((err) => console.error("❌ MongoDB 연결 실패", err));
 
 // 인증 관련 라우터를 '/api/auth' 경로에 등록
 app.use("/api/auth", authRoutes);

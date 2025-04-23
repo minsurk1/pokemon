@@ -3,12 +3,31 @@
 // 회원가입 완료
 // 로그인 기능은 구현은 됐지만 미흡함.
 
+require("dotenv").config(); // .env 파일 로딩 (이게 빠지면 안됨!)
+
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const router = express.Router();
+
+const jwtSecret = process.env.JWT_SECRET; // 환경 변수에서 JWT 비밀 키 가져오기
+
+// ✅ 모든 요청에 CORS 관련 응답 헤더 추가 (프리플라이트 요청 포함)
+router.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Credentials", "true");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200); // 프리플라이트 OPTIONS 요청에 대한 응답
+  }
+  next();
+});
 
 // 📌 회원가입 API
 router.post("/signup", async (req, res) => {
@@ -71,11 +90,11 @@ router.post("/login", async (req, res) => {
     }
 
     // 👉 JWT 비밀 키 로그로 출력 (확인용, 실제 서비스에선 지워야 함)
-    console.log("JWT 비밀 키:", process.env.JWT_SECRET);
+    console.log("JWT 비밀 키:", jwtSecret);
 
     const token = jwt.sign(
       { userId: user._id, username: user.username },
-      process.env.JWT_SECRET,
+      jwtSecret,
       { expiresIn: "1h" }
     );
 

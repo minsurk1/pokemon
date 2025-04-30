@@ -5,7 +5,7 @@ import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 import "./Login.css"
 import logo from "./assets/images/logo.png"
-import loginVideo from "./assets/videos/loginvideo.mp4" // 비디오 파일 직접 import
+import loginVideo from "./assets/videos/loginvideo.mp4" 
 import MainPage from "./MainPage.tsx"
 import SignUpPage from "./SignUpPage.tsx"
 import Inventory, { type Card, type CardPack } from "./Inventory.tsx"

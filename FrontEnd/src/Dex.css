@@ -2,7 +2,9 @@
   height: 100vh;
   overflow: hidden;
   overscroll-behavior: none;
+  overflow: hidden;
 }
+
 .background-video {
   position: fixed;
   top: 0;
@@ -12,7 +14,6 @@
   object-fit: cover;
   z-index: -1;
 }
-
 
 .dex-container {
   text-align: center;
@@ -24,7 +25,6 @@
   padding-top: 20px;
   margin-top: 100px;
   background-color: transparent;
-  
   z-index: -1;
 }
 
@@ -38,7 +38,7 @@
   z-index: 100;
   align-items: center;
 }
-
+  
 .header-icon {
   width: 50px;
   height: 50px;
@@ -114,7 +114,6 @@
 }
 
 .card-nav-button {
-
   height: 70px;
   width: 50px;
   margin-bottom: 250px;
@@ -122,12 +121,11 @@
   margin-left: 30px;
   background-color: #7b1fa2;
   color: white;
-  border: none;
+  border: black,1rem;
   border-radius: 8px;
   font-size: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
-
   z-index: 10;
 }
 

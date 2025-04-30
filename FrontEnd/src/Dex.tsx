@@ -15,6 +15,7 @@
   import poisonimage from "./assets/images/poison.png";
   import normalimage from "./assets/images/normal.png";
   import iceimage from "./assets/images/ice.png";
+  import flyimage from "./assets/images/fly.png";
   import electricimage from "./assets/images/electric.png";
   import esperimage from "./assets/images/esper.png";
   import legendimage from "./assets/images/legend.png";
@@ -24,6 +25,16 @@
     fire: Array.from({ length: 7 }, (_, i) => `/assets/models/firetier${i + 1}.glb`),
     electric: Array.from({ length: 7 }, (_, i) => `/assets/models/electrictier${i + 1}.glb`),
     esper: Array.from({ length: 7 }, (_, i) => `/assets/models/espertier${i + 1}.glb`),
+    water: Array.from({length: 7}, (_, i) => `/assets/models/watertier${i + 1}.glb`),
+    forest: Array.from({length: 7}, (_, i) => `/assets/models/foresttier${i + 1}.glb`),
+    electirc: Array.from({length: 7}, (_, i) => `/assets/models/electrictier${i + 1}.glb`),
+    fly: Array.from({length: 7}, (_, i) => `/assets/models/flytier${i + 1}.glb`),
+    worm: Array.from({length: 7}, (_, i) => `/assets/models/wormtier${i + 1}.glb`),
+    normal: Array.from({length: 7}, (_, i) => `/assets/models/normaltier${i + 1}.glb`),
+    poison: Array.from({length: 7}, (_, i) => `/assets/models/poisontier${i + 1}.glb`),
+    land: Array.from({length: 7}, (_, i) => `/assets/models/landtier${i + 1}.glb`),
+    ice: Array.from({length: 7}, (_, i) => `/assets/models/icetier${i + 1}.glb`),
+    legend: Array.from({length: 7}, (_, i) => `/assets/models/legendtier${i + 1}.glb`)
   };
 
   // 모델 컴포넌트
@@ -59,13 +70,13 @@
       { type: "fire", src: fireimage, alt: "불" },
       { type: "electric", src: electricimage, alt: "전기" },
       { type: "esper", src: esperimage, alt: "에스퍼" },
-      // 다른 타입들은 일반 이미지로 처리
       { type: "water", src: waterimage, alt: "물" },
       { type: "forest", src: forestimage, alt: "숲" },
       { type: "worm", src: wormimage, alt: "벌레" },
       { type: "land", src: landimage, alt: "땅" },
       { type: "poison", src: poisonimage, alt: "독" },
       { type: "normal", src: normalimage, alt: "노멀" },
+      { type: "fly" , src: flyimage, alt: "비행"},
       { type: "ice", src: iceimage, alt: "얼음" },
       { type: "legend", src: legendimage, alt: "전설" },
     ];

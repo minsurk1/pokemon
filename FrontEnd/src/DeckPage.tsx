@@ -230,6 +230,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
         <button className="nav-button" onClick={handleMain}>
           메인페이지
         </button>
+        <div className="deck-header-image"/>
         <button className="nav-button" onClick={handleStore}>
           상점페이지
         </button>

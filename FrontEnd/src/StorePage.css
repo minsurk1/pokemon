@@ -20,13 +20,13 @@
 
 .store-header {
     font-family: "Do hyeon",serif;
-    color: rgb(251, 228, 252);
+    color: rgb(255, 255, 255);
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
     padding: 10px 20px;
-    background: linear-gradient(135deg, #d02ede 0%, #240a50 50%, #8e24aa 100%);
+    background: linear-gradient(135deg, #264D3D 0%, #4cc69e 50%, #2d4835 100%);
     position: fixed;
     top: 0;
     left: 0;
@@ -42,7 +42,7 @@
 .inventory-button {
     font-family: "Do hyeon",serif;
     text-decoration: none;
-    background:linear-gradient(#ebe3ec,#a879be,#b39ddb) ;
+    background:linear-gradient(#3ad80e,#1add8f,#54c52b) ;
     font-weight: bold;
     font-size: 1.1rem;
     padding: 5px 10px;
@@ -56,7 +56,7 @@
 .main-button {
     font-family: "Do hyeon",serif;
     text-decoration: none;
-    background:linear-gradient(#ebe3ec,#a879be,#b39ddb) ;
+    background:linear-gradient(#3ad80e,#1add8f,#54c52b) ;
     font-weight: bold;
     font-size: 1.1rem;
     padding: 5px 10px;
@@ -86,6 +86,16 @@ h2 {
     margin-bottom: 20px;
 }
 
+.background-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+  }  
+
 .store-card-container {
     display: flex;
     justify-content: space-around;
@@ -97,7 +107,7 @@ h2 {
 .store-card {
     font-family: "Do hyeon",serif;
     width: 200px;
-    background: linear-gradient(145deg, #7b1fa2, #9c27b0);
+    background-color: transparent;
     color: white;
     font-size: 1.2rem;
     display: flex;

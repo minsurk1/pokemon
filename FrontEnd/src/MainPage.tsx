@@ -10,7 +10,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import "./MainPage.css"
 import mainImage from "./assets/images/default.png"
-import backgroundImage from "./assets/images/mainbg.jpg"
+import backgroundImage from "./assets/images/mainbg.png"
 import { CardAnimation } from "@lasbe/react-card-animation"
 import io, { type Socket } from "socket.io-client" // socket.io-client 임포트 및 Socket 타입 추가
 
@@ -37,7 +37,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     })
 
     // WebSocket 연결 설정
-    const newSocket = io("http://localhost:5000", { withCredentials: true })
+    const newSocket = io("http://localhost:5001", { withCredentials: true })
 
     setSocket(newSocket)
 
@@ -78,7 +78,9 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   const handleDeck = (): void => {
     navigate("/deck")
   }
-
+  const handledex = (): void => {
+    navigate("/dex")
+  }
   const handleBattle = (): void => {
     navigate("/battle")
   }
@@ -108,14 +110,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
       alert("올바른 방 코드를 입력해주세요.")
     }
   }
-
-  // 서버로 메시지 보내는 함수
-  const sendMessageToServer = (): void => {
-    if (socket) {
-      socket.emit("message", "클라이언트에서 보낸 메시지")
-    }
-  }
-
+  
   return (
     <div className="main-container" style={backgroundStyle}>
       {/* 사이드바 */}
@@ -125,6 +120,9 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
         </button>
         <button className="menu-button" onClick={handleDeck}>
           내카드
+        </button>
+        <button className="menu-button" onClick={handledex}>
+          도감
         </button>
         <button className="menu-button" onClick={handleBattle}>
           배틀테스트
@@ -179,16 +177,6 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
             </div>
           </div>
         )}
-
-        {/* 서버와의 통신 상태 */}
-        <div className="server-response">
-          <p>서버 응답: {serverResponse}</p>
-        </div>
-
-        {/* 서버로 메시지 보내기 */}
-        <button className="server-button" onClick={sendMessageToServer}>
-          서버로 메시지 보내기
-        </button>
       </div>
     </div>
   )

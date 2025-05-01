@@ -12,7 +12,7 @@ import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import io, { type Socket } from "socket.io-client" // Socket 타입 추가
 import "./WaitPage.css"
-import backgroundImage from "./assets/images/waitbg.jpg"
+import waitVideo from "./assets/videos/waitvideo.mp4"
 
 // location.state의 타입 정의
 interface LocationState {
@@ -24,7 +24,6 @@ function WaitPage() {
   const location = useLocation()
   const [isReady, setIsReady] = useState<boolean>(false)
   const [opponentReady, setOpponentReady] = useState<boolean>(false)
-  const [backgroundStyle, setBackgroundStyle] = useState<React.CSSProperties>({})
   const [message, setMessage] = useState<string>("")
   const [showMessage, setShowMessage] = useState<boolean>(false)
   const [socket, setSocket] = useState<Socket | null>(null) // WebSocket 연결 상태에 타입 추가
@@ -34,11 +33,7 @@ function WaitPage() {
   const roomCode = state?.roomCode || "UNKNOWN" // 방 코드
 
   useEffect(() => {
-    setBackgroundStyle({
-      backgroundImage: `url(${backgroundImage})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    })
+
 
     // 서버와 WebSocket 연결
     const newSocket = io("http://localhost:5000", { withCredentials: true })
@@ -111,7 +106,11 @@ function WaitPage() {
 
   return (
     <div className="wait-body">
-      <div className="wait-page" style={backgroundStyle}>
+      <div className="wait-page">
+      <video className="background-video" autoPlay loop muted playsInline>
+        <source src={waitVideo} type="video/mp4" />
+        브라우저가 비디오를 지원하지 않습니다.
+      </video>
         {showMessage && (
           <div className="message-box">
             <p>{message}</p>

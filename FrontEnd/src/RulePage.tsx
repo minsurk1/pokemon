@@ -2,20 +2,12 @@ import React from "react"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import "./RulePage.css"
-import backgroundImage from "./assets/images/rulebg.png"
+import rulevideo from "./assets/videos/rulevideo.mp4"
 
 function RulePage() {
-  const [backgroundStyle, setBackgroundStyle] = useState<React.CSSProperties>({})
   const [ruleText, setRuleText] = useState<string>("확인할 설명을 선택하세요.")
   const navigate = useNavigate()
 
-  useEffect(() => {
-    setBackgroundStyle({
-      backgroundImage: `url(${backgroundImage})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    })
-  }, [])
 
   const handleMain = (): void => {
     navigate("/main")
@@ -49,7 +41,11 @@ function RulePage() {
 
   return (
     <div className="rule-body">
-      <div className="rule-page" style={backgroundStyle}>
+      <div className="rule-page">
+      <video className="background-video" autoPlay loop muted playsInline>
+        <source src={rulevideo} type="video/mp4" />
+        브라우저가 비디오를 지원하지 않습니다.
+      </video>
         <button className="rule-mainbutton" onClick={handleMain}>
           메인페이지
         </button>

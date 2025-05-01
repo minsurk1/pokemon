@@ -35,13 +35,11 @@ const io = socketIo(server, {
   },
 });
 
-const dbURI = process.env.DB_URI;
-
-mongoose
-  .connect(dbURI)
-  .then(() => console.log("✅ MongoDB Atlas 연결 성공"))
-  .catch((err) => console.error("❌ MongoDB 연결 실패", err));
-
+const dbURI = process.env.MONGO_URI;
+// MongoDB 연결
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ DB 연결 성공"))
+  .catch((err) => console.error("❌ DB 연결 실패", err));
 // 인증 관련 라우터를 '/api/auth' 경로에 등록
 app.use("/api/auth", authRoutes);
 

@@ -266,7 +266,7 @@ function Inventory({ inventory, setInventory }: InventoryProps) {
       case "S":
         return { 1: 0.18, 2: 0.16, 3: 0.15, 4: 0.14, 5: 0.12, 6: 0.1, 7: 0.08, 8: 0.07 }
       default:
-        return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 } // 기본값으로 B 타입 확률 반환
+        return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 } 
     }
   }
 

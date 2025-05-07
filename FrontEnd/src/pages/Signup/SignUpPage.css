@@ -1,0 +1,161 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
+.signup-page {
+    background-image:url('../../assets/images/signup.png') ;
+    background-size: 90%;
+    background-repeat: no-repeat;
+    font-family: "Do hyeon", serif;
+    background-size: cover;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+  }
+
+  .signup-page h1 {
+    font-size: 4.5rem;
+    color: #496a85;
+    margin-bottom: 2rem;
+  }
+
+  .signup-page form {
+    opacity: 0.7;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .signup-page input {
+    font-family: "Do Hyeon", serif;
+    margin-bottom: 1.5rem;
+    padding: 12px 15px;
+    font-size: 1.4rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    transition: all 0.3s ease;
+  }
+
+  .signup-page input:focus {
+    border-color: #61dafb;
+    box-shadow: 0 0 0 2px rgba(97, 218, 251, 0.3);
+    outline: none;
+  }
+
+  .signup-page button {
+    font-family: "Do Hyeon", serif;
+    margin-top: 1rem;
+    padding: 12px;
+    font-size: 1.4rem;
+    background-color: #61dafb;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s;
+    font-weight: 500;
+  }
+
+  .signup-page button:hover {
+    background-color: #4fa3e2;
+    transform: translateY(-2px);
+  }
+
+  .signup-page button:last-of-type {
+    background-color: #b6d8e2;
+    border: 3px solid #00c4f5;
+    color: #333;
+    width: auto;
+    padding: 10px 20px;
+    font-size: 1.3rem;
+    margin-top: 1.5rem;
+    font-weight: 400;
+  }
+
+  .signup-page button:last-of-type:hover {
+    background-color: #f1f1f1;
+    color: #61dafb;
+    border-color: #61dafb;
+  }
+
+  .message-box {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffffff;
+    border: 2px solid #9c27b0;
+    padding: 15px 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    text-align: center;
+    animation: slideDown 0.5s ease-out;
+}
+.su-close-button{
+  background:linear-gradient(#92c4db,#458abc,#4a148c) ;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.message-box p {
+    font-size: 1.2rem;
+    color: #4a148c;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-container input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.password-container span {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: #666;
+  font-size: 1.4rem;
+}
+
+.password-container span:hover {
+  color: #333;
+}
+
+  @media (max-width: 480px) {
+    .signup-page h1 {
+      font-size: 2rem;
+    }
+
+    .signup-page form {
+      padding: 1.5rem;
+      width: 90%;
+    }
+
+    .signup-page input {
+      padding: 10px;
+    }
+
+    .signup-page button {
+      padding: 10px;
+      font-size: 1rem;
+    }
+  }

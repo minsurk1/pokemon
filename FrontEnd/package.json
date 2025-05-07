@@ -6,6 +6,7 @@
     "@lasbe/react-card-animation": "^1.0.0",
     "@react-three/drei": "^10.0.6",
     "@react-three/fiber": "^9.1.2",
+    "@tweenjs/tween.js": "^25.0.0",
     "axios": "^1.8.4",
     "cra-template": "1.2.0",
     "framer-motion": "^12.6.3",

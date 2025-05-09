@@ -90,6 +90,11 @@ function LoginPanel() {
             placeholder="비밀번호"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleLogin()
+              }
+            }}
           />
           <button className="login-button" onClick={handleLogin} disabled={isLoading}>
             {isLoading ? "로그인 중..." : "로그인"}

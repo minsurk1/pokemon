@@ -1,7 +1,8 @@
 import React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import "./StorePage.css"
+import MessageBox from "../../components/common/MessageBox.tsx"
 import bCard from "../../assets/images/b_card.png"
 import aCard from "../../assets/images/a_card.png"
 import sCard from "../../assets/images/s_card.png"
@@ -25,7 +26,6 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
     { image: sCard, name: "S급 카드팩", price: 500, packImage: sCard },
     { image: aCard, name: "A급 카드팩", price: 300, packImage: aCard },
   ])
-
 
   const handleBuyCard = (index: number): void => {
     const selectedCard = cards[index]
@@ -64,18 +64,15 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
   return (
     <div className="store-container">
       <div className="store-page">
-      <video className="background-video" autoPlay loop muted playsInline>
-        <source src={storeVideo} type="video/mp4" />
-        브라우저가 비디오를 지원하지 않습니다.
-      </video>
+        <video className="background-video" autoPlay loop muted playsInline>
+          <source src={storeVideo} type="video/mp4" />
+          브라우저가 비디오를 지원하지 않습니다.
+        </video>
       </div>
       {showMessage && (
-        <div className="message-box">
-          <p>{message}</p>
-          <button className="close-button" onClick={closeMessage}>
-            확인
-          </button>
-        </div>
+        <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1"  onClose={closeMessage}closeborderColor="black">
+          {message}
+        </MessageBox>
       )}
 
       <div className="store-header">
@@ -113,4 +110,3 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
 }
 
 export default StorePage
-

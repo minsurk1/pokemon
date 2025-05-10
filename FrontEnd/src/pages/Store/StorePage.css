@@ -30,7 +30,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 1000;
+    z-index: 500;
     box-sizing: border-box;
 }
 
@@ -162,7 +162,7 @@ h2 {
     transform: translateY(-2px);
 }
 
-.message-box {
+/* .message-box {
     position: fixed;
     top: 70px;
     left: 50%;
@@ -182,7 +182,7 @@ h2 {
     color: #4a148c;
     margin-bottom: 15px;
     font-weight: bold;
-}
+} */
 
 .close-button {
     background:linear-gradient(#9c27b0,#380b4b) ;

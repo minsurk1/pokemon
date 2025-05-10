@@ -4,6 +4,7 @@ import React from "react"
 import { useDrag, useDrop } from "react-dnd"
 import * as TWEEN from '@tweenjs/tween.js';
 import "./BattlePage.css"
+import MessageBox from "../../components/common/MessageBox.tsx"
 import CardMenu from "../../components/cards/CardMenu.tsx"
 import { cardsData } from "../Inventory/Inventory.tsx"
 import costImage from "../../assets/images/cost.png"
@@ -410,13 +411,10 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   return (
     <div className="battle-container">
       {showMessage && (
-        <div className="message-box">
-          <p>{message}</p>
-          <button className="close-button" onClick={closeMessage}>
-            확인
-          </button>
-        </div>
-      )}
+              <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1"  onClose={closeMessage}closeborderColor="black">
+                {message}
+              </MessageBox>
+            )}
       <div className="game-info">
         <div className="turn-indicator">턴: {turn}</div>
         <div className="timer">시간: {timeLeft}초</div>

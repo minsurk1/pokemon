@@ -439,7 +439,7 @@
   border-radius: 4px;
 }
 
-.message-box {
+/* .message-box {
   position: fixed;
   top: 70px;
   left: 50%;
@@ -459,7 +459,7 @@
   color: #4a148c;
   margin-bottom: 15px;
   font-weight: bold;
-}
+} */
 
 /* 반응형 스타일 */
 @media (max-width: 768px) {

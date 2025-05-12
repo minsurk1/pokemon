@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import "./LoginPanel.css"
+import MessageBox from "../common/MessageBox.tsx"
 
 import logo from "../../assets/images/logo.png"
 import loginVideo from "../../assets/videos/loginvideo.mp4"
@@ -19,6 +20,8 @@ function LoginPanel() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState<string>("") // 메시지 상태 추가
+  const [showMessage, setShowMessage] = useState<boolean>(false) // 메시지 박스 표시 여부
   const navigate = useNavigate()
 
   const togglePanel = () => setIsOpen(!isOpen)
@@ -36,16 +39,37 @@ function LoginPanel() {
         navigate("/main")
       }
     } catch {
-      alert("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.")
+      setMessage("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.")
+      setShowMessage(true)
+      return
     } finally {
       setIsLoading(false)
     }
   }
 
+  // 메시지 박스 닫기 함수
+  const closeMessage = (): void => {
+    setShowMessage(false)
+    setMessage("")
+  }
+
+
   const handleSignUp = () => navigate("/signup")
 
   return (
     <div className="login-main">
+      {showMessage && (
+        <MessageBox
+          bgColor="#e3f2fd"
+          borderColor="#828a10"
+          textColor="black"
+          onClose={closeMessage}
+          closeborderColor="#828a10"
+        >
+          {message}
+        </MessageBox>
+      )}
+
       <video className="background-video" autoPlay loop muted playsInline>
         <source src={loginVideo} type="video/mp4" />
         브라우저가 비디오를 지원하지 않습니다.

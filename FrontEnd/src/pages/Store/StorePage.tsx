@@ -6,8 +6,9 @@ import MessageBox from "../../components/common/MessageBox.tsx"
 import bCard from "../../assets/images/b_card.png"
 import aCard from "../../assets/images/a_card.png"
 import sCard from "../../assets/images/s_card.png"
-import storeVideo from "../../assets/videos/storevideo.mp4"
 import type { Card, CardPack } from "../Inventory/Inventory"
+import BackgroundVideo from "../../components/common/global.tsx"
+import storeVideo from "../../assets/videos/storevideo.mp4"
 
 // StorePage 컴포넌트 props 인터페이스
 interface StorePageProps {
@@ -64,10 +65,8 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
   return (
     <div className="store-container">
       <div className="store-page">
-        <video className="background-video" autoPlay loop muted playsInline>
-          <source src={storeVideo} type="video/mp4" />
-          브라우저가 비디오를 지원하지 않습니다.
-        </video>
+      <BackgroundVideo src={storeVideo} opacity={1} zIndex={-1} />
+
       </div>
       {showMessage && (
         <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1"  onClose={closeMessage}closeborderColor="black">
@@ -86,11 +85,6 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
           </button>
         </div>
       </div>
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
 
       <div className="store-card-container">
         {cards.map((card, index) => (

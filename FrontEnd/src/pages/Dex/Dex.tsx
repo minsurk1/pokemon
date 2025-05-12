@@ -7,6 +7,7 @@
   import { GLTF } from 'three-stdlib';
   import { useGLTF, OrbitControls, Environment, ContactShadows } from "@react-three/drei";
   import dexVideo from "../../assets/videos/dexvideo.mp4" 
+  import BackgroundVideo from "../../components/common/global.tsx";
 
   import fireimage from "../../assets/images/fire.png";
   import waterimage from "../../assets/images/water.png";
@@ -164,10 +165,7 @@
         </div>
 
         <div className="dex-container">
-        <video className="background-video" autoPlay loop muted playsInline>
-          <source src={dexVideo} type="video/mp4" />
-          브라우저가 비디오를 지원하지 않습니다.
-        </video>
+        <BackgroundVideo src={dexVideo} opacity={1} zIndex={-1} />
           <div className="dex-card-container">
             <button 
               className="card-nav-button" 

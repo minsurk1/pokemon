@@ -13,6 +13,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import io, { type Socket } from "socket.io-client" // Socket 타입 추가
 import "./WaitPage.css"
 import waitVideo from "../../assets/videos/waitvideo.mp4"
+import BackgroundVideo from "../../components/common/global.tsx"
 
 // location.state의 타입 정의
 interface LocationState {
@@ -107,10 +108,7 @@ function WaitPage() {
   return (
     <div className="wait-body">
       <div className="wait-page">
-      <video className="background-video" autoPlay loop muted playsInline>
-        <source src={waitVideo} type="video/mp4" />
-        브라우저가 비디오를 지원하지 않습니다.
-      </video>
+      <BackgroundVideo src={waitVideo} opacity={1} zIndex={-1}/>
         {showMessage && (
           <div className="message-box">
             <p>{message}</p>

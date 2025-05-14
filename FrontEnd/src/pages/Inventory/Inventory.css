@@ -2,12 +2,9 @@
 
 /*배경화면 디자인*/
 .inventory-page {    
-    background-image:url('../../assets/images/inventory.png') ;
-    background-size: 100%;
-    background-repeat: no-repeat;
     font-family: "Do Hyeon", serif;
     min-height: 89vh;
-    padding: 40px 20px;
+    padding: 30px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -18,7 +15,6 @@
     color: #dfe439; /* 글자 색상 */
     font-size: 4rem;
     margin-bottom: 10px;
-
     text-shadow:
       -1.5px -1.5px 0 black,
       1.5px -1.5px 0 black,

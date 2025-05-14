@@ -65,11 +65,21 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
   return (
     <div className="store-container">
       <div className="store-page">
-      <BackgroundVideo src={storeVideo} opacity={1} zIndex={-1} />
-
+        <BackgroundVideo
+          src={storeVideo}
+          opacity={1}
+          zIndex={-1}
+          objectPosition="center top"
+        />
       </div>
       {showMessage && (
-        <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1"  onClose={closeMessage}closeborderColor="black">
+        <MessageBox
+          bgColor="#e3f2fd"
+          borderColor="#2196f3"
+          textColor="#0d47a1"
+          onClose={closeMessage}
+          closeborderColor="black"
+        >
           {message}
         </MessageBox>
       )}

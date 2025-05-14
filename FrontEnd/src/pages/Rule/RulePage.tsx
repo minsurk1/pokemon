@@ -2,7 +2,7 @@ import React from "react"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import "./RulePage.css"
-import rulevideo from "../../assets/videos/rulevideo.mp4"
+import rulevideo from "../../assets/videos/common1.mp4"
 import BackgroundVideo from "../../components/common/global.tsx"
 
 function RulePage() {

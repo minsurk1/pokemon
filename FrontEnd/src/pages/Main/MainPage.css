@@ -20,6 +20,7 @@
     backdrop-filter: blur(10px);
     z-index: 2;
     gap: 1.5rem;
+    
 }
 
 .menu-button {
@@ -124,6 +125,7 @@
     overflow: hidden;
     transition: transform  0.3s ease;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    z-index: -10;
 }
 
 .monster-card:hover {

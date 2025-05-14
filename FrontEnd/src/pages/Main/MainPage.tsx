@@ -1,5 +1,3 @@
-"use client"
-
 // 메인 페이지에서 서버와 클라이언트간의 연결 상태 확인 기능 추가
 // 메인 페이지 접속 시 터미널에서 접속과 종료 상태 확인 가능
 // 로그인을 했지만 세션 관련한 기능은 아직 추가하지 않았음
@@ -13,6 +11,8 @@ import mainImage from "../../assets/images/default.png"
 import backgroundImage from "../../assets/images/mainbg.png"
 import { CardAnimation } from "@lasbe/react-card-animation"
 import io, { type Socket } from "socket.io-client" // socket.io-client 임포트 및 Socket 타입 추가
+import BackgroundVideo from "../../components/common/global.tsx"
+import mainVideo from "../../assets/videos/phantom.mp4";
 
 // MainPage 컴포넌트의 props 인터페이스 정의
 interface MainPageProps {
@@ -113,6 +113,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   
   return (
     <div className="main-container" style={backgroundStyle}>
+      <BackgroundVideo src={mainVideo} opacity={1} zIndex={1}/>
       {/* 사이드바 */}
       <div className="sidebar">
         <button className="menu-button" onClick={handleStore}>

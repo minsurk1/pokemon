@@ -1,9 +1,9 @@
-"use client"
-
 import React from "react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import "./Inventory.css"
+import BackgroundVideo from "../../components/common/global.tsx"
+import inventoryVideo from "../../assets/videos/arceus.mp4"
 
 import fireTier1 from "../../assets/images/firetier1.png"
 import fireTier2 from "../../assets/images/firetier2.png"
@@ -314,6 +314,7 @@ function Inventory({ inventory, setInventory }: InventoryProps) {
 
   return (
     <div className="inventory-page">
+      <BackgroundVideo src={inventoryVideo} opacity={1} zIndex={-1} objectPosition="center top"/>
       <h2>내 인벤토리</h2>
       {inventory && inventory.length === 0 ? (
         <div className="inventory-empty">구매한 카드팩이 없습니다.</div>

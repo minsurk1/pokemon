@@ -160,7 +160,7 @@
               <img src={button.src || "/placeholder.svg"} alt={button.alt} />
             </button>
           ))}
-          <button onClick={handleMain} className="dex-header-button "><AiFillHome />
+          <button onClick={handleMain} className="dex-main-button "><AiFillHome color="black" size={22}/>
           </button>
         </div>
 

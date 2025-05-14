@@ -2,6 +2,8 @@ import React from "react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import "./StorePage.css"
+import { MdInventory } from "react-icons/md";
+import { FaHome } from "react-icons/fa";
 import MessageBox from "../../components/common/MessageBox.tsx"
 import bCard from "../../assets/images/b_card.png"
 import aCard from "../../assets/images/a_card.png"
@@ -88,10 +90,10 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
         <div className="store-currency">보유 재화: {currency} G</div>
         <div>
           <button className="inventory-button" onClick={() => navigate("/inventory")}>
-            인벤토리
+            인벤토리  <MdInventory/>
           </button>
           <button className="main-button" onClick={() => navigate("/main")}>
-            메인페이지
+            메인페이지  <FaHome/>
           </button>
         </div>
       </div>

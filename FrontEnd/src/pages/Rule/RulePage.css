@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
 /* 전체 배경 스타일 */
 .rule-page {
     height: 100vh;
@@ -5,7 +7,7 @@
 
 /* 레이아웃과 폰트 설정 */
 .rule-body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Do Hyeon', Arial, sans-serif;
     margin: 0;
     padding: 0;
     color: #000000;
@@ -22,13 +24,16 @@
 
 /* 메인 버튼 스타일 */
 .rule-mainbutton {
+    font-family: 'Do Hyeon', Arial, sans-serif;
+    position: absolute;
+    right: 25px;
     margin-bottom: 1.5rem;
     padding: 1rem;
     font-size: 1.2rem;
     font-weight: bold;
-    color: white;
-    background: #352350;
-    border: none;
+    color: rgb(0, 0, 0);
+    background: #ffffff;
+    border: 3px, solid , black;
     border-radius: 15px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     transition: background 0.3s ease, transform 0.3s ease;
@@ -36,7 +41,7 @@
 }
 
 /* 버튼 hover 상태 */
-.mainbutton:hover {
+.rule-mainbutton:hover {
     background: #5a4f72;
     transform: scale(1.05);
 }
@@ -48,16 +53,17 @@
     gap: 10px;
     margin-bottom: -1rem;
     justify-content: center; /* 버튼을 가운데 정렬 */
+    margin-top: 1rem;
 }
 
 /* 각 버튼 스타일 */
 .rule-buttons button {
+    font-family: 'Do Hyeon', Arial, sans-serif;
     padding: 1rem;
     font-size: 1.1rem;
-    color: #fff;
-    font-weight: bold;
-    background: #352350;
-    border: none;
+    color: rgb(0, 0, 0);
+    background: #ffffff;
+    border: 3px, solid , black;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     transition: background 0.3s ease, transform 0.3s ease;
@@ -81,6 +87,7 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     overflow-y: auto;
     margin-bottom: 40px;
+    background-color: rgba(155, 211, 194, 0.5);
 }
 
 .rule-display::-webkit-scrollbar {
@@ -100,7 +107,12 @@
 .rule-display p {
     font-size: 1.3rem;
     line-height: 1.6;
-    color: #87CEFA;
+    color: #ffffff;
     text-align: center;
     font-weight: bold;
+    text-shadow: 
+    0.6px 0.6px 0 #000000,   
+    -0.6px -0.6px 0 #000000,
+    0.6px -0.6px 0 #000, 
+    -0.6px 0.6px 0 #000;  
 }

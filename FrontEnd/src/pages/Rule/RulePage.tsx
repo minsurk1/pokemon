@@ -3,6 +3,7 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import "./RulePage.css"
 import rulevideo from "../../assets/videos/common1.mp4"
+import { FaHome } from "react-icons/fa";
 import BackgroundVideo from "../../components/common/global.tsx"
 
 function RulePage() {
@@ -45,7 +46,7 @@ function RulePage() {
       <div className="rule-page">
       <BackgroundVideo src={rulevideo} opacity={1} zIndex={-1}/>
         <button className="rule-mainbutton" onClick={handleMain}>
-          메인페이지
+          메인페이지  <FaHome/>
         </button>
 
         <div className="rule-buttons">

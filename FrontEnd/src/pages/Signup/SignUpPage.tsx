@@ -5,6 +5,8 @@ import axios from "axios"
 import { FaEye, FaEyeSlash } from "react-icons/fa"
 import "./SignUpPage.css"
 import MessageBox from "../../components/common/MessageBox.tsx"
+import BackgroundVideo from "../../components/common/global.tsx"
+import signupVideo from "../../assets/videos/signupvideo.mp4"
 
 function SignUpPage() {
   const navigate = useNavigate()
@@ -71,6 +73,7 @@ function SignUpPage() {
 
   return (
     <div className="signup-page">
+      <BackgroundVideo src={signupVideo} opacity={1} zIndex={-1}/>
       <h1>회원가입</h1>
       <div className="signup-main">
         <button onClick={() => navigate("/")}>로그인 페이지</button>

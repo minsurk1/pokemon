@@ -1,11 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
 
 .signup-page {
-  background-image: url("../../assets/images/signup.png");
+  
   background-size: 90%;
   background-repeat: no-repeat;
   font-family: "Do hyeon", serif;
-  background-size: cover;
+
   display: flex;
   flex-direction: column;
   align-items: center;

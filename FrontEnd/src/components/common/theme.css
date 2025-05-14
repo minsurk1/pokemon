@@ -1,0 +1,22 @@
+:root {
+  /* 기존 테마 색상 */
+  --gaioga-color: #0f99b8;
+  --gaioga-hover-color: #340fb8;
+  --gaioga-accent-color: #4fcbeb; 
+
+  --thunder-color: hsl(51, 88%, 49%);
+  --thunder-hover-color: #ff8800;
+  --thunder-accent-color: #ffdf5e;
+
+  --grandon-color: #bd0b0b;
+  --grandon-hover-color: #ff8400;
+  --grandon-accent-color: #ff6347;
+
+  --phantom-color: #352350;
+  --phantom-hover-color: #8e5cd9;
+  --phantom-accent-color: #a569ff;
+
+  /* 현재 활성화된 테마 색상 (기본값은 phantom) */
+  --theme-color: var(--phantom-color);
+  --theme-hover-color: var(--phantom-hover-color);
+}

@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+@import "../../components/common/theme.css";
 
 .main-container {
     
@@ -29,7 +30,7 @@
     padding: 1rem;
     font-size: 1.3rem;
     color: #fff;
-    background: #352350;
+    background: var(--theme-color);
     border: none;
     border-radius: 15px;
     box-shadow:  0 4px 6px rgba(0, 0, 0, 0.15);
@@ -38,27 +39,9 @@
 }
 
 .menu-button:hover {
-    background: #352350;
+    background: var(--theme-hover-color);
     transform: translateY(-3px);
     transform: scale(1.06);
-}
-
-.create-room {
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
-    color: #fff;
-    background-color:  #352350;
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-    cursor: pointer;
-    transition: background 0.3s ease, transform 0.3s ease;
-    margin-bottom: 1.5rem;
-}
-
-.create-room:hover {
-    background-color:  #352350;
-    transform: translateY(-3px);
 }
 
 .main-content {    
@@ -89,14 +72,14 @@
     font-size: 1.2rem;
     font-weight: 600;
     color: #fff;
-    background-color: rgba(106, 90, 205, 0.7);
+    background-color:var(--theme-color);
     padding: 0.5rem 1rem;
     border-radius: 20px;
     transition: all 0.3s ease;
 }
 
 .money:hover {
-    background-color: rgba(106, 90, 205, 0.9);
+    background-color:var(--theme-hover-color);
 }
 
 .logout-button {
@@ -104,7 +87,7 @@
     padding: 0.5rem 1.5rem;
     font-size: 1rem;
     color: #fff;
-    background-color: rgba(165, 105, 255, 0.7);
+    background-color:var(--theme-color);
     border: none;
     border-radius: 20px;
     cursor: pointer;
@@ -112,7 +95,7 @@
 }
 
 .logout-button:hover {
-    background-color: rgba(146, 83, 226, 0.9);
+    background-color: var(--theme-hover-color);
 }
 
 .monster-card {
@@ -141,26 +124,25 @@
 .room-tab {
     position: absolute;
     top: 50%;
-    left: 50%;
+    left: 45%;
     transform: translate(-50%, -50%);
     background-color: rgba(255, 255, 255, 0.9);
-    padding: 20px;
+    padding-top: 10px;
+    padding-left: 20px;
+    padding-right:20px;
+    padding-bottom: 20px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
     z-index: 100;
-  }
-  
-  .room-tab h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    color: #352350;
-  }
-  
+    justify-content: center;
+}
+
   .create-room {
+    font-family: "Do hyeon",serif;
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
-    background-color: #352350;
+    background-color: var(--theme-color);
     color: white;
     border: none;
     border-radius: 5px;
@@ -169,7 +151,7 @@
   }
   
   .create-room:hover {
-    background-color:  #352350;
+    background-color: var(--theme-hover-color);
   }
   
   .join-room {
@@ -178,6 +160,7 @@
   }
   
   .join-room input {
+    font-family: "Do hyeon",serif;
     flex-grow: 1;
     padding: 10px;
     border: 1px solid #ccc;
@@ -185,8 +168,9 @@
   }
   
   .join-room button {
+    font-family: "Do hyeon",serif;
     padding: 10px;
-    background-color:  #352350;
+    background-color: var(--theme-color);
     color: white;
     border: none;
     border-radius: 5px;
@@ -195,7 +179,29 @@
   }
   
   .join-room button:hover {
-    background-color: #352350;
+    background-color: var(--theme-hover-color);
   }
   
+  /* 반응형 디자인 */
+  @media (max-width: 768px) {
+    .sidebar {
+      width: 150px;
+      padding: 1.5rem 0.5rem;
+    }
+  
+    .menu-button {
+      font-size: 1rem;
+      padding: 0.8rem;
+    }
+  
+    .monster-card {
+      width: 280px;
+      height: 400px;
+    }
+  
+    .theme-indicator {
+      left: 160px;
+      font-size: 0.8rem;
+    }
+  }
   

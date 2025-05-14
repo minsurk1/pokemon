@@ -8,11 +8,35 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import "./MainPage.css"
 import mainImage from "../../assets/images/default.png"
-import backgroundImage from "../../assets/images/mainbg.png"
 import { CardAnimation } from "@lasbe/react-card-animation"
 import io, { type Socket } from "socket.io-client" // socket.io-client 임포트 및 Socket 타입 추가
 import BackgroundVideo from "../../components/common/global.tsx"
-import mainVideo from "../../assets/videos/phantom.mp4";
+
+import phantomVideo from "../../assets/videos/phantom.mp4";
+import gaiogaVideo from "../../assets/videos/gaioga.mp4"
+import grandonVideo from "../../assets/videos/grandon.mp4"
+import thunderVideo from "../../assets/videos/thunder.mp4"
+
+const videoFiles = [phantomVideo, gaiogaVideo, grandonVideo, thunderVideo]
+
+const videoThemes = {
+  [phantomVideo]: {
+    name: "팬텀",
+    color: "phantom",
+  },
+  [gaiogaVideo]: {
+    name: "가이오가",
+    color: "gaioga",
+  },
+  [grandonVideo]: {
+    name: "그란돈",
+    color: "grandon",
+  },
+  [thunderVideo]: {
+    name: "썬더",
+    color: "thunder",
+  },
+}
 
 // MainPage 컴포넌트의 props 인터페이스 정의
 interface MainPageProps {
@@ -24,17 +48,20 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   const navigate = useNavigate()
   const [showRoomTab, setShowRoomTab] = useState<boolean>(false)
   const [roomCode, setRoomCode] = useState<string>("")
-  const [backgroundStyle, setBackgroundStyle] = useState<React.CSSProperties>({})
   const [socket, setSocket] = useState<Socket | null>(null) // socket 상태에 타입 추가
   const [serverResponse, setServerResponse] = useState<string>("") // 서버 응답을 받을 상태
 
+  const [randomVideo] = useState(() => {
+    const randomIndex = Math.floor(Math.random() * videoFiles.length)
+    return videoFiles[randomIndex]
+  })
+
+  const themeColorClass = videoThemes[randomVideo].color
+  const themeName = videoThemes[randomVideo].name
+
   useEffect(() => {
-    // 배경 스타일 설정
-    setBackgroundStyle({
-      backgroundImage: `url(${backgroundImage})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    })
+    document.documentElement.style.setProperty("--theme-color", `var(--${themeColorClass}-color)`)
+    document.documentElement.style.setProperty("--theme-hover-color", `var(--${themeColorClass}-hover-color)`)
 
     // WebSocket 연결 설정
     const newSocket = io("http://localhost:5001", { withCredentials: true })
@@ -65,7 +92,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     return () => {
       newSocket.close()
     }
-  }, [navigate])
+  }, [navigate,themeColorClass])
 
   const handleLogout = (): void => {
     navigate("/")
@@ -112,8 +139,8 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   }
   
   return (
-    <div className="main-container" style={backgroundStyle}>
-      <BackgroundVideo src={mainVideo} opacity={1} zIndex={1}/>
+    <div className="main-container">
+      <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
       {/* 사이드바 */}
       <div className="sidebar">
         <button className="menu-button" onClick={handleStore}>
@@ -184,4 +211,3 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 }
 
 export default MainPage
-

@@ -163,6 +163,7 @@
   font-weight: bold;
   text-transform: uppercase;
   z-index: 1;
+  margin-left:16px;
 }
 
 .login-button::before {

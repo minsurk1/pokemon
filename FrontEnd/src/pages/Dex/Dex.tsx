@@ -8,6 +8,7 @@
   import { useGLTF, OrbitControls, Environment, ContactShadows } from "@react-three/drei";
   import dexVideo from "../../assets/videos/dexvideo.mp4" 
   import BackgroundVideo from "../../components/common/global.tsx";
+  import Button from "../../components/common/button.tsx";
 
   import fireimage from "../../assets/images/fire.png";
   import waterimage from "../../assets/images/water.png";
@@ -153,15 +154,14 @@
         <div className="dex-header">
           {typeButtons.map((button) => (
             <button 
-              key={button.type} 
+              key={button.type}  
               className={`dex-header-button ${selectedType === button.type ? 'active' : ''}`}
               onClick={() => handleTypeChange(button.type)}
             >
               <img src={button.src || "/placeholder.svg"} alt={button.alt} />
             </button>
           ))}
-          <button onClick={handleMain} className="dex-main-button "><AiFillHome color="black" size={22}/>
-          </button>
+         <Button onClick={handleMain} bgColor="white" marginLeft="auto" marginRight="20px"><AiFillHome color="black" size={22}/></Button>
         </div>
 
         <div className="dex-container">

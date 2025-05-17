@@ -27,6 +27,8 @@
   background-color: #000000;
   z-index: 100;
   align-items: center;
+  border-bottom: solid 3px rgb(14, 147, 219);
+  /* border-top: solid 3px rgb(14, 147, 219); */
 }
   
 .header-icon {

@@ -24,26 +24,6 @@
     
 }
 
-.menu-button {
-    font-family: "Do hyeon",serif;
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    font-size: 1.3rem;
-    color: #fff;
-    background: var(--theme-color);
-    border: none;
-    border-radius: 15px;
-    box-shadow:  0 4px 6px rgba(0, 0, 0, 0.15);
-    transition: background 0.3s ease,transform 0.3s ease;
-    cursor: pointer;
-}
-
-.menu-button:hover {
-    background: var(--theme-hover-color);
-    transform: translateY(-3px);
-    transform: scale(1.06);
-}
-
 .main-content {    
     font-family: "Do hyeon",serif;
     flex-grow: 1;

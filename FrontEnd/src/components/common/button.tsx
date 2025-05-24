@@ -7,6 +7,7 @@ interface ButtonProps {
     color?:string
     bgColor?: string
     textColor?: string
+    background?: string
     borderColor?: string
     border?: string
     borderRadius?: string
@@ -19,7 +20,7 @@ interface ButtonProps {
     marginLeft?: string
     hoverOpacity?: string
     transform?: string
-    transition?: string
+    transition?: string 
     onClick?: () => void;
     children?: React.ReactNode;
 }
@@ -58,12 +59,17 @@ const StyleMenuButton = styled.button<ButtonProps>`
     padding:${(props)=>props.padding || "1rem"};
     font-size: 1.3rem;
     color:${(props)=>props.color ||"#fff"};
-    background: var(--theme-color);
+    background: ${(props)=>props.background ||   "var(--theme-color)"};
     border: ${(props)=>props.border || "none"};
     border-radius:${(props)=>props.borderRadius||"15px"};
     box-shadow:  0 4px 6px rgba(0, 0, 0, 0.15);
     transition: background 0.3s ease,transform 0.3s ease;
     cursor: pointer;
+    &:hover {
+    background: var(--theme-hover-color);
+    opacity: ${(props)=>props.hoverOpacity || 0.8};
+    transform: ${(props)=>props.transform || "scale(1.03)"}; 
+    transition: ${(props)=>props.transition||"all 0.2s ease-in-out"};
 `
 export function HomeButton({
     bgColor,
@@ -105,24 +111,31 @@ export function HomeButton({
 
 export function MenuButton({
   children,
+  background,
   marginBottom,
   padding,
   color,
   border,
   borderRadius,
+  hoverOpacity,
+  transform,
+  transition,
   onClick
 }: ButtonProps){
   return(
     <StyleMenuButton
-   
+    background={background}
     marginBottom={marginBottom}
     color={color}
     padding={padding}
     border={border}
     borderRadius={borderRadius}
+    hoverOpacity={hoverOpacity}
+    transform={transform}
+    transition={transition}
     onClick={onClick}
     >
    {children}
-    </StyleMenuButton>
+    </StyleMenuButton>   
   );
 }

@@ -8,7 +8,7 @@
   import { useGLTF, OrbitControls, Environment, ContactShadows } from "@react-three/drei";
   import dexVideo from "../../assets/videos/dexvideo.mp4" 
   import BackgroundVideo from "../../components/common/global.tsx";
-  import Button from "../../components/common/button.tsx";
+  import {HomeButton} from "../../components/common/button.tsx";
 
   import fireimage from "../../assets/images/fire.png";
   import waterimage from "../../assets/images/water.png";
@@ -161,7 +161,9 @@
               <img src={button.src || "/placeholder.svg"} alt={button.alt} />
             </button>
           ))}
-         <Button onClick={handleMain} bgColor="white" marginLeft="auto" marginRight="20px"><AiFillHome color="black" size={22}/></Button>
+         <HomeButton onClick={handleMain} bgColor="white" marginLeft="auto" 
+                      marginRight="20px" hoverOpacity="0.8" transition="all 0.5s ease" transform="scale(1.01)"
+                      ><AiFillHome color="black" size={22}/></HomeButton>
         </div>
 
         <div className="dex-container">

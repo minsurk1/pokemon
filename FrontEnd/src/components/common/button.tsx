@@ -1,23 +1,31 @@
-import React from "react";
+import React, { Children } from "react";
 import styled from "styled-components";
 import { AiFillHome } from "react-icons/ai"; 
+import "./theme.css"
 
 interface ButtonProps {
+    color?:string
     bgColor?: string
     textColor?: string
+    background?: string
     borderColor?: string
     border?: string
+    borderRadius?: string
     height?: string
     width?: string
+    padding?:string
     marginTop?: string
     marginBottom?: string
     marginRight?: string
     marginLeft?: string
+    hoverOpacity?: string
+    transform?: string
+    transition?: string 
     onClick?: () => void;
     children?: React.ReactNode;
 }
 
-const HomeButton = styled.div<ButtonProps>`
+const StyleHomeButton = styled.button<ButtonProps>`
     margin-left: auto;
     background: ${(props) => props.bgColor || "#f000000"};
   ${(props) =>
@@ -38,8 +46,32 @@ const HomeButton = styled.div<ButtonProps>`
     display: flex;
     align-items: center;
     justify-content: center;
+    
+     &:hover {
+    opacity: ${(props)=>props.hoverOpacity || 0.8};
+    transform: ${(props)=>props.transform || "scale(1.03)"}; 
+    transition: ${(props)=>props.transition||"all 0.2s ease-in-out"};
+  }
+`;
+const StyleMenuButton = styled.button<ButtonProps>`
+    font-family: "Do hyeon",serif;
+    margin-bottom:${(props)=>props.marginBottom || "1.5rem"};
+    padding:${(props)=>props.padding || "1rem"};
+    font-size: 1.3rem;
+    color:${(props)=>props.color ||"#fff"};
+    background: ${(props)=>props.background ||   "var(--theme-color)"};
+    border: ${(props)=>props.border || "none"};
+    border-radius:${(props)=>props.borderRadius||"15px"};
+    box-shadow:  0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.3s ease,transform 0.3s ease;
+    cursor: pointer;
+    &:hover {
+    background: var(--theme-hover-color);
+    opacity: ${(props)=>props.hoverOpacity || 0.8};
+    transform: ${(props)=>props.transform || "scale(1.03)"}; 
+    transition: ${(props)=>props.transition||"all 0.2s ease-in-out"};
 `
-export default function Button({
+export function HomeButton({
     bgColor,
     textColor,
     borderColor,
@@ -50,10 +82,13 @@ export default function Button({
     marginBottom,
     marginRight,
     marginLeft,
+    hoverOpacity,
+    transform,
+    transition,
     onClick
 }: ButtonProps) {
     return (
-      <HomeButton
+      <StyleHomeButton
         bgColor={bgColor}
         textColor={textColor}
         borderColor={borderColor}
@@ -64,9 +99,43 @@ export default function Button({
         marginBottom={marginBottom}
         marginRight={marginRight}
         marginLeft={marginLeft}
+        hoverOpacity={hoverOpacity}  
+        transform={transform}
+        transition={transition}
         onClick={onClick}
       >
        <AiFillHome size={22} color={textColor || "black"} /> 
-       </HomeButton>
+       </StyleHomeButton>
     );
   }
+
+export function MenuButton({
+  children,
+  background,
+  marginBottom,
+  padding,
+  color,
+  border,
+  borderRadius,
+  hoverOpacity,
+  transform,
+  transition,
+  onClick
+}: ButtonProps){
+  return(
+    <StyleMenuButton
+    background={background}
+    marginBottom={marginBottom}
+    color={color}
+    padding={padding}
+    border={border}
+    borderRadius={borderRadius}
+    hoverOpacity={hoverOpacity}
+    transform={transform}
+    transition={transition}
+    onClick={onClick}
+    >
+   {children}
+    </StyleMenuButton>   
+  );
+}

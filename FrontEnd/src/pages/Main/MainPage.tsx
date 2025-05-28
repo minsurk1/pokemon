@@ -1,16 +1,12 @@
-// 메인 페이지에서 서버와 클라이언트간의 연결 상태 확인 기능 추가
-// 메인 페이지 접속 시 터미널에서 접속과 종료 상태 확인 가능
-// 로그인을 했지만 세션 관련한 기능은 아직 추가하지 않았음
-// 대표 카드 밑에 있는 서버로 메세지 보내는 기능은 테스트 하고 냅뒀음. 삭제해도 됨
-
 import React from "react"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import "./MainPage.css"
 import mainImage from "../../assets/images/default.png"
 import { CardAnimation } from "@lasbe/react-card-animation"
-import io, { type Socket } from "socket.io-client" // socket.io-client 임포트 및 Socket 타입 추가
+import io, { type Socket } from "socket.io-client" 
 import BackgroundVideo from "../../components/common/global.tsx"
+import { MenuButton } from "../../components/common/button.tsx"
 
 import phantomVideo from "../../assets/videos/phantom.mp4";
 import gaiogaVideo from "../../assets/videos/gaioga.mp4"
@@ -112,7 +108,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     navigate("/battle")
   }
 
-  const handleReadme = (): void => {
+  const handleRule = (): void => {
     navigate("/rule")
   }
 
@@ -143,27 +139,27 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
       <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
       {/* 사이드바 */}
       <div className="sidebar">
-        <button className="menu-button" onClick={handleStore}>
+        <MenuButton onClick={handleStore}>
           상점
-        </button>
-        <button className="menu-button" onClick={handleDeck}>
+        </MenuButton>
+        <MenuButton onClick={handleDeck}>
           내카드
-        </button>
-        <button className="menu-button" onClick={handledex}>
+        </MenuButton>
+        <MenuButton onClick={handledex}>
           도감
-        </button>
-        <button className="menu-button" onClick={handleBattle}>
-          배틀테스트
-        </button>
-        <button className="menu-button" onClick={handleReadme}>
-          룰 설명
-        </button>
-        <button className="menu-button" onClick={toggleRoomTab}>
+        </MenuButton>
+        <MenuButton onClick={handleBattle}>
+          배틀  
+        </MenuButton>
+        <MenuButton onClick={handleRule}>
+          Rule
+        </MenuButton>
+        <MenuButton onClick={handleCreateRoom}>
           {showRoomTab ? "탭 닫기" : "방 만들기/입장"}
-        </button>
-        <button className="menu-button" onClick={handleProfile}>
+        </MenuButton>
+        <MenuButton onClick={handleProfile}>
           마이페이지
-        </button>
+        </MenuButton>
       </div>
 
       {/* 메인 콘텐츠 */}

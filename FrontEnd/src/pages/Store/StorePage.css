@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
 
+
 .store-page {
   position: fixed;
   top: 0;
@@ -11,7 +12,7 @@
 
 .store-container {
   text-align: center;
-  min-height: 94vh;
+  min-height: 88vh;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -37,7 +38,7 @@
   z-index: 500;
   box-sizing: border-box;
   height: 60px;
-  backdrop-filter: blur(20px); 
+  /* backdrop-filter: blur(20px);  */
 }
 
 .store-currency {

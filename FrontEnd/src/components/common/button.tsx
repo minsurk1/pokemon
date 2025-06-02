@@ -32,7 +32,7 @@ const StyleHomeButton = styled.button<ButtonProps>`
     props.border
       ? `border: 2px solid ${props.borderColor || '#9c27b0'};`
       : 'border: none;'};
-    border-radius: 50%;
+    border-radius: ${(props)=>props.borderRadius||"0"};
     cursor: pointer;
     font-family: "Do hyeon", serif;
     font-size: 1rem;
@@ -76,6 +76,7 @@ export function HomeButton({
     textColor,
     borderColor,
     border,
+    borderRadius,
     height,
     width,
     marginTop,
@@ -92,6 +93,7 @@ export function HomeButton({
         bgColor={bgColor}
         textColor={textColor}
         borderColor={borderColor}
+        borderRadius={borderRadius}
         border={border}
         height={height}
         width={width}

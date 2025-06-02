@@ -154,9 +154,9 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
         <MenuButton onClick={handleRule}>
           Rule
         </MenuButton>
-        <MenuButton onClick={handleCreateRoom}>
+        <MenuButton onClick={toggleRoomTab}>
           {showRoomTab ? "탭 닫기" : "방 만들기/입장"}
-        </MenuButton>
+        </MenuButton> 
         <MenuButton onClick={handleProfile}>
           마이페이지
         </MenuButton>

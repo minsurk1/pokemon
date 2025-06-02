@@ -10,7 +10,7 @@ import aCard from "../../assets/images/a_card.png"
 import sCard from "../../assets/images/s_card.png"
 import type { Card, CardPack } from "../Inventory/Inventory"
 import BackgroundVideo from "../../components/common/global.tsx"
-import storeVideo from "../../assets/videos/storevideo.mp4"
+import storeVideo from "../../assets/videos/rulevideo.mp4"
 
 // StorePage 컴포넌트 props 인터페이스
 interface StorePageProps {
@@ -66,14 +66,12 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
 
   return (
     <div className="store-container">
-      <div className="store-page">
-        <BackgroundVideo
+      <BackgroundVideo
           src={storeVideo}
           opacity={1}
           zIndex={-1}
           objectPosition="center top"
         />
-      </div>
       {showMessage && (
         <MessageBox
           bgColor="#e3f2fd"

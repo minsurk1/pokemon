@@ -5,6 +5,7 @@ import "./RulePage.css"
 import rulevideo from "../../assets/videos/rulevideo.mp4"
 import { FaHome } from "react-icons/fa";
 import BackgroundVideo from "../../components/common/global.tsx"
+import { HomeButton } from "../../components/common/button.tsx"
 
 function RulePage() {
   const [ruleText, setRuleText] = useState<string>("확인할 설명을 선택하세요.")
@@ -48,9 +49,7 @@ function RulePage() {
     <div className="rule-body">
       <div className="rule-page">
       <BackgroundVideo src={rulevideo} opacity={1} zIndex={-1}/>
-        <button className="rule-mainbutton" onClick={handleMain}>
-          메인페이지  <FaHome/>
-        </button>
+        <HomeButton onClick={handleMain} borderRadius="20%" border="2px solid" borderColor="black"></HomeButton>
 
         <div className="rule-buttons">
           <button onClick={() => setRuleText(rules.battle)}>배틀 설명</button>

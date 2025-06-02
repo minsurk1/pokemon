@@ -1,19 +1,18 @@
-import React from "react"
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import "./MainPage.css"
-import mainImage from "../../assets/images/default.png"
-import { CardAnimation } from "@lasbe/react-card-animation"
-import io, { type Socket } from "socket.io-client" 
-import BackgroundVideo from "../../components/common/global.tsx"
-import { MenuButton } from "../../components/common/button.tsx"
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import "./MainPage.css";
+import mainImage from "../../assets/images/default.png";
+import { CardAnimation } from "@lasbe/react-card-animation";
+import io, { type Socket } from "socket.io-client";
+import BackgroundVideo from "../../components/common/global.tsx";
+import { MenuButton } from "../../components/common/button.tsx";
 
 import phantomVideo from "../../assets/videos/phantom.mp4";
-import gaiogaVideo from "../../assets/videos/gaioga.mp4"
-import grandonVideo from "../../assets/videos/grandon.mp4"
-import thunderVideo from "../../assets/videos/thunder.mp4"
+import gaiogaVideo from "../../assets/videos/gaioga.mp4";
+import grandonVideo from "../../assets/videos/grandon.mp4";
+import thunderVideo from "../../assets/videos/thunder.mp4";
 
-const videoFiles = [phantomVideo, gaiogaVideo, grandonVideo, thunderVideo]
+const videoFiles = [phantomVideo, gaiogaVideo, grandonVideo, thunderVideo];
 
 const videoThemes = {
   [phantomVideo]: {
@@ -32,137 +31,141 @@ const videoThemes = {
     name: "썬더",
     color: "thunder",
   },
-}
+};
 
-// MainPage 컴포넌트의 props 인터페이스 정의
 interface MainPageProps {
-  currency: number
-  selectedDeck: string[]
+  currency: number;
+  selectedDeck: string[];
 }
 
 function MainPage({ currency, selectedDeck }: MainPageProps) {
-  const navigate = useNavigate()
-  const [showRoomTab, setShowRoomTab] = useState<boolean>(false)
-  const [roomCode, setRoomCode] = useState<string>("")
-  const [socket, setSocket] = useState<Socket | null>(null) // socket 상태에 타입 추가
-  const [serverResponse, setServerResponse] = useState<string>("") // 서버 응답을 받을 상태
+  const navigate = useNavigate();
+  const [showRoomTab, setShowRoomTab] = useState<boolean>(false);
+  const [roomCode, setRoomCode] = useState<string>("");
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [serverResponse, setServerResponse] = useState<string>("");
+  const [serverError, setServerError] = useState<string>("");
 
   const [randomVideo] = useState(() => {
-    const randomIndex = Math.floor(Math.random() * videoFiles.length)
-    return videoFiles[randomIndex]
-  })
+    const randomIndex = Math.floor(Math.random() * videoFiles.length);
+    return videoFiles[randomIndex];
+  });
 
-  const themeColorClass = videoThemes[randomVideo].color
-  const themeName = videoThemes[randomVideo].name
+  const themeColorClass = videoThemes[randomVideo].color;
+  const themeName = videoThemes[randomVideo].name;
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--theme-color", `var(--${themeColorClass}-color)`)
-    document.documentElement.style.setProperty("--theme-hover-color", `var(--${themeColorClass}-hover-color)`)
+    document.documentElement.style.setProperty(
+      "--theme-color",
+      `var(--${themeColorClass}-color)`
+    );
+    document.documentElement.style.setProperty(
+      "--theme-hover-color",
+      `var(--${themeColorClass}-hover-color)`
+    );
 
-    // WebSocket 연결 설정
-    const newSocket = io("http://localhost:5001", { withCredentials: true })
+    const newSocket = io("http://localhost:5001", { withCredentials: true });
+    setSocket(newSocket);
 
-    setSocket(newSocket)
+    const onMessage = (data: string) => {
+      setServerResponse(data);
+      setServerError("");
+    };
+    const onRoomCreated = (newRoomCode: string) => {
+      navigate("/wait", { state: { roomCode: newRoomCode } });
+    };
+    const onRoomJoined = (joinedRoomCode: string) => {
+      navigate("/wait", { state: { roomCode: joinedRoomCode } });
+    };
+    const onError = (error: string) => {
+      setServerError(error);
+    };
 
-    // 서버로부터 "message" 이벤트가 오면 응답 처리
-    newSocket.on("message", (data: string) => {
-      setServerResponse(data) // 서버 응답을 상태에 저장
-    })
+    newSocket.on("message", onMessage);
+    newSocket.on("roomCreated", onRoomCreated);
+    newSocket.on("roomJoined", onRoomJoined);
+    newSocket.on("error", onError);
 
-    // 방 생성 후 "roomCreated" 이벤트를 수신하여 대기실로 이동
-    newSocket.on("roomCreated", (newRoomCode: string) => {
-      navigate("/wait", { state: { roomCode: newRoomCode } }) // 방 코드와 함께 대기실로 이동
-    })
-
-    // 방 입장 처리
-    newSocket.on("roomJoined", (joinedRoomCode: string) => {
-      navigate("/wait", { state: { roomCode: joinedRoomCode } }) // 방 코드와 함께 대기실로 이동
-    })
-
-    // 방 입장 오류 처리
-    newSocket.on("error", (error: string) => {
-      alert(error) // 방 입장 실패 시 오류 메시지 표시
-    })
-
-    // 컴포넌트가 언마운트될 때 연결 종료
     return () => {
-      newSocket.close()
-    }
-  }, [navigate,themeColorClass])
+      newSocket.off("message", onMessage);
+      newSocket.off("roomCreated", onRoomCreated);
+      newSocket.off("roomJoined", onRoomJoined);
+      newSocket.off("error", onError);
+      newSocket.close();
+    };
+  }, [navigate, themeColorClass]);
 
-  const handleLogout = (): void => {
-    navigate("/")
-  }
+  const handleLogout = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
 
-  const handleStore = (): void => {
-    navigate("/store")
-  }
+  const handleStore = useCallback(() => {
+    navigate("/store");
+  }, [navigate]);
 
-  const handleDeck = (): void => {
-    navigate("/deck")
-  }
-  const handledex = (): void => {
-    navigate("/dex")
-  }
-  const handleBattle = (): void => {
-    navigate("/battle")
-  }
+  const handleDeck = useCallback(() => {
+    navigate("/deck");
+  }, [navigate]);
 
-  const handleRule = (): void => {
-    navigate("/rule")
-  }
+  const handledex = useCallback(() => {
+    navigate("/dex");
+  }, [navigate]);
 
-  const toggleRoomTab = (): void => {
-    setShowRoomTab(!showRoomTab)
-  }
+  const handleBattle = useCallback(() => {
+    navigate("/battle");
+  }, [navigate]);
 
-  const handleProfile = (): void => {
-    navigate("/profile")
-  }
+  const handleRule = useCallback(() => {
+    navigate("/rule");
+  }, [navigate]);
 
-  const handleCreateRoom = (): void => {
+  const toggleRoomTab = useCallback(() => {
+    setShowRoomTab((prev) => !prev);
+    setServerError(""); // 탭 열 때 에러 초기화
+  }, []);
+
+  const handleProfile = useCallback(() => {
+    navigate("/profile");
+  }, [navigate]);
+
+  const handleCreateRoom = useCallback(() => {
     if (socket) {
-      socket.emit("createRoom") // 서버에 방 생성 요청
+      socket.emit("createRoom");
+      setServerError("");
     }
-  }
+  }, [socket]);
 
-  const handleJoinRoom = (): void => {
+  const handleJoinRoom = useCallback(() => {
     if (roomCode.length === 6 && socket) {
-      socket.emit("joinRoom", roomCode) // 서버에 방 입장 요청
+      socket.emit("joinRoom", roomCode);
+      setServerError("");
     } else {
-      alert("올바른 방 코드를 입력해주세요.")
+      setServerError("올바른 방 코드를 입력해주세요.");
     }
-  }
-  
+  }, [roomCode, socket]);
+
+  // Enter 키로 방 입장 처리
+  const onRoomCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleJoinRoom();
+    }
+  };
+
   return (
     <div className="main-container">
       <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
-      {/* 사이드바 */}
       <div className="sidebar">
-        <MenuButton onClick={handleStore}>
-          상점
-        </MenuButton>
-        <MenuButton onClick={handleDeck}>
-          내카드
-        </MenuButton>
-        <MenuButton onClick={handledex}>
-          도감
-        </MenuButton>
-        <MenuButton onClick={handleBattle}>
-          배틀  
-        </MenuButton>
-        <MenuButton onClick={handleRule}>
-          Rule
-        </MenuButton>
+        <MenuButton onClick={handleStore}>상점</MenuButton>
+        <MenuButton onClick={handleDeck}>내카드</MenuButton>
+        <MenuButton onClick={handledex}>도감</MenuButton>
+        <MenuButton onClick={handleBattle}>배틀</MenuButton>
+        <MenuButton onClick={handleRule}>Rule</MenuButton>
         <MenuButton onClick={toggleRoomTab}>
           {showRoomTab ? "탭 닫기" : "방 만들기/입장"}
-        </MenuButton> 
-        <MenuButton onClick={handleProfile}>
-          마이페이지
         </MenuButton>
+        <MenuButton onClick={handleProfile}>마이페이지</MenuButton>
       </div>
 
-      {/* 메인 콘텐츠 */}
       <div className="main-content">
         <div className="main-header">
           <span className="money">현재 돈: {currency}원</span>
@@ -171,18 +174,24 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           </button>
         </div>
 
-        {/* 대표 몬스터 카드 */}
         <CardAnimation angle={35}>
           <div className="monster-card">
             {selectedDeck && selectedDeck.length > 0 ? (
-              <img src={selectedDeck[0] || "/placeholder.svg"} alt="대표 몬스터 카드" className="monster-image" />
+              <img
+                src={selectedDeck[0] || "/placeholder.svg"}
+                alt="대표 몬스터 카드"
+                className="monster-image"
+              />
             ) : (
-              <img src={mainImage || "/placeholder.svg"} alt="기본 대표 몬스터 카드" className="monster-image" />
+              <img
+                src={mainImage || "/placeholder.svg"}
+                alt="기본 대표 몬스터 카드"
+                className="monster-image"
+              />
             )}
           </div>
         </CardAnimation>
 
-        {/* 방 만들기/입장 탭 */}
         {showRoomTab && (
           <div className="room-tab">
             <h3>방 만들기/입장</h3>
@@ -194,16 +203,25 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
                 type="text"
                 placeholder="방 코드 입력"
                 value={roomCode}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRoomCode(e.target.value.toUpperCase())}
+                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 maxLength={6}
+                onKeyDown={onRoomCodeKeyDown}
               />
               <button onClick={handleJoinRoom}>방 입장</button>
             </div>
+            {serverError && (
+              <div
+                className="error-message"
+                style={{ color: "red", marginTop: "8px" }}
+              >
+                {serverError}
+              </div>
+            )}
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default MainPage
+export default MainPage;

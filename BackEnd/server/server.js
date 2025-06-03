@@ -12,7 +12,7 @@ const app = express();
 
 // ✅ CORS 설정 (기존 주석은 그대로 유지)
 app.use(cors({
-  origin: ["http://localhost:3000", "http://localhost:3001"],
+  origin: ["http://localhost:3000", "https://pokemon-server-529a.onrender.com"],
   credentials: true
 }));
 
@@ -59,7 +59,7 @@ app.use("/api/auth", authRoutes);
 // 소켓 방 관련 이벤트 핸들러 등록
 setupRoomHandlers(io);
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`서버가 포트 ${PORT}에서 실행 중...`);
 });

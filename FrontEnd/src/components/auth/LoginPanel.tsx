@@ -30,7 +30,7 @@ function LoginPanel() {
     setIsLoading(true)
     try {
       const response = await axios.post<LoginResponse>(
-        "http://localhost:5001/api/auth/login",
+        "https://pokemon-server-529a.onrender.com/api/auth/login",
         { username, password }
       )
       if (response.data.token) {

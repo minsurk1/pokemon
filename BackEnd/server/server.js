@@ -1,4 +1,3 @@
-
 require("dotenv").config();
 
 const express = require("express");
@@ -36,27 +35,31 @@ const io = socketIo(server, {
   },
 });
 
-// MongoDB 연결
-const dbURI = process.env.DB_URI || "mongodb://127.0.0.1:27017/userDB";
-mongoose
-  .connect(dbURI)
-  .then(() => console.log("MongoDB 연결 성공"))
-  .catch((err) => console.error("MongoDB 연결 실패", err));
+// MongoDB 연결용 URI 가져오기
+const dbURI = process.env.MONGO_URI;
 
-app.use(express.json());
-app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
-    credentials: true,
+if (!dbURI) {
+  console.error("❌ MONGO_URI 환경변수가 없습니다!");
+  process.exit(1); // 환경변수가 없으면 서버 종료 (명확한 문제 인지용)
+}
+
+mongoose
+  .connect(dbURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
   })
-);
+  .then(() => console.log("✅ MongoDB 연결 성공"))
+  .catch((err) => {
+    console.error("❌ MongoDB 연결 실패", err);
+    process.exit(1); // 연결 실패시 서버 종료
+  });
 
 app.use("/api/auth", authRoutes);
 
 // 소켓 방 관련 이벤트 핸들러 등록
 setupRoomHandlers(io);
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT;
 server.listen(PORT, () => {
   console.log(`서버가 포트 ${PORT}에서 실행 중...`);
 });

@@ -103,6 +103,7 @@ router.post("/login", async (req, res) => {
       message: "로그인 성공!",
       token,
       user: {
+        id: user._id,
         username: user.username,
         email: user.email,
         nickname: user.nickname,

@@ -53,7 +53,7 @@ function SignUpPage() {
 
     // 상대 경로로 수정: "/api/auth/signup" 사용
     axios
-      .post("http://localhost:5001/api/auth/signup", data) // 정확한 경로
+      .post("https://pokemon-server-529a.onrender.com/api/auth/signup", data) // 정확한 경로
       .then((response) => {
         setMessage(response.data.message)
         setShowMessage(true)

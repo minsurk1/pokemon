@@ -5,7 +5,7 @@ import "./LoginPanel.css"
 import MessageBox from "../common/MessageBox.tsx"
 
 import logo from "../../assets/images/logo.png"
-import loginVideo from "../../assets/videos/loginvideo.mp4"
+import loginVideo from "../../assets/videos/loginvideo2.mp4"
 
 interface LoginResponse {
   token: string

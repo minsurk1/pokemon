@@ -52,14 +52,14 @@
     font-size: 1.2rem;
     font-weight: 600;
     color: #fff;
-    background-color:var(--theme-color);
+    background:var(--theme-color);
     padding: 0.5rem 1rem;
     border-radius: 20px;
     transition: all 0.3s ease;
 }
 
 .money:hover {
-    background-color:var(--theme-hover-color);
+    background:var(--theme-hover-color);
 }
 
 .logout-button {
@@ -67,7 +67,7 @@
     padding: 0.5rem 1.5rem;
     font-size: 1.2rem;
     color: #fff;
-    background-color:var(--theme-color);
+    background:var(--theme-color);
     border: none;
     border-radius: 20px;
     cursor: pointer;
@@ -75,7 +75,7 @@
 }
 
 .logout-button:hover {
-    background-color: var(--theme-hover-color);
+    background: var(--theme-hover-color);
 }
 
 .monster-card {
@@ -122,7 +122,7 @@
     width: 100%;
     padding: 10px;
     margin-bottom: 10px;
-    background-color: var(--theme-color);
+    background: var(--theme-color);
     color: white;
     border: none;
     border-radius: 5px;
@@ -131,7 +131,7 @@
   }
   
   .create-room:hover {
-    background-color: var(--theme-hover-color);
+    background: var(--theme-hover-color);
   }
   
   .join-room {
@@ -150,7 +150,7 @@
   .join-room button {
     font-family: "Do hyeon",serif;
     padding: 10px;
-    background-color: var(--theme-color);
+    background: var(--theme-color);
     color: white;
     border: none;
     border-radius: 5px;
@@ -159,7 +159,7 @@
   }
   
   .join-room button:hover {
-    background-color: var(--theme-hover-color);
+    background: var(--theme-hover-color);
   }
   
   /* 반응형 디자인 */

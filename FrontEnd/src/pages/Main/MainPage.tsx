@@ -11,8 +11,11 @@ import phantomVideo from "../../assets/videos/phantom.mp4";
 import gaiogaVideo from "../../assets/videos/gaioga.mp4";
 import grandonVideo from "../../assets/videos/grandon.mp4";
 import thunderVideo from "../../assets/videos/thunder.mp4";
+import lekuzaVideo from "../../assets/videos/lekuza.mp4";
+import lugiaVideo from "../../assets/videos/lugia.mp4";
+import darkraiVideo from "../../assets/videos/darkrai.mp4";
 
-const videoFiles = [phantomVideo, gaiogaVideo, grandonVideo, thunderVideo];
+const videoFiles = [phantomVideo, gaiogaVideo, grandonVideo, thunderVideo ,darkraiVideo, lekuzaVideo ,lugiaVideo];
 
 const videoThemes = {
   [phantomVideo]: {
@@ -31,6 +34,18 @@ const videoThemes = {
     name: "썬더",
     color: "thunder",
   },
+  [lekuzaVideo]:{
+    name: "레쿠자",
+    color: "lekuza",
+  },
+  [lugiaVideo]:{
+    name:"루기아",
+    color:"lugia"
+  },
+  [darkraiVideo]:{
+    name:"다크라이",
+    color:"darkrai"
+  }
 };
 
 interface MainPageProps {

@@ -93,7 +93,7 @@
   left: -350px;
   width: 350px;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: rgba(255, 255, 255, 0.9);
   color: white;
   padding: 20px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
@@ -154,7 +154,7 @@
   width: 90%;
   padding: 12px;
   margin-top: 1px;
-  background: linear-gradient(to right, #1b5e2a, #d4dc6a, #828a10);
+  background: linear-gradient(to right, #d76c59, #edea29, #cff123);
   border: none;
   color: #000;
   border-radius: 5px;
@@ -170,7 +170,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #480c0c, #ff0000, #510b03);
+  background: linear-gradient(135deg, #c62727, #ff0000, #510b03);
   opacity: 0;
   transition: opacity 0.5s ease;
   z-index: -1;
@@ -188,7 +188,7 @@
   width: 90%;
   padding: 12px;
   margin-top: 10px;
-  background: linear-gradient(to right,#1b5e2a,#d4dc6a,#828a10); 
+  background: linear-gradient(to right, #d76c59, #edea29, #cff123); 
   border: none;
   color: #000;
   border-radius: 5px;
@@ -203,7 +203,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #480c0c, #ff0000, #510b03);
+  background: linear-gradient(135deg, #c02424, #ff0000, #510b03);
   opacity: 0;
   transition: opacity 0.5s ease;
   z-index: -1;

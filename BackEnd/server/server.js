@@ -11,16 +11,24 @@ const { setupRoomHandlers } = require("./routes/room"); // 분리한 room 모듈
 const app = express();
 
 // ✅ CORS 설정 (기존 주석은 그대로 유지)
-app.use(cors({
-  origin: ["http://localhost:3000", "https://pokemon-server-529a.onrender.com"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://pokemon-server-529a.onrender.com",
+    ],
+    credentials: true,
+  })
+);
 
 // ✅ Preflight 요청에 응답 헤더 추가 (중요!)
-app.options("*", cors({
-  origin: ["http://localhost:3000", "http://localhost:3001"],
-  credentials: true
-}));
+app.options(
+  "*",
+  cors({
+    origin: ["http://localhost:3000", "http://localhost:3001"],
+    credentials: true,
+  })
+);
 
 // ✅ JSON 바디 파싱
 app.use(express.json());
@@ -62,4 +70,9 @@ setupRoomHandlers(io);
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`서버가 포트 ${PORT}에서 실행 중...`);
+});
+
+// 헬스 체크 엔드포인트
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
 });

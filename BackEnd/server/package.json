@@ -19,6 +19,7 @@
     "iconv-lite": "^0.6.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.10.0",
+    "socket.io": "^4.8.1",
     "three": "^0.175.0"
   },
   "proxy": "http://localhost:5000"

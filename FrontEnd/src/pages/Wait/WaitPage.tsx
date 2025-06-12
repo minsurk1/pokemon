@@ -1,12 +1,3 @@
-"use client";
-
-// 방 접속 시 상대방 입장했는 지 확인하는 기능(API) 추가
-// 현재 PowerShell에서 npm start를 2번 하면 3000번, 3001번 포트로 접속됨
-// 각 포트에서 방 입장 시 실시간 접속 상태 확인 가능
-// 서로 '준비완료' 버튼을 누르면 배틀페이지로 이동
-// 새로 고침 시 오류
-// socket.io, socket.io-client 패키지 사용
-
 import React from "react";
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -14,6 +5,8 @@ import io, { type Socket } from "socket.io-client"; // Socket 타입 추가
 import "./WaitPage.css";
 import waitVideo from "../../assets/videos/waitvideo.mp4";
 import BackgroundVideo from "../../components/common/global.tsx";
+import MessageBox from "../../components/common/MessageBox.tsx";
+
 
 // location.state의 타입 정의
 interface LocationState {
@@ -111,13 +104,16 @@ function WaitPage() {
       <div className="wait-page">
         <BackgroundVideo src={waitVideo} opacity={1} zIndex={-1} />
         {showMessage && (
-          <div className="message-box">
-            <p>{message}</p>
-            <button className="close-button" onClick={closeMessage}>
-              확인
-            </button>
-          </div>
-        )}
+                <MessageBox
+                  bgColor="#e3f2fd"
+                  borderColor="#2196f3"
+                  textColor="#0d47a1"
+                  onClose={closeMessage}
+                  closeborderColor="black"
+                >
+                  {message}
+                </MessageBox>
+              )}
         <div className="room-info">
           <h2>대기실</h2>
           <p>방 코드: {roomCode}</p>

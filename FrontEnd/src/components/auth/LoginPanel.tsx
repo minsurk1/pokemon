@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./LoginPanel.css";
 
-import logo from "../../assets/images/logo.png"
-import loginVideo from "../../assets/videos/loginvideo2.mp4"
+import logo from "../../assets/images/logo.png";
+import loginVideo from "../../assets/videos/loginvideo2.mp4";
 
 interface LoginResponse {
   token: string;
@@ -20,6 +20,8 @@ function LoginPanel() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  const openButtonRef = useRef<HTMLButtonElement>(null);
 
   const togglePanel = () => setIsOpen(!isOpen);
 
@@ -47,6 +49,12 @@ function LoginPanel() {
 
   const handleSignUp = () => navigate("/signup");
 
+  useEffect(() => {
+    if (!isOpen && openButtonRef.current) {
+      openButtonRef.current.focus();
+    }
+  }, [isOpen]);
+
   return (
     <div className="login-main">
       <video className="background-video" autoPlay loop muted playsInline>
@@ -67,8 +75,8 @@ function LoginPanel() {
 
           <form
             onSubmit={(e: React.FormEvent<HTMLFormElement>) => {
-              e.preventDefault()
-              handleLogin()
+              e.preventDefault();
+              handleLogin();
             }}
           >
             <input
@@ -97,8 +105,19 @@ function LoginPanel() {
           </button>
         </div>
       </div>
+
       {!isOpen && (
-        <button className="toggle-button open" onClick={togglePanel}>
+        <button
+          ref={openButtonRef}
+          className="toggle-button open"
+          onClick={togglePanel}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " " || e.key === "Spacebar" || e.key === "Tab") {
+              e.preventDefault(); 
+              togglePanel();
+            }
+          }}
+        >
           열기
         </button>
       )}

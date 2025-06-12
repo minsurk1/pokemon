@@ -186,6 +186,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
       <div className="main-content">
         <div className="main-header">
+        <span className="theme-name">{themeName}</span>
           <span className="money">현재 돈: {currency}원</span>
           <button className="logout-button" onClick={handleLogout}>
             로그아웃

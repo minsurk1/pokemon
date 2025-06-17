@@ -46,7 +46,10 @@
     right: 2rem;
     z-index: 10;
 }
-
+.main-header .theme-name {
+  color: rgb(185, 11, 11);
+  font-weight: bold;
+}
 .money {
     font-family: "Do hyeon",serif;
     font-size: 1.2rem;

@@ -16,7 +16,7 @@ const jwtSecret = process.env.JWT_SECRET; // 환경 변수에서 JWT 비밀 키 
 
 // ✅ 모든 요청에 CORS 관련 응답 헤더 추가 (프리플라이트 요청 포함)
 router.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000","http://localhost:3001",);
   res.header(
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"

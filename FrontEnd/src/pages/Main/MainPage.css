@@ -47,9 +47,36 @@
     z-index: 10;
 }
 .main-header .theme-name {
-  color: rgb(185, 11, 11);
-  font-weight: bold;
+  font-family: "Do hyeon",serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+    background:var(--theme-color);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    transition: all 0.3s ease;
 }
+
+.theme-name:hover {
+  background:var(--theme-hover-color);
+}
+
+.background-tab {
+  position: absolute;
+  top: 50%;
+  left: 45%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 255, 255, 0.9);
+  padding-top: 10px;
+  padding-left: 20px;
+  padding-right:20px;
+  padding-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  justify-content: center;
+}
+
 .money {
     font-family: "Do hyeon",serif;
     font-size: 1.2rem;

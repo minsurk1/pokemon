@@ -23,6 +23,7 @@ interface ButtonProps {
     transition?: string 
     onClick?: () => void;
     children?: React.ReactNode;
+    fontSize?: string 
 }
 
 const StyleHomeButton = styled.button<ButtonProps>`
@@ -57,7 +58,7 @@ const StyleMenuButton = styled.button<ButtonProps>`
     font-family: "Do hyeon",serif;
     margin-bottom:${(props)=>props.marginBottom || "1.5rem"};
     padding:${(props)=>props.padding || "1rem"};
-    font-size: 1.3rem;
+    font-size: ${(props)=>props.fontSize || "1.3rem"};
     color:${(props)=>props.color ||"#fff"};
     background: ${(props)=>props.background ||   "var(--theme-color)"};
     border: ${(props)=>props.border || "none"};
@@ -122,6 +123,7 @@ export function MenuButton({
   hoverOpacity,
   transform,
   transition,
+  fontSize,
   onClick
 }: ButtonProps){
   return(

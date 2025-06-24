@@ -170,7 +170,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #c62727, #ff0000, #510b03);
+  background: linear-gradient(135deg, #c02424, #ff0000, #510b03);
   opacity: 0;
   transition: opacity 0.5s ease;
   z-index: -1;

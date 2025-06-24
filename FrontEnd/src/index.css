@@ -11,9 +11,8 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
-/*이거 그 머라하지; 그 머라하지; 터치패드로 위아래로 안넘어가는데 땡기면 좀 넘어가지잖아 그거 막는건데 이거 키면 터치패드로 전화면 앞화면 이동 못함 나중에 발표할떄 on ㄱㄱ
-html, body {
+/* 이거 그 머라하지; 그 머라하지; 터치패드로 위아래로 안넘어가는데 땡기면 좀 넘어가지잖아 그거 막는건데 이거 키면 터치패드로 전화면 앞화면 이동 못함 나중에 발표할떄 on ㄱㄱ */
+/* html, body {
   overscroll-behavior: none;
   touch-action: none;
-}
-*/
+} */

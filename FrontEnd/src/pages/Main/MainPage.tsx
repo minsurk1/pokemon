@@ -56,6 +56,7 @@ interface MainPageProps {
 function MainPage({ currency, selectedDeck }: MainPageProps) {
   const navigate = useNavigate();
   const [showRoomTab, setShowRoomTab] = useState<boolean>(false);
+  const [showCardTab, setShowCardTab] = useState<boolean>(false);
   const [roomCode, setRoomCode] = useState<string>("");
   const [socket, setSocket] = useState<Socket | null>(null);
   const [serverResponse, setServerResponse] = useState<string>("");
@@ -80,7 +81,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     );
 
     const newSocket = io(
-      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
+      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.®app/",
       { withCredentials: true }
     );
     setSocket(newSocket);
@@ -193,7 +194,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           </button>
         </div>
 
-        <CardAnimation angle={35}>
+        {/* <CardAnimation angle={35}>
           <div className="monster-card">
             {selectedDeck && selectedDeck.length > 0 ? (
               <img
@@ -209,7 +210,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
               />
             )}
           </div>
-        </CardAnimation>
+        </CardAnimation> */}
 
         {showRoomTab && (
           <div className="room-tab">

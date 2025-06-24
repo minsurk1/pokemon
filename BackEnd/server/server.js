@@ -15,6 +15,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
+      "http://localhost:3001",
       "https://pokemon-server-529a.onrender.com",
     ],
     credentials: true,

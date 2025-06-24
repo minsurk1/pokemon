@@ -4,8 +4,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import io, { type Socket } from "socket.io-client"; // Socket 타입 추가
 import "./WaitPage.css";
 import waitVideo from "../../assets/videos/waitvideo.mp4";
-import BackgroundVideo from "../../components/common/global.tsx";
-import MessageBox from "../../components/common/MessageBox.tsx";
+import BackgroundVideo from "../../components/common/global";
+import MessageBox from "../../components/common/MessageBox";
 
 
 // location.state의 타입 정의

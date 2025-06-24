@@ -4,12 +4,12 @@ import { useNavigate } from "react-router-dom"
 import "./StorePage.css"
 import { MdInventory } from "react-icons/md";
 import { FaHome } from "react-icons/fa";
-import MessageBox from "../../components/common/MessageBox.tsx"
+import MessageBox from "../../components/common/MessageBox"
 import bCard from "../../assets/images/b_card.png"
 import aCard from "../../assets/images/a_card.png"
 import sCard from "../../assets/images/s_card.png"
 import type { Card, CardPack } from "../Inventory/Inventory"
-import BackgroundVideo from "../../components/common/global.tsx"
+import BackgroundVideo from "../../components/common/global"
 import storeVideo from "../../assets/videos/storevideo.mp4"
 
 // StorePage 컴포넌트 props 인터페이스

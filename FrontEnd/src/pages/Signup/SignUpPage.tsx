@@ -1,11 +1,11 @@
 import React from "react";
-import { useState } from "react";
+import { useState,FormEvent  } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./SignUpPage.css";
-import MessageBox from "../../components/common/MessageBox.tsx";
-import BackgroundVideo from "../../components/common/global.tsx";
+import MessageBox from "../../components/common/MessageBox";
+import BackgroundVideo from "../../components/common/global";
 import signupVideo from "../../assets/videos/signupvideo.mp4";
 
 function SignUpPage() {
@@ -34,7 +34,7 @@ function SignUpPage() {
     setMessage("");
   };
 
-  const handleSignUp = (e) => {
+  const handleSignUp = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // 비밀번호 일치 체크

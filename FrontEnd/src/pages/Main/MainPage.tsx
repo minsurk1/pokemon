@@ -4,8 +4,8 @@ import "./MainPage.css";
 import mainImage from "../../assets/images/default.png";
 import { CardAnimation } from "@lasbe/react-card-animation";
 import io, { type Socket } from "socket.io-client";
-import BackgroundVideo from "../../components/common/global.tsx";
-import { MenuButton } from "../../components/common/button.tsx";
+import BackgroundVideo from "../../components/common/global";
+import { MenuButton } from "../../components/common/button";
 
 import phantomVideo from "../../assets/videos/phantom.mp4";
 import gaiogaVideo from "../../assets/videos/gaioga.mp4";
@@ -81,7 +81,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     );
 
     const newSocket = io(
-      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.®app/",
+      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
       { withCredentials: true }
     );
     setSocket(newSocket);

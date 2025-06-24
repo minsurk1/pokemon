@@ -1,7 +1,21 @@
 import React from "react"
 import "./CardMenu.css"
 
-const CardMenu = ({ x, y, onClose, card }) => {
+interface Card {
+  name?: string;
+  attack?: number;
+  hp?: number;
+  cost?: number;
+}
+
+interface CardMenuProps {
+  x: number;
+  y: number;
+  onClose: () => void;
+  card?: Card | null;
+}
+
+const CardMenu: React.FC<CardMenuProps> = ({ x, y, onClose, card }) => {
   if (!card) return null
 
   return (

@@ -2,7 +2,7 @@ import React from "react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import "./Inventory.css"
-import BackgroundVideo from "../../components/common/global.tsx"
+import BackgroundVideo from "../../components/common/global"
 import inventoryVideo from "../../assets/videos/arceus.mp4"
 
 import fireTier1 from "../../assets/images/firetier1.png"

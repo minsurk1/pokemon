@@ -7,8 +7,8 @@
   import { GLTF } from 'three-stdlib';
   import { useGLTF, OrbitControls, Environment, ContactShadows } from "@react-three/drei";
   import dexVideo from "../../assets/videos/dexvideo.mp4" 
-  import BackgroundVideo from "../../components/common/global.tsx";
-  import {HomeButton} from "../../components/common/button.tsx";
+  import BackgroundVideo from "../../components/common/global";
+  import {HomeButton} from "../../components/common/button";
 
   import fireimage from "../../assets/images/fire.png";
   import waterimage from "../../assets/images/water.png";
@@ -28,20 +28,25 @@
     fire: Array.from({ length: 7 }, (_, i) => `/assets/models/firetier${i + 1}.glb`),
     electric: Array.from({ length: 7 }, (_, i) => `/assets/models/electrictier${i + 1}.glb`),
     esper: Array.from({ length: 7 }, (_, i) => `/assets/models/espertier${i + 1}.glb`),
-    water: Array.from({length: 7}, (_, i) => `/assets/models/watertier${i + 1}.glb`),
-    forest: Array.from({length: 7}, (_, i) => `/assets/models/foresttier${i + 1}.glb`),
-    electirc: Array.from({length: 7}, (_, i) => `/assets/models/electrictier${i + 1}.glb`),
-    fly: Array.from({length: 7}, (_, i) => `/assets/models/flytier${i + 1}.glb`),
-    worm: Array.from({length: 7}, (_, i) => `/assets/models/wormtier${i + 1}.glb`),
-    normal: Array.from({length: 7}, (_, i) => `/assets/models/normaltier${i + 1}.glb`),
-    poison: Array.from({length: 7}, (_, i) => `/assets/models/poisontier${i + 1}.glb`),
-    land: Array.from({length: 7}, (_, i) => `/assets/models/landtier${i + 1}.glb`),
-    ice: Array.from({length: 7}, (_, i) => `/assets/models/icetier${i + 1}.glb`),
-    legend: Array.from({length: 7}, (_, i) => `/assets/models/legendtier${i + 1}.glb`)
-  };
+    water: Array.from({ length: 7 }, (_, i) => `/assets/models/watertier${i + 1}.glb`),
+    forest: Array.from({ length: 7 }, (_, i) => `/assets/models/foresttier${i + 1}.glb`),
+    electirc: Array.from({ length: 7 }, (_, i) => `/assets/models/electrictier${i + 1}.glb`),
+    fly: Array.from({ length: 7 }, (_, i) => `/assets/models/flytier${i + 1}.glb`),
+    worm: Array.from({ length: 7 }, (_, i) => `/assets/models/wormtier${i + 1}.glb`),
+    normal: Array.from({ length: 7 }, (_, i) => `/assets/models/normaltier${i + 1}.glb`),
+    poison: Array.from({ length: 7 }, (_, i) => `/assets/models/poisontier${i + 1}.glb`),
+    land: Array.from({ length: 7 }, (_, i) => `/assets/models/landtier${i + 1}.glb`),
+    ice: Array.from({ length: 7 }, (_, i) => `/assets/models/icetier${i + 1}.glb`),
+    legend: Array.from({ length: 7 }, (_, i) => `/assets/models/legendtier${i + 1}.glb`)
+  } as const;
 
-  // 모델 컴포넌트
-  function PokemonModel({ modelPath }) {
+  type PokemonType = keyof typeof typeModels;
+
+  interface PokemonModelProps {
+    modelPath: string;
+  }
+  
+  function PokemonModel({ modelPath }: PokemonModelProps) {
     const gltf = useGLTF(modelPath) as GLTF;
     
     return (
@@ -61,7 +66,7 @@
     const carouselRef = useRef(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isAnimating, setIsAnimating] = useState(false);
-    const [selectedType, setSelectedType] = useState("fire"); 
+    const [selectedType, setSelectedType] = useState<PokemonType>("fire"); 
     const [models, setModels] = useState(typeModels.fire); 
 
     const handleMain = (): void => {
@@ -69,7 +74,7 @@
     };
 
     // 타입 버튼 정의
-    const typeButtons = [
+    const typeButtons:{ type: PokemonType; src: string; alt: string }[] = [
       { type: "fire", src: fireimage, alt: "불" },
       { type: "electric", src: electricimage, alt: "전기" },
       { type: "esper", src: esperimage, alt: "에스퍼" },
@@ -85,7 +90,7 @@
     ];
 
     // 타입 변경 핸들러
-    const handleTypeChange = (type) => {
+    const handleTypeChange = (type: PokemonType) => {
       if (isAnimating) return;
       
       setIsAnimating(true);

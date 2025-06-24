@@ -6,17 +6,17 @@ import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
 
 // 페이지 컴포넌트 임포트
-import LoginPage from "./pages/Login/Login.tsx" // 로그인 페이지
-import MainPage from "./pages/Main/MainPage.tsx"
-import SignUpPage from "./pages/Signup/SignUpPage.tsx"
-import StorePage from "./pages/Store/StorePage.tsx"
-import Inventory, { type Card, type CardPack } from "./pages/Inventory/Inventory.tsx"
-import DeckPage from "./pages/Deck/DeckPage.tsx"
-import BattlePage from "./pages/Battle/BattlePage.tsx"
-import WaitPage from "./pages/Wait/WaitPage.tsx"
-import RulePage from "./pages/Rule/RulePage.tsx"
-import ProfilePage from "./pages/Profile/ProfilePage.tsx"
-import Dex from "./pages/Dex/Dex.tsx"
+import LoginPage from "./pages/Login/Login" // 로그인 페이지
+import MainPage from "./pages/Main/MainPage"
+import SignUpPage from "./pages/Signup/SignUpPage"
+import StorePage from "./pages/Store/StorePage"
+import Inventory, { type Card, type CardPack } from "./pages/Inventory/Inventory"
+import DeckPage from "./pages/Deck/DeckPage"
+import BattlePage from "./pages/Battle/BattlePage"
+import WaitPage from "./pages/Wait/WaitPage"
+import RulePage from "./pages/Rule/RulePage"
+import ProfilePage from "./pages/Profile/ProfilePage"
+import Dex from "./pages/Dex/Dex"
 
 function App() {
   // 상태 관리 로직

@@ -1,6 +1,6 @@
 import React, { Children } from "react";
 import styled from "styled-components";
-import { AiFillHome } from "react-icons/ai"; 
+import { AiFillHome } from "react-icons/ai";
 import "./theme.css"
 
 interface ButtonProps {

@@ -30,23 +30,22 @@
   height:132px;
 }
 .nav-button {
-  padding: 15px 10px;
-  font-size: 1.7em;
-  text-align: center;
-  font-family: "Do Hyeon", serif;
-  letter-spacing: 3px;
+  font-family: "Do Hyeon" ,serif;
+  background: #232946;
+  color: #ffd803;
+  border: none;
+  border-radius: 14px;
+  padding: 16px 38px;
+  font-size: 1.18rem;
   font-weight: bold;
-  color: #145179;
-  background-color: #f4cd4d;
-  border: 5px solid #145179;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
+  box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
+  text-shadow: 0 0 8px #ffd803;
+  transition: box-shadow 0.2s, color 0.2s;
 }
 
 .nav-button:hover {
-  background-color: rgb(236, 244, 78);
-  transform: scale(1.05);
+  color: #fff;
+  box-shadow: 0 0 28px #ffd803, 0 0 60px #232946 inset;
 }
 
 .selected-cards-container {
@@ -75,12 +74,16 @@
   }
   
 .selected-cards {
+  
   display: inline-flex;
   gap: 20px;
   padding: 25px;
 }
 
 .selected-card {
+  background-image:url("../../assets/images/default.png");
+  background-size: cover;
+  opacity: 1;
   flex: 0 0 auto;
   width: 140px;
   height: 190px;

@@ -18,6 +18,7 @@ interface ButtonProps {
     marginBottom?: string
     marginRight?: string
     marginLeft?: string
+    boxShadow?: string
     hoverOpacity?: string
     transform?: string
     transition?: string 
@@ -66,6 +67,7 @@ const StyleMenuButton = styled.button<ButtonProps>`
     box-shadow:  0 4px 6px rgba(0, 0, 0, 0.15);
     transition: background 0.3s ease,transform 0.3s ease;
     cursor: pointer;
+    box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
     &:hover {
     background: var(--theme-hover-color);
     opacity: ${(props)=>props.hoverOpacity || 0.8};
@@ -124,12 +126,14 @@ export function MenuButton({
   transform,
   transition,
   fontSize,
+  boxShadow,
   onClick
 }: ButtonProps){
   return(
     <StyleMenuButton
     background={background}
     marginBottom={marginBottom}
+    boxShadow={boxShadow}
     color={color}
     padding={padding}
     border={border}

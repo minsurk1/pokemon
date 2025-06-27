@@ -203,7 +203,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #c02424, #ff0000, #510b03);
+  background: linear-gradient(135deg, #a9f10e, #12e8bd, #148cf5);
   opacity: 0;
   transition: opacity 0.5s ease;
   z-index: -1;

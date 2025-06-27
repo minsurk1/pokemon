@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
-import React from "react"
+import type React from "react"
 
 import { useDrag, useDrop } from "react-dnd"
-import * as TWEEN from '@tweenjs/tween.js';
 import "./BattlePage.css"
 import MessageBox from "../../components/common/MessageBox"
 import CardMenu from "../../components/cards/CardMenu"
@@ -127,7 +126,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   // ref 객체 생성
   const enemyAvatarRef = useRef<HTMLDivElement>(null)
   const myZoneRef = useRef<HTMLDivElement>(null)
-  const eventZoneRef = useRef<HTMLDivElement>(null)
+  // eventZoneRef 제거 - 더 이상 필요하지 않음
 
   // 턴 종료 버튼 핸들러
   const handleendturn = (): void => {
@@ -340,33 +339,27 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
   // 특정 이벤트의 HP를 업데이트하도록 변경합니다.
   const updateEventHP = (eventId: number, amount: number): void => {
-    setActiveEvents((prevEvents) =>
-      prevEvents.map((event) =>
-        event.id === eventId ? { ...event, hp: Math.max(0, Math.min(event.maxHp, event.hp + amount)) } : event,
-      ),
-    )
+    setActiveEvents((prevEvents) => {
+      const updatedEvents = prevEvents
+        .map((event) => {
+          if (event.id === eventId) {
+            const newHP = Math.max(0, Math.min(event.maxHp, event.hp + amount))
+
+            // HP가 0이 되면 효과 실행 후 이벤트 제거
+            if (newHP <= 0 && event.effect) {
+              event.effect()
+              return null // 이벤트 제거를 위해 null 반환
+            }
+
+            return { ...event, hp: newHP }
+          }
+          return event
+        })
+        .filter(Boolean) as Event[] // null 값 제거
+
+      return updatedEvents
+    })
   }
-
-  // 이벤트 존에 카드를 드롭했을 때 이벤트 HP를 감소함
-  const [, dropEvent] = useDrop<DragItem, void, {}>({
-    accept: "CARD", // CARD 타입을 받아들입니다 (EVENT가 아님)
-    drop: (item, monitor) => {
-      // 드롭된 카드 찾기
-      const droppedCard = myCardsInZone.find((card) => card.id === item.id)
-
-      // 활성화된 이벤트가 있는지 확인
-      if (activeEvents.length > 0 && droppedCard && typeof droppedCard.attack === "number") {
-        // 가장 최근 이벤트의 HP 감소 (또는 다른 로직으로 대상 이벤트 선택 가능)
-        const targetEvent = activeEvents[activeEvents.length - 1]
-        updateEventHP(targetEvent.id, -droppedCard.attack)
-
-        // 이벤트 HP가 0이 되면 제거하는 로직 추가 (선택사항)
-        if (targetEvent.hp - droppedCard.attack <= 0) {
-          setActiveEvents((prev) => prev.filter((event) => event.id !== targetEvent.id))
-        }
-      }
-    },
-  })
 
   // 내 카드 렌더링 함수
   const renderMyCard = (card: Card, fromZone: boolean, index: number) => {
@@ -402,19 +395,19 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     }
   }, [drop])
 
-  useEffect(() => {
-    if (eventZoneRef.current) {
-      dropEvent(eventZoneRef.current)
-    }
-  }, [dropEvent])
-
   return (
     <div className="battle-container">
       {showMessage && (
-              <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1"  onClose={closeMessage}closeborderColor="black">
-                {message}
-              </MessageBox>
-            )}
+        <MessageBox
+          bgColor="#e3f2fd"
+          borderColor="#2196f3"
+          textColor="#0d47a1"
+          onClose={closeMessage}
+          closeborderColor="black"
+        >
+          {message}
+        </MessageBox>
+      )}
       <div className="game-info">
         <div className="turn-indicator">턴: {turn}</div>
         <div className="timer">시간: {timeLeft}초</div>
@@ -449,9 +442,9 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           ))}
         </div>
 
-        {/* 이벤트 존 */}
+        {/* 이벤트 존 - ref 제거 */}
         <div className="middle-zone">
-          <div ref={eventZoneRef} className="event-zone">
+          <div className="event-zone">
             <div className="event-items-container">
               {activeEvents.map((event) => (
                 <EventItem key={event.id} event={event} updateEventHP={updateEventHP} />
@@ -590,4 +583,3 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
 }
 
 export default BattlePage
-

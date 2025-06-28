@@ -3,17 +3,21 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "proxy": "http://localhost:5000",
   "dependencies": {
     "@react-three/fiber": "^9.1.2",
     "bcryptjs": "^3.0.1",
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "framer-motion": "^12.6.5",
     "iconv-lite": "^0.6.3",
@@ -22,7 +26,6 @@
     "socket.io": "^4.8.1",
     "three": "^0.175.0"
   },
-  "proxy": "http://localhost:5000",
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",

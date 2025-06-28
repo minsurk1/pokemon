@@ -1,3 +1,30 @@
+# 의존성
+node_modules/
+package-lock.json
+
+# 빌드 결과물 (루트 폴더 기준)
+ /dist/
+ /build/
+
+# 환경변수
+.env
+.env.*  # 예: .env.local, .env.production 등
+
+# 로그
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 운영체제별 불필요 파일
 .DS_Store
-build/
-dist/
+Thumbs.db
+
+# 에디터/IDE 설정
+.vscode/
+.idea/
+*.swp
+
+# 테스트 커버리지
+coverage/

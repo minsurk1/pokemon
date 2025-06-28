@@ -24,8 +24,10 @@
   },
   "proxy": "http://localhost:5000",
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.0.7",
     "@types/socket.io": "^3.0.1",
     "ts-node": "^10.9.2",

@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:5001",
   "dependencies": {
     "@react-three/fiber": "^9.1.2",
     "bcryptjs": "^3.0.1",

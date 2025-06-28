@@ -1,0 +1,328 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+@import "../../components/common/theme.css";
+
+.main-container {
+  display: flex;
+  height: 100vh;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  padding: 2.5rem 1rem;
+  width: 200px;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  z-index: 2;
+  gap: 1.5rem;
+}
+
+.main-content {
+  font-family: "Do hyeon", serif;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 2rem;
+}
+
+.main-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  z-index: 10;
+}
+
+.main-header .theme-name {
+  font-family: "Do hyeon", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--theme-color);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.theme-name:hover {
+  background: var(--theme-hover-color);
+}
+
+.background-tab {
+  position: absolute;
+  top: 50%;
+  left: 45%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 255, 255, 0.9);
+  padding-top: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  justify-content: center;
+}
+
+.money {
+  font-family: "Do hyeon", serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--theme-color);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.money:hover {
+  background: var(--theme-hover-color);
+}
+
+.logout-button {
+  font-family: "Do hyeon", serif;
+  padding: 0.5rem 1.5rem;
+  font-size: 1.2rem;
+  color: #fff;
+  background: var(--theme-color);
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logout-button:hover {
+  background: var(--theme-hover-color);
+}
+
+.monster-card {
+  width: 350px;
+  height: 500px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  z-index: -10;
+}
+
+.monster-card:hover {
+  transform: scale(1.05);
+}
+
+.monster-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-tab {
+  font-family: "Do Hyeon", serif;
+  text-shadow:
+  -1.5px -1.5px 0 rgb(255, 255, 255),
+  1.5px -1.5px 0 rgb(255, 255, 255),
+  -1.5px 1.5px 0 rgb(255, 255, 255),
+  1.5px 1.5px 0 rgb(255, 255, 255);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: transparent;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  max-width: 500px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.card-tab h3 {
+  text-align: center;
+  color: var(--theme-color);
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.theme-card-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+}
+
+.theme-main-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 15px;
+  background: linear-gradient(135deg, var(--theme-color), var(--theme-hover-color));
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.theme-card-image {
+  width: 350px;
+  height: 500px;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease;
+}
+
+.theme-card-image:hover {
+  transform: scale(1.05);
+}
+
+.theme-card-name {
+  color: white;
+  font-size: 1.3rem;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow:
+  -1.5px -1.5px 0 black,
+  1.5px -1.5px 0 black,
+  -1.5px 1.5px 0 black,
+  1.5px 1.5px 0 black;
+}
+
+.user-deck-section {
+  width: 100%;
+}
+
+.user-deck-section h4 {
+  text-align: center;
+  color: var(--theme-color);
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+
+.user-cards-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.user-card-image {
+  width: 60px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.user-card-image:hover {
+  transform: scale(1.1);
+}
+
+.room-tab {
+  position: absolute;
+  top: 50%;
+  left: 45%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(255, 255, 255, 0.9);
+  padding-top: 10px;
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  justify-content: center;
+}
+
+.create-room {
+  font-family: "Do hyeon", serif;
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  background: var(--theme-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.create-room:hover {
+  background: var(--theme-hover-color);
+}
+
+.join-room {
+  display: flex;
+  gap: 10px;
+}
+
+.join-room input {
+  font-family: "Do hyeon", serif;
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.join-room button {
+  font-family: "Do hyeon", serif;
+  padding: 10px;
+  background: var(--theme-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.join-room button:hover {
+  background: var(--theme-hover-color);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 150px;
+    padding: 1.5rem 0.5rem;
+  }
+
+  .menu-button {
+    font-size: 1rem;
+    padding: 0.8rem;
+  }
+
+  .monster-card {
+    width: 280px;
+    height: 400px;
+  }
+
+  .theme-indicator {
+    left: 160px;
+    font-size: 0.8rem;
+  }
+
+  .card-tab {
+    max-width: 90%;
+    max-height: 80%;
+  }
+
+  .theme-card-image {
+    width: 120px;
+    height: 160px;
+  }
+}

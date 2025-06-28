@@ -15,7 +15,11 @@ const jwtSecret = process.env.JWT_SECRET; // 환경 변수에서 JWT 비밀 키 
 
 // ✅ 모든 요청에 CORS 관련 응답 헤더 추가 (프리플라이트 요청 포함)
 router.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header(
+    "Access-Control-Allow-Origin",
+    "http://localhost:3000",
+    "http://localhost:3001"
+  );
   res.header(
     "Access-Control-Allow-Headers",
     "Origin, X-Requested-With, Content-Type, Accept, Authorization"
@@ -44,7 +48,7 @@ router.post("/signup", async (req, res) => {
         .status(400)
         .json({ message: "이미 사용 중인 아이디 또는 이메일입니다." });
     }
-
+    //DB에 저장할 값
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
@@ -52,6 +56,7 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
       email,
       nickname,
+      money: 1200,
     });
 
     await newUser.save();
@@ -80,7 +85,7 @@ router.post("/login", async (req, res) => {
         .status(400)
         .json({ message: "아이디 또는 비밀번호가 잘못되었습니다." });
     }
-
+    //로그인시 비밀번호가 맞는지 확인인
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res
@@ -101,6 +106,7 @@ router.post("/login", async (req, res) => {
       message: "로그인 성공!",
       token,
       user: {
+        id: user._id,
         username: user.username,
         email: user.email,
         nickname: user.nickname,

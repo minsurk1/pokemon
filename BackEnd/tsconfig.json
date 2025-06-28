@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "rootDir": "src", // 소스 루트 디렉토리
+    "outDir": "dist", // 결과물 디렉토리
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"], // src 폴더 내부 TypeScript 파일만 포함
+  "exclude": ["dist", "node_modules"]
+}

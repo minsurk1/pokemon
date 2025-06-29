@@ -408,10 +408,10 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           {message}
         </MessageBox>
       )}
-      <div className="game-info">
+      {/* <div className="game-info">
         <div className="turn-indicator">턴: {turn}</div>
         <div className="timer">시간: {timeLeft}초</div>
-      </div>
+      </div> */}
 
       <div className="player-section enemy-section">
         <div className="opponent-area">
@@ -442,7 +442,6 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           ))}
         </div>
 
-        {/* 이벤트 존 - ref 제거 */}
         <div className="middle-zone">
           <div className="event-zone">
             <div className="event-items-container">

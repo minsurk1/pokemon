@@ -1,28 +1,58 @@
 .profile-page {
-    background: linear-gradient(#baba1c,#323220,#000000);
     min-height: 100vh;
     width: 100%;
+    display: flex;      
+    flex-direction: row;     
+    align-items: stretch;
+  }
+
+  .field-container {
+    flex: 1;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    color: white;
-    font-family: 'Arial', sans-serif;
+    flex-direction: column; 
   }
-  
-  .profile-info {
-    background-color: rgba(255, 255, 255, 0.1);
-    padding: 20px;
-    border-radius: 10px;
-    max-width: 400px;
+  .horizontal-line {
     width: 100%;
-    margin-bottom: 20px;
+    height: 0.2vh; /* 선 두께 */
+    background: #000000; /* 선 색상 */
+    opacity: 0.5;     /* 투명도 (선택) */
+    z-index: 20;      /* 필요시 조정 */
+  }
+  .enemy-field {
+    width: 100%;
+    height: 49.9vh;
+    background-color: #2d2d2d;
+    clip-path: polygon(0 0, 100% 0, 100% 60%, 90% 44%, 10% 44%, 0 60%);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .player-field {
+    width: 100%;
+    height: 49.9vh;
+    background-color: #2d2d2d;
+    clip-path: polygon(0 100%, 100% 100%, 100% 40%, 90% 56%, 10% 56%, 0 40%);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  .right-container{
+    height: 100vh;
+    width: 10%;
+    background-color: aqua;
+    display: flex;
+    flex-direction: column; 
+  }
+  .enemy-info{
+    height: 30vh;
+    background-color: blue;
+  }
+  .event-zone{
+    height: 40vh;
+    background-color: blueviolet;
+  }
+  .player-info{
+    height: 30vh;
+    background-color: red;
   }
   
-  .profile-info p {
-    margin: 10px 0;
-  }
-  
-  h1 {
-    margin-bottom: 20px;
-  }

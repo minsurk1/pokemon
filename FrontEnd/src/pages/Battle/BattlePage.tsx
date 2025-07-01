@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback, useRef } from "react"
 import type React from "react"
 
@@ -126,7 +128,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   // ref 객체 생성
   const enemyAvatarRef = useRef<HTMLDivElement>(null)
   const myZoneRef = useRef<HTMLDivElement>(null)
-  // eventZoneRef 제거 - 더 이상 필요하지 않음
+  const playerZoneRef = useRef<HTMLDivElement>(null)
 
   // 턴 종료 버튼 핸들러
   const handleendturn = (): void => {
@@ -199,7 +201,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       eventEffect = () => setEnemyHP((prev) => Math.max(prev - 200, 0))
     }
 
-    setMessage(`새로운 이벤트가 등장했습니다: ${eventMsg}`)
+    setMessage(`이벤트가 교체되었습니다: ${eventMsg}`)
     setEventImage(eventImg)
     setShowMessage(true)
 
@@ -221,7 +223,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       effect: eventEffect,
     }
 
-    setActiveEvents((prev) => [...prev, newEvent])
+    setActiveEvents([newEvent])
 
     setTimeout(() => {
       setShowMessage(false)
@@ -343,11 +345,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       const updatedEvents = prevEvents
         .map((event) => {
           if (event.id === eventId) {
-            const newHP = Math.max(0, Math.min(event.maxHp, event.hp + amount))
+            const newHP = Math.max(0, event.hp + amount)
 
-            // HP가 0이 되면 효과 실행 후 이벤트 제거
-            if (newHP <= 0 && event.effect) {
-              event.effect()
+            // HP가 0 이하가 되면 효과 실행 후 이벤트 제거
+            if (newHP <= 0) {
+              if (event.effect) {
+                event.effect() // 효과 실행
+              }
               return null // 이벤트 제거를 위해 null 반환
             }
 
@@ -395,6 +399,12 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     }
   }, [drop])
 
+  useEffect(() => {
+    if (playerZoneRef.current) {
+      drop(playerZoneRef.current)
+    }
+  }, [drop])
+
   return (
     <div className="battle-container">
       {showMessage && (
@@ -408,21 +418,14 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           {message}
         </MessageBox>
       )}
-      {/* <div className="game-info">
-        <div className="turn-indicator">턴: {turn}</div>
-        <div className="timer">시간: {timeLeft}초</div>
-      </div> */}
 
-      <div className="player-section enemy-section">
-        <div className="opponent-area">
-          <div ref={enemyAvatarRef} className="enemy-avatar" />
-          <div className="hp-bar">
-            <div className="hp-bar-inner" style={{ width: `${(enemyHP / 2000) * 100}%` }}></div>
-            <div className="hp-text">{enemyHP}/2000</div>
-          </div>
-          <div className="cards-row">
-            {[...Array(8)].map((_, index) => (
-              <div key={`opponent-card-${index}`} className="card-slot">
+      <div className="field-container">
+        {/* 적 필드 */}
+        <div className="enemy-field">
+          {/* 적 카드존 */}
+          <div ref={enemyAvatarRef} className="enemy-card-zone">
+            {[...Array(5)].map((_, index) => (
+              <div key={`enemy-card-${index}`} className="enemy-card-slot">
                 <div className="enemy-card">
                   <div className="card-back" />
                 </div>
@@ -430,69 +433,75 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
             ))}
           </div>
         </div>
-      </div>
 
-      <div className="game-zones">
-        <div className="card-zone opponent-zone">
-          <span></span>
+        {/* 중앙 구분선 */}
+        <div className="horizontal-line"></div>
+
+        {/* 플레이어 필드 */}
+        <div ref={playerZoneRef} className="player-field"></div>
+
+        {/* 플레이어 카드존을 독립적으로 배치 */}
+        <div ref={myZoneRef} className="player-card-zone">
+          {myCardsInZone.length > 0 ? (
+            myCardsInZone.map((card, index) => renderMyCard(card, true, index))
+          ) : (
+            <div className="empty-zone">카드를 여기에 배치하세요</div>
+          )}
         </div>
-        <div className="cost-zone opponent-cost">
+
+        {/* 덱 카드 */}
+        <div className="deck-area">
+          <div className="deck-card"></div>
+          <div className="hand-cards">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
+        </div>
+
+        {/* 코스트 존 */}
+        <div className="enemy-cost-zone">
           {[...Array(opponentCostIcons)].map((_, index) => (
-            <div key={`opponent-cost-${index}`} className="cost-icon" />
+            <div key={`enemy-cost-${index}`} className="cost-icon" />
           ))}
         </div>
+        <div className="player-cost-zone">
+          {[...Array(playerCostIcons)].map((_, index) => (
+            <div key={`player-cost-${index}`} className="cost-icon" />
+          ))}
+        </div>
+      </div>
 
-        <div className="middle-zone">
-          <div className="event-zone">
-            <div className="event-items-container">
-              {activeEvents.map((event) => (
-                <EventItem key={event.id} event={event} updateEventHP={updateEventHP} />
-              ))}
-            </div>
+      <div className="right-container">
+        {/* 적 정보 */}
+        <div className="enemy-info">
+          <div className="enemy-avatar" />
+          <div className="hp-bar">
+            <div className="hp-bar-inner" style={{ width: `${(enemyHP / 2000) * 100}%` }}></div>
+            <div className="hp-text">{enemyHP}/2000</div>
+          </div>
+          <div className="game-info">
+            <div className="turn-indicator">턴: {turn}</div>
+            <div className="timer">시간: {timeLeft}초</div>
+          </div>
+        </div>
+
+        {/* 이벤트 존 */}
+        <div className="event-zone">
+          <div className="event-items-container">
+            {activeEvents.map((event) => (
+              <EventItem key={event.id} event={event} updateEventHP={updateEventHP} />
+            ))}
           </div>
           <button className="endturn-button" onClick={handleendturn}>
             턴 종료
           </button>
         </div>
 
-        <div ref={myZoneRef} className="card-zone my-zone">
-          {myCardsInZone.length > 0 ? (
-            myCardsInZone.map((card, index) => renderMyCard(card, true, index))
-          ) : (
-            <span></span>
-          )}
-        </div>
-        <div className="cost-zone my-cost">
-          {[...Array(playerCostIcons)].map((_, index) => (
-            <div key={`my-cost-${index}`} className="cost-icon" />
-          ))}
-        </div>
-      </div>
-
-      <div className="player-section my-section">
-        <div className="my-area">
-          <div className="player-info">
-            <div className="player-avatar" />
-          </div>
+        {/* 플레이어 정보 */}
+        <div className="player-info">
+          <div className="player-avatar" />
           <div className="hp-bar">
             <div className="hp-bar-inner" style={{ width: `${(playerHP / 2000) * 100}%` }}></div>
             <div className="hp-text">{playerHP}/2000</div>
           </div>
-          <div></div>
         </div>
-      </div>
-
-      <div className="deck-area">
-        <div className="card-deck">
-          {remainingCards.map((_, index) => (
-            <div
-              key={`deck-card-${index}`}
-              className="deck-card"
-              style={{ right: `${index * 2}px`, bottom: `${index * 1}px` }}
-            />
-          ))}
-        </div>
-        <div className="cards-row">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
       </div>
 
       {showMenu && (

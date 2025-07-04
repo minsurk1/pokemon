@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./LoginPanel.css";
 
 import logo from "../../assets/images/logo.png";
@@ -19,11 +20,20 @@ function LoginPanel() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const openButtonRef = useRef<HTMLButtonElement>(null);
 
   const togglePanel = () => setIsOpen(!isOpen);
+  
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
   const handleLogin = async () => {
     setIsLoading(true);
@@ -95,6 +105,9 @@ function LoginPanel() {
                 setPassword(e.target.value)
               }
             />
+            <span onClick={togglePasswordVisibility}>
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </span>
             <button className="login-button" type="submit" disabled={isLoading}>
               {isLoading ? "로그인 중..." : "로그인"}
             </button>

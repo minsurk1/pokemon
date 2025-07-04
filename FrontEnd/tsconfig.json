@@ -14,7 +14,6 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    // typeRoots는 node_modules/@types만 지정
     "typeRoots": ["./node_modules/@types"],
     "baseUrl": "src",
     "paths": {

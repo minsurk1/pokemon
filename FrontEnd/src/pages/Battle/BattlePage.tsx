@@ -46,13 +46,13 @@ interface BattlePageProps {
   selectedDeck: string[]
 }
 
-// Card 컴포넌트 props 인터페이스
+// Card 컴포넌트 props 인터페이스 - onClick 타입 수정
 interface CardProps {
   card: Card
   fromZone: boolean
   index: number
   moveCard: (fromIndex: number, toIndex: number) => void
-  onClick: () => void
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void // 타입 수정
   onContextMenu: (e: React.MouseEvent<HTMLDivElement>) => void
   costIcons: number
   isHovered: boolean
@@ -83,25 +83,17 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   const [enemyHP, setEnemyHP] = useState<number>(2000)
   const [timeLeft, setTimeLeft] = useState<number>(30)
   const [myCardsInZone, setMyCardsInZone] = useState<Card[]>([])
-  const [remainingCards, setRemainingCards] = useState<Card[]>(
-    selectedDeck.map((cardImage, index) => {
-      const cardData = (cardsData as any[]).find((card) => card.image === cardImage)
-      return {
-        id: `card-${index}`,
-        image: cardImage,
-        name: cardData ? cardData.name : "Unknown Card",
-        attack: cardData ? cardData.attack : 0,
-        hp: cardData ? cardData.hp : 0,
-        maxhp: cardData ? cardData.hp : 0,
-        cost: cardData ? cardData.cost : 0,
-      }
-    }),
-  )
+
+  // 덱과 손패 분리
+  const [deckCards, setDeckCards] = useState<Card[]>([])
+  const [handCards, setHandCards] = useState<Card[]>([])
+  const [canDrawThisTurn, setCanDrawThisTurn] = useState<boolean>(true)
+
   const [enemyremainingCards, enemysetRemainingCards] = useState<Card[]>(
     selectedDeck.map((cardImage, index) => {
       const enemycardData = (cardsData as any[]).find((card) => card.image === cardImage)
       return {
-        id: `card-${index}`,
+        id: `enemy-card-${index}`,
         image: cardImage,
         name: enemycardData ? enemycardData.name : "Unknown Card",
         attack: enemycardData ? enemycardData.attack : 0,
@@ -125,10 +117,69 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   const [eventHP, setEventHP] = useState<number>(400)
   const [eventmaxHP, setEventMaxHP] = useState<number>(400)
 
+  // 애니메이션 중인 카드 상태 추가
+  const [animatingCard, setAnimatingCard] = useState<Card | null>(null)
+  const [animationPosition, setAnimationPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+
   // ref 객체 생성
   const enemyAvatarRef = useRef<HTMLDivElement>(null)
   const myZoneRef = useRef<HTMLDivElement>(null)
   const playerZoneRef = useRef<HTMLDivElement>(null)
+
+  // 초기 덱과 손패 설정
+  useEffect(() => {
+    const allCards = selectedDeck.map((cardImage, index) => {
+      const cardData = (cardsData as any[]).find((card) => card.image === cardImage)
+      return {
+        id: `card-${index}`,
+        image: cardImage,
+        name: cardData ? cardData.name : "Unknown Card",
+        attack: cardData ? cardData.attack : 0,
+        hp: cardData ? cardData.hp : 0,
+        maxhp: cardData ? cardData.hp : 0,
+        cost: cardData ? cardData.cost : 0,
+      }
+    })
+
+    // 덱을 섞기
+    const shuffledCards = [...allCards].sort(() => Math.random() - 0.5)
+
+    // 초기 3장을 손패로, 나머지를 덱으로
+    const initialHand = shuffledCards.slice(0, 3)
+    const remainingDeck = shuffledCards.slice(3)
+
+    setHandCards(initialHand)
+    setDeckCards(remainingDeck)
+  }, [selectedDeck])
+
+  // 카드 드로우 함수
+  const drawCard = (): void => {
+    if (!canDrawThisTurn) {
+      setMessage("이번 턴에는 이미 카드를 뽑았습니다!")
+      setShowMessage(true)
+      return
+    }
+
+    if (deckCards.length === 0) {
+      setMessage("덱에 카드가 없습니다!")
+      setShowMessage(true)
+      return
+    }
+
+    if (handCards.length >= 10) {
+      setMessage("손패가 가득 찼습니다! (최대 10장)")
+      setShowMessage(true)
+      return
+    }
+
+    const newCard = deckCards[0]
+    setHandCards((prev) => [...prev, newCard])
+    setDeckCards((prev) => prev.slice(1))
+    setCanDrawThisTurn(false)
+
+    setMessage(`${newCard.name}을(를) 뽑았습니다!`)
+    setShowMessage(true)
+  }
 
   // 턴 종료 버튼 핸들러
   const handleendturn = (): void => {
@@ -137,6 +188,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     setPlayerCostIcons(newTotal)
     setOpponentCostIcons(newTotal)
     setTimeLeft(30)
+    setCanDrawThisTurn(true) // 새 턴에는 다시 드로우 가능
 
     // 5턴마다 이벤트 발생
     if ((turn + 1) % 5 === 0) {
@@ -170,6 +222,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       const newTurn = prevTurn + 1
       setPlayerCostIcons(Math.min(newTurn + 1, 8))
       setTimeLeft(30)
+      setCanDrawThisTurn(true) // 새 턴에는 다시 드로우 가능
 
       // 5턴마다 이벤트 발생
       if (newTurn % 5 === 0) {
@@ -254,22 +307,28 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     return () => clearInterval(timer)
   }, [endTurn])
 
-  // 카드 클릭 핸들러
-  const handleCardClick = (cardId: string, fromZone: boolean): void => {
+  // 카드 클릭 핸들러 (손패에서 필드로) - 타입 수정
+  const handleCardClick = (cardId: string, fromZone: boolean, e: React.MouseEvent<HTMLDivElement>): void => {
     if (fromZone) {
       return
     } else {
-      const cardToMove = remainingCards.find((c) => c.id === cardId)
+      const cardToMove = handCards.find((c) => c.id === cardId)
       if (cardToMove && playerCostIcons >= cardToMove.cost) {
-        // 카드 호버 효과 적용
+        // 클릭한 카드의 위치 정보 가져오기
+        const rect = (e.target as HTMLElement).getBoundingClientRect()
+        setAnimationPosition({ x: rect.left, y: rect.top })
+
+        // 애니메이션용 카드 설정
+        setAnimatingCard(cardToMove)
         setHoveredCardId(cardId)
 
         setTimeout(() => {
-          setRemainingCards(remainingCards.filter((c) => c.id !== cardId))
+          setHandCards(handCards.filter((c) => c.id !== cardId))
           setMyCardsInZone([...myCardsInZone, cardToMove])
           setPlayerCostIcons((prevIcons) => prevIcons - cardToMove.cost)
-          setHoveredCardId(null) // 호버 상태 초기화
-        }, 500)
+          setHoveredCardId(null)
+          setAnimatingCard(null) // 애니메이션 종료
+        }, 700) // 애니메이션 시간과 맞춤
       } else {
         setMessage("코스트가 부족하여 이 카드를 사용할 수 없습니다!")
         setShowMessage(true)
@@ -365,7 +424,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     })
   }
 
-  // 내 카드 렌더링 함수
+  // 내 카드 렌더링 함수 - 타입 수정
   const renderMyCard = (card: Card, fromZone: boolean, index: number) => {
     // 호버 효과 적용 여부 확인
     const isHovered = hoveredCardId === card.id
@@ -377,8 +436,10 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           fromZone={fromZone}
           index={index}
           moveCard={moveCardInZone}
-          onClick={() => handleCardClick(card.id, fromZone)}
-          onContextMenu={(e) => (fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id))}
+          onClick={(e: React.MouseEvent<HTMLDivElement>) => handleCardClick(card.id, fromZone, e)}
+          onContextMenu={(e: React.MouseEvent<HTMLDivElement>) =>
+            fromZone ? handleZoneRightClick(e, card.id) : handleCardRightClick(e, card.id)
+          }
           costIcons={playerCostIcons}
           isHovered={isHovered}
         />
@@ -419,6 +480,22 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
         </MessageBox>
       )}
 
+      {/* 애니메이션 중인 카드를 독립적으로 렌더링 */}
+      {animatingCard && (
+        <div className="animating-card-overlay">
+          <div
+            className="animating-card"
+            style={{
+              left: animationPosition.x,
+              top: animationPosition.y,
+            }}
+          >
+            <img src={animatingCard.image || "/placeholder.svg"} alt="애니메이션 카드" />
+            <div className="card-cost">{animatingCard.cost}</div>
+          </div>
+        </div>
+      )}
+
       <div className="field-container">
         {/* 적 필드 */}
         <div className="enemy-field">
@@ -449,10 +526,17 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           )}
         </div>
 
-        {/* 덱 카드 */}
+        {/* 덱과 손패 영역 */}
         <div className="deck-area">
-          <div className="deck-card"></div>
-          <div className="hand-cards">{remainingCards.map((card, index) => renderMyCard(card, false, index))}</div>
+          <button
+            className="deck-card"
+            onClick={drawCard}
+            disabled={!canDrawThisTurn || deckCards.length === 0}
+            title={`덱에 ${deckCards.length}장 남음`}
+          >
+            <div className="deck-count">{deckCards.length}</div>
+          </button>
+          <div className="hand-cards">{handCards.map((card, index) => renderMyCard(card, false, index))}</div>
         </div>
 
         {/* 코스트 존 */}
@@ -511,7 +595,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           onClose={closeMenu}
           card={
             myCardsInZone.find((card) => card.id === selectedCardId) ||
-            remainingCards.find((card) => card.id === selectedCardId)
+            handCards.find((card) => card.id === selectedCardId)
           }
         />
       )}
@@ -519,7 +603,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   )
 }
 
-// Card 컴포넌트
+// Card 컴포넌트 - 타입 수정
 const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIcons, isHovered }: CardProps) => {
   // useRef를 사용하여 ref 객체 생성
   const cardRef = useRef<HTMLDivElement>(null)
@@ -570,7 +654,7 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
     <div
       ref={cardRef}
       className={`my-card ${fromZone ? "in-zone" : ""} ${isDragging ? "dragging" : ""}`}
-      onClick={onClick}
+      onClick={onClick} // 이제 타입이 맞음
       onContextMenu={onContextMenu}
       style={cardStyle}
     >

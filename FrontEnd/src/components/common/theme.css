@@ -1,34 +1,33 @@
 :root {
-  /* 기존 테마 색상 */
-  --gaioga-color: linear-gradient(to right, #0085f2, #00e5ff,#007bff );
-  --gaioga-hover-color: linear-gradient(to right, #2f00ff,#345cb8, #2600ff);
-  --gaioga-accent-color: #4fcbeb; 
+  --gaioga-color: linear-gradient(to right, #0085f2, #00e5ff, #007bff);
+  --gaioga-hover-color: linear-gradient(to right, #2f00ff, #345cb8, #2600ff);
+  --gaioga-accent-color: #4fcbeb;
 
-  --thunder-color: linear-gradient(to right,#e5a000,#e9e500,#e5a800);
-  --thunder-hover-color: linear-gradient(to right,#ff8000,#e5c600,#e58d00);
-  --thunder-accent-color: #ffdf5e;
+  --thunder-color: linear-gradient(to right, #e5a000, #e9e500, #e5a800);
+  --thunder-hover-color: linear-gradient(to right, #ff8000, #e5c600, #e58d00);
+  --thunder-accent-color: #ffb700;
 
   --grandon-color: linear-gradient(135deg, #480c0c, #ff0000, #510b03);
   --grandon-hover-color: linear-gradient(to right, #eca413, #ff5500, #eca413);
-  --grandon-accent-color: #ff6347;
+  --grandon-accent-color: #58261d;
 
-  --phantom-color: linear-gradient(to right, #352350,#5f31a4,#352350);
-  --phantom-hover-color: linear-gradient(to right,#6f3bbd,#352350,#7143b6);
+  --phantom-color: linear-gradient(to right, #352350, #5f31a4, #352350);
+  --phantom-hover-color: linear-gradient(to right, #6f3bbd, #352350, #7143b6);
   --phantom-accent-color: #a569ff;
 
   --darkrai-color: linear-gradient(to right, #000000, #3c3737, #000000);
-  --darkrai-hover-color:linear-gradient(135deg, #480c0c, #ff0000, #510b03);
-  --darkrai-accent-color:#d60c0c;
+  --darkrai-hover-color: linear-gradient(135deg, #480c0c, #ff0000, #510b03);
+  --darkrai-accent-color: #642525;
 
-  --lugia-color: linear-gradient(to right, #2d5de0,#636ee4 , #4c76eb);
-  --lugia-hover-color: linear-gradient(to right , #b1c1dc,#8b8fd5,#b3b9d7);
-  --lugia-accent-color:#1347d5;
+  --lugia-color: linear-gradient(to right, #2d5de0, #636ee4, #4c76eb);
+  --lugia-hover-color: linear-gradient(to right, #b1c1dc, #8b8fd5, #b3b9d7);
+  --lugia-accent-color: #1347d5;
 
-  --lekuza-color: linear-gradient(to right,#1b5e2a,#d4dc6a,#828a10); 
-  --lekuza-hover-color:linear-gradient(135deg, #480c0c, #ff0000, #510b03);
-  --lekuza-accent-color:#db1818;
-  
-  /* 현재 활성화된 테마 색상 (기본값은 phantom) */
+  --lekuza-color: linear-gradient(to right, #1b5e2a, #d4dc6a, #828a10);
+  --lekuza-hover-color: linear-gradient(135deg, #480c0c, #ff0000, #510b03);
+  --lekuza-accent-color: #a7e49c;
+
   --theme-color: var(--phantom-color);
   --theme-hover-color: var(--phantom-hover-color);
+  --theme-accent-color: var(--phantom-accent-color);
 }

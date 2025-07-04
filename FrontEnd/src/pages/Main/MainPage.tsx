@@ -1,3 +1,5 @@
+"use client"
+
 import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
@@ -25,12 +27,11 @@ import { CardAnimation } from "@lasbe/react-card-animation"
 
 const videoFiles = [phantomVideo, gaiogaVideo, grandonVideo, thunderVideo, darkraiVideo, lekuzaVideo, lugiaVideo]
 
-// ✅ 테마별 이미지 정보 추가
 const videoThemes = {
   [phantomVideo]: {
     name: "팬텀",
     color: "phantom",
-    image: phantomImage, // 테마 대표 이미지 추가
+    image: phantomImage,
   },
   [gaiogaVideo]: {
     name: "가이오가",
@@ -85,11 +86,13 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
   const themeColorClass = videoThemes[randomVideo].color
   const themeName = videoThemes[randomVideo].name
-  const themeImage = videoThemes[randomVideo].image // ✅ 테마 이미지 가져오기
+  const themeImage = videoThemes[randomVideo].image
 
   useEffect(() => {
+    // CSS 변수 설정 (오타 수정: --theme--accent-color → --theme-accent-color)
     document.documentElement.style.setProperty("--theme-color", `var(--${themeColorClass}-color)`)
     document.documentElement.style.setProperty("--theme-hover-color", `var(--${themeColorClass}-hover-color)`)
+    document.documentElement.style.setProperty("--theme-accent-color", `var(--${themeColorClass}-accent-color)`)
 
     const newSocket = io("https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/", { withCredentials: true })
     setSocket(newSocket)
@@ -200,7 +203,11 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           <div className="theme-card-container">
             <div className="theme-main-card">
               <CardAnimation>
-              <img src={themeImage || "/placeholder.svg"} alt={`${themeName} 대표 카드`} className="theme-card-image" />
+                <img
+                  src={themeImage || "/placeholder.svg"}
+                  alt={`${themeName} 대표 카드`}
+                  className="theme-card-image"
+                />
               </CardAnimation>
               <div className="theme-card-name">{themeName}</div>
             </div>
@@ -233,24 +240,6 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
             로그아웃
           </button>
         </div>
-
-        {/* <CardAnimation angle={35}>
-          <div className="monster-card">
-            {selectedDeck && selectedDeck.length > 0 ? (
-              <img
-                src={selectedDeck[0] || "/placeholder.svg"}
-                alt="대표 몬스터 카드"
-                className="monster-image"
-              />
-            ) : (
-              <img
-                src={mainImage || "/placeholder.svg"}
-                alt="기본 대표 몬스터 카드"
-                className="monster-image"
-              />
-            )}
-          </div>
-        </CardAnimation> */}
 
         {showRoomTab && (
           <div className="room-tab">

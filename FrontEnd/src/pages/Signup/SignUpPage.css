@@ -1,11 +1,9 @@
 @import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
 
 .signup-page {
-  
   background-size: 90%;
   background-repeat: no-repeat;
   font-family: "Do hyeon", serif;
-
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -32,7 +30,7 @@
   font-size: 1.0rem;
   background-color: #eaff00;
   border: 3px solid #00fffb;  
-  opacity: 0.7;
+  opacity: 1;
   color: #000000;
   border-radius: 8px;
   cursor: pointer;
@@ -47,7 +45,7 @@
 }
 
 .signup-page form {
-  opacity: 0.7;
+  opacity: 0.9;
   display: flex;
   flex-direction: column;
   width: 100%;

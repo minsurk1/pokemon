@@ -155,11 +155,11 @@
 }
 
 .deck-card {
-  width: 100px;
+  width: 105px;
   height: 140px;
   background-image: url("../../assets/images/default.png");
   background-size: cover;
-  border: 3px solid #4a90e2;
+  /* border: 3px solid #2b00ff; */
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -170,13 +170,15 @@
   font-family: "Do Hyeon", serif;
   font-size: 1.2rem;
   font-weight: bold;
+  background-color: transparent;
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
 }
 
 .deck-card:hover:not(:disabled) {
   transform: scale(1.05);
-  border-color: #66b3ff;
+  /* border-color: #66b3ff; */
   box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
 }
 
@@ -352,7 +354,7 @@
   height: 40px;
   border-radius: 20%;
   color: #ffffff;
-  background: radial-gradient(#0015ff, #2f00ff, #270834);
+  background: radial-gradient(#000000, #000000, #270834);
   border: 2px solid rgb(31, 27, 48);
   font-weight: 900;
   cursor: pointer;

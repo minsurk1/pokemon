@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import type React from "react"
-
+import { CiClock1 } from "react-icons/ci";
 import { useDrag, useDrop } from "react-dnd"
 import "./BattlePage.css"
 import MessageBox from "../../components/common/MessageBox"
@@ -574,7 +574,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
             ))}
           </div>
           <button className="endturn-button" onClick={handleendturn}>
-            턴 종료
+            턴 종료<CiClock1 size={24}/>
           </button>
         </div>
 
@@ -654,7 +654,7 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
     <div
       ref={cardRef}
       className={`my-card ${fromZone ? "in-zone" : ""} ${isDragging ? "dragging" : ""}`}
-      onClick={onClick} // 이제 타입이 맞음
+      onClick={onClick} 
       onContextMenu={onContextMenu}
       style={cardStyle}
     >

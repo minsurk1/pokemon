@@ -525,7 +525,10 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
             <div className="empty-zone">카드를 여기에 배치하세요</div>
           )}
         </div>
-
+        <div className="time-zone">
+            <div className="turn-indicator">턴: {turn}</div>
+            <div className="timer">시간: {timeLeft}초</div>
+        </div>
         {/* 덱과 손패 영역 */}
         <div className="deck-area">
           <button
@@ -559,10 +562,6 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           <div className="hp-bar">
             <div className="hp-bar-inner" style={{ width: `${(enemyHP / 2000) * 100}%` }}></div>
             <div className="hp-text">{enemyHP}/2000</div>
-          </div>
-          <div className="game-info">
-            <div className="turn-indicator">턴: {turn}</div>
-            <div className="timer">시간: {timeLeft}초</div>
           </div>
         </div>
 

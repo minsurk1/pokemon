@@ -138,16 +138,30 @@
 }
 
 .empty-zone {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(0, 0, 0, 0.8);
   font-size: 1.2rem;
   text-align: center;
   padding: 20px;
 }
 
+.time-zone {
+  position: absolute;
+  height: 208.5px;
+  clip-path: polygon(0 0, 100% 20.1%, 100% 100%, 0 100%);
+  background-color: #f200ff;
+  z-index: 100;
+  width: 130px;
+  left: 0;
+  bottom: 0 ;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .deck-area {
   position: absolute;
   bottom: 20px;
-  left: 20px;
+  left: 150px;
   display: flex;
   gap: 20px;
   align-items: flex-end;
@@ -297,14 +311,19 @@
   text-align: center;
 }
 
-.turn-indicator,
+.turn-indicator
+{
+  margin-top:50px;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
 .timer {
   font-size: 1.1rem;
   font-weight: bold;
 }
 
 .hp-bar {
-  width: 200px;
+  width: 140px;
   height: 20px;
   background: #ddd;
   border-radius: 5px;

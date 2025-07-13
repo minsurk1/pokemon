@@ -137,20 +137,34 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
         attack: cardData ? cardData.attack : 0,
         hp: cardData ? cardData.hp : 0,
         maxhp: cardData ? cardData.hp : 0,
-        cost: cardData ? cardData.cost : 0,
+        cost: cardData ? cardData.cost : 1,
       }
     })
 
-    // 덱을 섞기
-    const shuffledCards = [...allCards].sort(() => Math.random() - 0.5)
+const oneCostCards = allCards.filter(card => card.cost === 1)
+const otherCards = allCards.filter(card => card.cost !== 1)
 
-    // 초기 3장을 손패로, 나머지를 덱으로
-    const initialHand = shuffledCards.slice(0, 3)
-    const remainingDeck = shuffledCards.slice(3)
+let initialHand: Card[] = []
+let remainingDeck: Card[] = []
 
-    setHandCards(initialHand)
-    setDeckCards(remainingDeck)
-  }, [selectedDeck])
+if (oneCostCards.length > 0) {
+  const guaranteedOneCost = oneCostCards[Math.floor(Math.random() * oneCostCards.length)]
+  initialHand.push(guaranteedOneCost)
+
+  const remainingCards = [...oneCostCards.filter(c => c.id !== guaranteedOneCost.id), ...otherCards]
+  const shuffledRemaining = remainingCards.sort(() => Math.random() - 0.5)
+  
+  initialHand.push(...shuffledRemaining.slice(0, 2))
+  remainingDeck = shuffledRemaining.slice(2)
+} else {
+  const shuffledCards = [...allCards].sort(() => Math.random() - 0.5)
+  initialHand = shuffledCards.slice(0, 3)
+  remainingDeck = shuffledCards.slice(3)
+}
+
+setHandCards(initialHand)
+setDeckCards(remainingDeck)
+}, [selectedDeck])
 
   // 카드 드로우 함수
   const drawCard = (): void => {

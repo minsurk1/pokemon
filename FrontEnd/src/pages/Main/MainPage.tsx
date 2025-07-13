@@ -151,7 +151,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
   const toggleRoomTab = useCallback(() => {
     setShowRoomTab((prev) => !prev)
-    setServerError("") // 탭 열 때 에러 초기화
+    setServerError("")
   }, [])
 
   const toggleCardTab = useCallback(() => {

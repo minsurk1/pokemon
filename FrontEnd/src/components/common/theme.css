@@ -9,7 +9,7 @@
 
   --grandon-color: linear-gradient(135deg, #480c0c, #ff0000, #510b03);
   --grandon-hover-color: linear-gradient(to right, #eca413, #ff5500, #eca413);
-  --grandon-accent-color: #58261d;
+  --grandon-accent-color: #ff0000;
 
   --phantom-color: linear-gradient(to right, #352350, #5f31a4, #352350);
   --phantom-hover-color: linear-gradient(to right, #6f3bbd, #352350, #7143b6);

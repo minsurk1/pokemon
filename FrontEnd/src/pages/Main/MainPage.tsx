@@ -190,7 +190,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
       <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
       <div className="sidebar">
         <MenuButton onClick={handleStore}>상점</MenuButton>
-        <MenuButton onClick={handleDeck}>내카드</MenuButton>
+        <MenuButton onClick={handleDeck}>카드</MenuButton>
         <MenuButton onClick={handledex}>도감</MenuButton>
         <MenuButton onClick={handleBattle}>배틀</MenuButton>
         <MenuButton onClick={handleRule}>Rule</MenuButton>

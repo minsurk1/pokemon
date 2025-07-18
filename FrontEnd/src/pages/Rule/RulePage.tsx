@@ -49,13 +49,13 @@ function RulePage() {
     <div className="rule-body">
       <div className="rule-page">
       <BackgroundVideo src={rulevideo} opacity={1} zIndex={-1}/>
-        <HomeButton onClick={handleMain} borderRadius="20%" border="2px solid" borderColor="black"></HomeButton>
 
         <div className="rule-buttons">
           <button onClick={() => setRuleText(rules.battle)}>배틀 설명</button>
           <button onClick={() => setRuleText(rules.economy)}>상점 설명</button>
           <button onClick={() => setRuleText(rules.deckSetting)}>덱 설정 설명</button>
           <button onClick={() => setRuleText(rules.developer)}>개발자 주석</button>
+          <HomeButton onClick={handleMain} borderRadius="20%" border="2px solid" borderColor="black"></HomeButton>
         </div>
 
         <div className="rule-display">

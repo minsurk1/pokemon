@@ -59,7 +59,7 @@
 /* 각 버튼 스타일 */
 .rule-buttons button {
     font-family: 'Do Hyeon', Arial, sans-serif;
-    padding: 1rem;
+    padding: 0.7rem;
     font-size: 1.1rem;
     color: rgb(0, 0, 0);
     background: #ffffff;

@@ -1,5 +1,7 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
 .wait-body {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Do Hyeon', Arial, sans-serif;
     margin: 0;
     padding: 0;
     color: #000000;
@@ -91,21 +93,25 @@
 }
 
 .ready-button {
-    background-color: #4caf50;
+    font-family: 'Do Hyeon', Arial, sans-serif;
+    background-color: #000000;
     color: white;
 }
 
 .ready-button.ready {
-    background-color: #3e8e41;
+    font-family: 'Do Hyeon', Arial, sans-serif;
+    background-color: #000000;
 }
 
 .start-button {
-    background-color: #2196f3;
+    font-family: 'Do Hyeon', Arial, sans-serif;
+    background-color: #000000;
     color: white;
 }
 
 .return-button {
-    background-color: #f44336;
+    font-family: 'Do Hyeon', Arial, sans-serif;
+    background-color: #000000;
     color: white;
 }
 

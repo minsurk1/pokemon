@@ -438,6 +438,12 @@ setDeckCards(remainingDeck)
     })
   }
 
+  const checkGameEnd = () => {
+    if (playerHP <= 0 ) return "defeat"
+    if (enemyHP >= 0 ) return "victory"
+    if (deckCards.length === 0 && handCards.length === 0) return "fatigue"
+  }
+
   // 내 카드 렌더링 함수 - 타입 수정
   const renderMyCard = (card: Card, fromZone: boolean, index: number) => {
     // 호버 효과 적용 여부 확인

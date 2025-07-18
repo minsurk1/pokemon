@@ -226,16 +226,15 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
 
   return (
     <div className="deck-page">
-      <div className="navigation-section">
-        <button className="nav-button" onClick={handleMain}>
+       <div className="navigation-section"> 
+          <button className="nav-button" onClick={handleMain}>
           메인페이지
         </button>
         <div className="deck-header-image"/>
         <button className="nav-button" onClick={handleStore}>
           상점페이지
         </button>
-      </div>
-
+        </div>
       <div className="selected-cards-container">
         <div className="selected-cards">
           {selectedCards.map((card, index) => (

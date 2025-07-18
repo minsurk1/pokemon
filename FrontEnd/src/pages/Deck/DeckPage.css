@@ -12,11 +12,12 @@
   background-image: url("../../assets/images/mainbg.png");
   padding-right :40px;
   padding-left: 40px;
-  padding-top: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 1;
+  z-index: 200;
+  position: sticky;
+  top: 0;
 }
 .deck-header-image{
   background-image: url("../../assets/images/deckheader.png");
@@ -27,15 +28,15 @@
   align-items: center;
   z-index: 10;
   width: 907px;
-  height:132px;
+  height:100px;
 }
 .nav-button {
   font-family: "Do Hyeon" ,serif;
-  background: #232946;
+  background: #000000;
   color: #ffd803;
   border: none;
   border-radius: 14px;
-  padding: 16px 38px;
+  padding: 16px 28px;
   font-size: 1.18rem;
   font-weight: bold;
   box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
@@ -51,11 +52,11 @@
 .selected-cards-container {
   position: sticky;
   font-family: "Do Hyeon", serif;
-  top: 0;
+  top: 100px  ;
   z-index: 100;
   background-color: rgb(0, 0, 0);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 10px 0;
+
   border-top: 4px solid #1f3a4c;
   overflow-x: auto;
   white-space: nowrap;
@@ -74,10 +75,9 @@
   }
   
 .selected-cards {
-  
   display: inline-flex;
   gap: 20px;
-  padding: 25px;
+  padding: 10px;
 }
 
 .selected-card {
@@ -92,7 +92,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border-radius: 15px;
+  border-radius: 5px;
   font-size: 1.2em;
   font-weight: bold;
   cursor: pointer;
@@ -121,7 +121,7 @@
 }
 
 .card {
-  width: 100%;
+  width: 160px;
   height: auto;
   background-color: #2980b9;
   color: #fff;
@@ -133,6 +133,7 @@
   transition: transform 0.2s, box-shadow 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  margin-left:15px
 }
 
 .card:hover {

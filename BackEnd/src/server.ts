@@ -5,6 +5,7 @@ import { Server as SocketIOServer } from "socket.io";
 import mongoose from "mongoose";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes";
+import userRoutes from "./routes/userRoutes";
 import { setupRoomHandlers } from "./routes/room"; // 소켓 방 핸들러
 
 dotenv.config(); // 루트의 .env 파일을 자동으로 로드
@@ -66,6 +67,7 @@ mongoose
 
 // ✅ 라우터 등록
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
 // ✅ Socket.io 이벤트 핸들러
 setupRoomHandlers(io);

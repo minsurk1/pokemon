@@ -10,6 +10,7 @@ const socket_io_1 = require("socket.io");
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
+const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const room_1 = require("./routes/room"); // 소켓 방 핸들러
 dotenv_1.default.config(); // 루트의 .env 파일을 자동으로 로드
 const app = (0, express_1.default)();
@@ -54,6 +55,7 @@ mongoose_1.default
 });
 // ✅ 라우터 등록
 app.use("/api/auth", authRoutes_1.default);
+app.use("/api/user", userRoutes_1.default);
 // ✅ Socket.io 이벤트 핸들러
 (0, room_1.setupRoomHandlers)(io);
 // ✅ 서버 시작

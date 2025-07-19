@@ -58,7 +58,7 @@ function MainPage({ selectedDeck }: MainPageProps) {
     axios
       .get("/api/user/me", {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
         },
       })
       .then((res) => {

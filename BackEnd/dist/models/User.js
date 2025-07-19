@@ -42,6 +42,8 @@ const UserSchema = new mongoose_1.Schema({
     nickname: { type: String, required: true },
     money: { type: Number, default: 1200 }, // 초기 금액 1200원
     createdAt: { type: Date, default: Date.now },
+}, {
+    versionKey: false, // __v 필드 제거
 });
 // 모델 생성 및 내보내기
 exports.default = mongoose_1.default.model("User", UserSchema);

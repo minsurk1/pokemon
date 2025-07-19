@@ -50,7 +50,7 @@ function MainPage({ selectedDeck }: MainPageProps) {
     const token = localStorage.getItem("token"); // 로그인 시 저장한 토큰
 
     if (!token) {
-      console.error("토큰이 없습니다. 로그인 필요");
+      console.log("토큰이 없습니다. 로그인 필요");
       navigate("/"); // 토큰 없으면 로그인 페이지로 이동 권장
       return;
     }

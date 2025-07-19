@@ -19,7 +19,7 @@ router.get(
     }
 
     try {
-      const user = await User.findById(req.user.userId).select(
+      const user = await User.findById(req.user.id).select(
         "username nickname money"
       );
       if (!user) {

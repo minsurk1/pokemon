@@ -8,7 +8,7 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "typeRoots": ["./types", "./node_modules/@types"]
+    "typeRoots": ["./src/types", "./node_modules/@types"]
   },
   "include": ["src/**/*"], // src 폴더 내부 TypeScript 파일만 포함
   "exclude": ["dist", "node_modules"]

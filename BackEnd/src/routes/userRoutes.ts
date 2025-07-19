@@ -7,10 +7,13 @@ import User from "../models/User";
 
 const router = Router();
 
+console.log("userRoutes 라우터 로드됨");
+
 router.get(
   "/me",
   isAuthenticated,
   async (req: AuthenticatedRequest, res: Response) => {
+    console.log("/api/user/me 요청 처리");
     if (!req.user) {
       return res.status(401).json({ message: "인증이 필요합니다." });
     }

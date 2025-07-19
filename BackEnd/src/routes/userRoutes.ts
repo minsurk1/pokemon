@@ -8,7 +8,7 @@ import User from "../models/User";
 const router = Router();
 
 router.get(
-  "/profile",
+  "/me",
   isAuthenticated,
   async (req: AuthenticatedRequest, res: Response) => {
     if (!req.user) {

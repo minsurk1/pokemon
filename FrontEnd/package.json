@@ -2,6 +2,7 @@
   "name": "poket",
   "version": "0.1.0",
   "private": true,
+  "proxy": "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app",
   "dependencies": {
     "@lasbe/react-card-animation": "^1.0.0",
     "@react-three/drei": "^10.0.6",

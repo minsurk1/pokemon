@@ -6,6 +6,7 @@ import { CardAnimation } from "@lasbe/react-card-animation";
 import io, { type Socket } from "socket.io-client";
 import BackgroundVideo from "../../components/common/global.tsx";
 import { MenuButton } from "../../components/common/button.tsx";
+import axios from "axios";
 
 import phantomVideo from "../../assets/videos/phantom.mp4";
 import gaiogaVideo from "../../assets/videos/gaioga.mp4";
@@ -15,36 +16,27 @@ import thunderVideo from "../../assets/videos/thunder.mp4";
 const videoFiles = [phantomVideo, gaiogaVideo, grandonVideo, thunderVideo];
 
 const videoThemes = {
-  [phantomVideo]: {
-    name: "팬텀",
-    color: "phantom",
-  },
-  [gaiogaVideo]: {
-    name: "가이오가",
-    color: "gaioga",
-  },
-  [grandonVideo]: {
-    name: "그란돈",
-    color: "grandon",
-  },
-  [thunderVideo]: {
-    name: "썬더",
-    color: "thunder",
-  },
+  [phantomVideo]: { name: "팬텀", color: "phantom" },
+  [gaiogaVideo]: { name: "가이오가", color: "gaioga" },
+  [grandonVideo]: { name: "그란돈", color: "grandon" },
+  [thunderVideo]: { name: "썬더", color: "thunder" },
 };
 
 interface MainPageProps {
-  currency: number;
   selectedDeck: string[];
 }
 
-function MainPage({ currency, selectedDeck }: MainPageProps) {
+function MainPage({ selectedDeck }: MainPageProps) {
   const navigate = useNavigate();
-  const [showRoomTab, setShowRoomTab] = useState<boolean>(false);
-  const [roomCode, setRoomCode] = useState<string>("");
+  const [showRoomTab, setShowRoomTab] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [serverResponse, setServerResponse] = useState<string>("");
-  const [serverError, setServerError] = useState<string>("");
+  const [serverError, setServerError] = useState("");
+
+  const [userInfo, setUserInfo] = useState<{
+    nickname: string;
+    money: number;
+  } | null>(null);
 
   const [randomVideo] = useState(() => {
     const randomIndex = Math.floor(Math.random() * videoFiles.length);
@@ -52,7 +44,33 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   });
 
   const themeColorClass = videoThemes[randomVideo].color;
-  const themeName = videoThemes[randomVideo].name;
+
+  // 사용자 정보 불러오기 (JWT 토큰 사용)
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      console.log("토큰이 없습니다. 로그인 필요");
+      navigate("/");
+      return;
+    }
+
+    axios
+      .get("/api/user/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((res) => {
+        setUserInfo(res.data);
+      })
+      .catch((err) => {
+        console.error("유저 정보 가져오기 실패", err);
+        if (err.response && err.response.status === 401) {
+          navigate("/");
+        }
+      });
+  }, [navigate]);
 
   useEffect(() => {
     document.documentElement.style.setProperty(
@@ -66,14 +84,12 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
     const newSocket = io(
       "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
-      { withCredentials: true }
+      {
+        withCredentials: true,
+      }
     );
     setSocket(newSocket);
 
-    const onMessage = (data: string) => {
-      setServerResponse(data);
-      setServerError("");
-    };
     const onRoomCreated = (newRoomCode: string) => {
       navigate("/wait", { state: { roomCode: newRoomCode } });
     };
@@ -84,13 +100,11 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
       setServerError(error);
     };
 
-    newSocket.on("message", onMessage);
     newSocket.on("roomCreated", onRoomCreated);
     newSocket.on("roomJoined", onRoomJoined);
     newSocket.on("error", onError);
 
     return () => {
-      newSocket.off("message", onMessage);
       newSocket.off("roomCreated", onRoomCreated);
       newSocket.off("roomJoined", onRoomJoined);
       newSocket.off("error", onError);
@@ -99,6 +113,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   }, [navigate, themeColorClass]);
 
   const handleLogout = useCallback(() => {
+    localStorage.removeItem("token"); // 토큰 삭제
     navigate("/");
   }, [navigate]);
 
@@ -124,7 +139,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
   const toggleRoomTab = useCallback(() => {
     setShowRoomTab((prev) => !prev);
-    setServerError(""); // 탭 열 때 에러 초기화
+    setServerError("");
   }, []);
 
   const handleProfile = useCallback(() => {
@@ -147,7 +162,6 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     }
   }, [roomCode, socket]);
 
-  // Enter 키로 방 입장 처리
   const onRoomCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleJoinRoom();
@@ -171,7 +185,11 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
       <div className="main-content">
         <div className="main-header">
-          <span className="money">현재 돈: {currency}원</span>
+          <span className="money">
+            {userInfo
+              ? `${userInfo.nickname}님의 돈: ${userInfo.money}원`
+              : "로딩 중..."}
+          </span>
           <button className="logout-button" onClick={handleLogout}>
             로그아웃
           </button>
@@ -179,15 +197,15 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
         <CardAnimation angle={35}>
           <div className="monster-card">
-            {selectedDeck && selectedDeck.length > 0 ? (
+            {selectedDeck?.[0] ? (
               <img
-                src={selectedDeck[0] || "/placeholder.svg"}
+                src={selectedDeck[0]}
                 alt="대표 몬스터 카드"
                 className="monster-image"
               />
             ) : (
               <img
-                src={mainImage || "/placeholder.svg"}
+                src={mainImage}
                 alt="기본 대표 몬스터 카드"
                 className="monster-image"
               />

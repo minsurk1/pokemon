@@ -25,7 +25,6 @@ const cards = [
     image3DColor: "/models/fireTier2_color.glb",
     image3DGray: "/models/fireTier2_gray.glb",
   },
-  // 필요한 카드들 계속 추가...
 ];
 
 async function seed() {

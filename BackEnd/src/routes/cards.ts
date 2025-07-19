@@ -14,7 +14,7 @@ router.post("/draw-cards", async (req, res) => {
     const allCards = await Card.find({}).exec();
 
     // 2. 확률, 카드팩 타입 기반으로 카드 뽑기 로직 구현 (프론트와 동일하게)
-  const getProbabilities = (packType: string): { [key: number]: number } => {
+   const getProbabilities = (packType: string): { [key: number]: number } => {
   switch (packType) {
     case "B":
       return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
@@ -26,6 +26,7 @@ router.post("/draw-cards", async (req, res) => {
       return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
   }
 };
+
 
     const probabilities = getProbabilities(packType);
 
@@ -39,6 +40,16 @@ router.post("/draw-cards", async (req, res) => {
       }
       return Math.max(...Object.keys(probabilities).map(Number));
     }
+
+    // tier별 카드 필터링 후 랜덤 선택
+    function getRandomCardFromTier(tier: number) {
+     const tierCards = allCards.filter(card =>
+  card.attack === tier || card.hp === tier
+);
+      if (tierCards.length === 0) return null;
+      return tierCards[Math.floor(Math.random() * tierCards.length)];
+    }
+
     // 5장 카드 뽑기
     const drawnCards = [];
     for (let i=0; i<5; i++) {
@@ -65,21 +76,16 @@ router.post("/draw-cards", async (req, res) => {
         await newUserCard.save();
       }
     }
-    function getRandomCardFromTier(tier: number) {
-  const tierCards = allCards.filter(card => card.attack === tier || card.hp === tier);
-  if (tierCards.length === 0) return null;
-  return tierCards[Math.floor(Math.random() * tierCards.length)];
-}
 
-// 반환 부분
-res.status(200).json({
+    // 4. 뽑은 카드 정보(필요한 필드만) 프론트에 반환
+  res.status(200).json({
   message: "카드 뽑기 성공",
-  drawnCards: drawnCards.map(c => ({
+  drawnCards: drawnCards.map((c) => ({
     id: c._id,
-    name: c.cardName,
-    image3D: c.image3DColor,
+    name: c.cardName,          
+    image3D: c.image3DColor,  
     image3DGray: c.image3DGray,
-    damage: c.attack,
+    damage: c.attack,         
     hp: c.hp,
   })),
 });

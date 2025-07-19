@@ -3,13 +3,15 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import User from "../models/User";
+import Card from "../models/Card";
+import UserCard from "../models/UserCard";
 
 dotenv.config();
 
 const router = Router();
 const jwtSecret = process.env.JWT_SECRET as string;
 
-// CORS 처리 미들웨어
+// ✅ CORS 처리 미들웨어
 router.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "http://localhost:3000");
   res.header(
@@ -33,11 +35,13 @@ router.post("/signup", async (req: Request, res: Response) => {
   const { username, password, email, nickname } = req.body;
 
   try {
+    // 입력값 유효성 검사
     if (!username || !password || !email || !nickname) {
       console.log("❌ 필수 필드 누락");
       return res.status(400).json({ message: "모든 필드를 입력해주세요" });
     }
 
+    // 이미 존재하는 유저인지 확인
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
       console.log("❌ 이미 존재하는 사용자:", existingUser);
@@ -46,9 +50,11 @@ router.post("/signup", async (req: Request, res: Response) => {
         .json({ message: "이미 사용 중인 아이디 또는 이메일입니다." });
     }
 
+    // 비밀번호 해싱
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log("🔐 비밀번호 해싱 완료");
 
+    // 새 유저 생성
     const newUser = new User({
       username,
       password: hashedPassword,
@@ -59,6 +65,23 @@ router.post("/signup", async (req: Request, res: Response) => {
 
     await newUser.save();
     console.log("✅ 회원가입 성공, ID:", newUser._id);
+
+    // ✅ 모든 카드 불러오기
+    const allCards = await Card.find();
+
+    // ✅ 유저 카드 도감 생성
+    const userCardPromises = allCards.map((card) => {
+      const isOwned = card.cardName === "파이리"; // 파이리만 보유
+      return new UserCard({
+        userId: newUser._id,
+        cardId: card._id,
+        owned: true, // 도감에는 항상 true
+        count: isOwned ? 1 : 0,
+      }).save();
+    });
+
+    await Promise.all(userCardPromises);
+    console.log("📘 도감 카드 생성 완료");
 
     res.status(201).json({ message: "회원가입 성공!" });
   } catch (err: any) {

@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "description": "",
-  "proxy": "http://localhost:5001",
+  "proxy": "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app",
   "dependencies": {
     "@react-three/fiber": "^9.1.2",
     "bcryptjs": "^3.0.1",

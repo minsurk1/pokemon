@@ -11,6 +11,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const room_1 = require("./routes/room"); // 소켓 방 핸들러
+const cards_1 = __importDefault(require("./routes/cards"));
 dotenv_1.default.config(); // 루트의 .env 파일을 자동으로 로드
 const app = (0, express_1.default)();
 // ✅ CORS 설정
@@ -69,3 +70,5 @@ app.use((req, res, next) => {
     console.log(`[📥 요청 수신] ${req.method} ${req.url}`);
     next();
 });
+// 카드 뽑기 API 라우터
+app.use("/api/cards", cards_1.default);

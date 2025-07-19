@@ -1,6 +1,6 @@
-import React from "react"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import axios from "axios"
 import "./DeckPage.css"
 
 import fireTier1 from "../../assets/images/firetier1.png"
@@ -105,113 +105,62 @@ interface DeckPageProps {
   selectedDeck: string[]
 }
 
+interface UserCard {
+  cardId: string  // 카드 이미지 이름 기반 키로 대응할 것
+  owned: boolean
+}
+
 const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
   const [selectedCards, setSelectedCards] = useState<string[]>(selectedDeck || [])
-  const maxSelectedCards = 30
+  const [userCards, setUserCards] = useState<UserCard[]>([])
   const navigate = useNavigate()
+  const maxSelectedCards = 30
+
+  // 카드 전체 배열
   const cards: string[] = [
-    fireTier1,
-    fireTier2,
-    fireTier3,
-    fireTier4,
-    fireTier5,
-    fireTier6,
-    fireTier7,
-    waterTier1,
-    waterTier2,
-    waterTier3,
-    waterTier4,
-    waterTier5,
-    waterTier6,
-    waterTier7,
-    forestTier1,
-    forestTier2,
-    forestTier3,
-    forestTier4,
-    forestTier5,
-    forestTier6,
-    forestTier7,
-    electricTier1,
-    electricTier2,
-    electricTier3,
-    electricTier4,
-    electricTier5,
-    electricTier6,
-    electricTier7,
-    esperTier1,
-    esperTier2,
-    esperTier3,
-    esperTier4,
-    esperTier5,
-    esperTier6,
-    esperTier7,
-    flyTier1,
-    flyTier2,
-    flyTier3,
-    flyTier4,
-    flyTier5,
-    flyTier6,
-    flyTier7,
-    iceTier1,
-    iceTier2,
-    iceTier3,
-    iceTier4,
-    iceTier5,
-    iceTier6,
-    iceTier7,
-    landTier1,
-    landTier2,
-    landTier3,
-    landTier4,
-    landTier5,
-    landTier6,
-    landTier7,
-    normalTier1,
-    normalTier2,
-    normalTier3,
-    normalTier4,
-    normalTier5,
-    normalTier6,
-    normalTier7,
-    poisonTier1,
-    poisonTier2,
-    poisonTier3,
-    poisonTier4,
-    poisonTier5,
-    poisonTier6,
-    poisonTier7,
-    wormTier1,
-    wormTier2,
-    wormTier3,
-    wormTier4,
-    wormTier5,
-    wormTier6,
-    wormTier7,
-    legendTier1,
-    legendTier2,
-    legendTier3,
-    legendTier4,
-    legendTier5,
-    legendTier6,
-    legendTier7,
+    fireTier1, fireTier2, fireTier3, fireTier4, fireTier5, fireTier6, fireTier7,
+    waterTier1, waterTier2, waterTier3, waterTier4, waterTier5, waterTier6, waterTier7,
+    forestTier1, forestTier2, forestTier3, forestTier4, forestTier5, forestTier6, forestTier7,
+    electricTier1, electricTier2, electricTier3, electricTier4, electricTier5, electricTier6, electricTier7,
+    esperTier1, esperTier2, esperTier3, esperTier4, esperTier5, esperTier6, esperTier7,
+    flyTier1, flyTier2, flyTier3, flyTier4, flyTier5, flyTier6, flyTier7,
+    iceTier1, iceTier2, iceTier3, iceTier4, iceTier5, iceTier6, iceTier7,
+    landTier1, landTier2, landTier3, landTier4, landTier5, landTier6, landTier7,
+    normalTier1, normalTier2, normalTier3, normalTier4, normalTier5, normalTier6, normalTier7,
+    poisonTier1, poisonTier2, poisonTier3, poisonTier4, poisonTier5, poisonTier6, poisonTier7,
+    wormTier1, wormTier2, wormTier3, wormTier4, wormTier5, wormTier6, wormTier7,
+    legendTier1, legendTier2, legendTier3, legendTier4, legendTier5, legendTier6, legendTier7,
   ]
 
+  // ✅ 유저 카드 정보 가져오기
   useEffect(() => {
-    if (selectedDeck) {
-      setSelectedCards(selectedDeck)
+    const fetchUserCards = async () => {
+      try {
+      const user = localStorage.getItem("user");
+      const parsedUser = user ? JSON.parse(user) : null;
+      const userId = parsedUser?.id;
+        const res = await axios.get(`/api/user/${userId}/cards`)
+        setUserCards(res.data.userCards)
+      } catch (err) {
+        console.error("유저 카드 정보 불러오기 실패:", err)
+      }
     }
-  }, [selectedDeck])
 
-  const handleMain = (): void => {
-    navigate("/main")
-  }
+    fetchUserCards()
+  }, [])
 
-  const handleStore = (): void => {
-    navigate("/store")
+  const handleMain = () => navigate("/main")
+  const handleStore = () => navigate("/store")
+
+  const isOwned = (cardPath: string): boolean => {
+    const imageName = cardPath.split("/").pop()?.replace(".png", "")
+    return userCards.some((uc) => uc.cardId === imageName && uc.owned)
   }
 
   const selectCard = (card: string): void => {
     if (selectedCards.length >= maxSelectedCards) return
+    if (!isOwned(card)) return // 보유하지 않은 카드 클릭 방지
+
     const newSelectedCards = [...selectedCards, card]
     setSelectedCards(newSelectedCards)
     onDeckChange(newSelectedCards)
@@ -227,20 +176,16 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
   return (
     <div className="deck-page">
       <div className="navigation-section">
-        <button className="nav-button" onClick={handleMain}>
-          메인페이지
-        </button>
-        <div className="deck-header-image"/>
-        <button className="nav-button" onClick={handleStore}>
-          상점페이지
-        </button>
+        <button className="nav-button" onClick={handleMain}>메인페이지</button>
+        <div className="deck-header-image" />
+        <button className="nav-button" onClick={handleStore}>상점페이지</button>
       </div>
 
       <div className="selected-cards-container">
         <div className="selected-cards">
           {selectedCards.map((card, index) => (
             <div key={index} className="selected-card" onClick={() => removeCard(index)}>
-              <img src={card || "/placeholder.svg"} alt={`Selected ${index}`} />
+              <img src={card} alt={`Selected ${index}`} />
             </div>
           ))}
           {Array.from({ length: maxSelectedCards - selectedCards.length }, (_, index) => (
@@ -252,15 +197,25 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
       </div>
 
       <div className="card-list">
-        {cards.map((card, index) => (
-          <div key={index} className="card" onClick={() => selectCard(card)}>
-            <img src={card || "/placeholder.svg"} alt={`Card ${index}`} />
-          </div>
-        ))}
+        {cards.map((card, index) => {
+          const owned = isOwned(card)
+          return (
+            <div
+              key={index}
+              className={`card ${!owned ? "unowned" : ""}`}
+              onClick={() => selectCard(card)}
+            >
+              <img
+                src={card}
+                alt={`Card ${index}`}
+                className={!owned ? "grayscale" : ""}
+              />
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
 export default DeckPage
-

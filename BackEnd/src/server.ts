@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes";
 import { setupRoomHandlers } from "./routes/room"; // 소켓 방 핸들러
-
+import cardRoutes from "./routes/cards";
 dotenv.config(); // 루트의 .env 파일을 자동으로 로드
 
 const app = express();
@@ -36,7 +36,6 @@ app.options(
 
 // ✅ JSON 바디 파싱
 app.use(express.json());
-
 // ✅ HTTP + Socket 서버 생성
 const server = http.createServer(app);
 
@@ -85,3 +84,5 @@ app.use((req, res, next) => {
   console.log(`[📥 요청 수신] ${req.method} ${req.url}`);
   next();
 });
+// 카드 뽑기 API 라우터
+app.use("/api/cards", cardRoutes);

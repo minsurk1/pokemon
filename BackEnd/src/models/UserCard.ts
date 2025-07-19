@@ -1,17 +1,17 @@
-import mongoose, { Schema, type Document, Types } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IUserCard extends Document {
-  user: Types.ObjectId;
-  card: Types.ObjectId;
+  user: mongoose.Types.ObjectId;
+  card: mongoose.Types.ObjectId;
   count: number;
   owned: boolean;
 }
 
-const UserCardSchema: Schema = new Schema({
+const UserCardSchema = new Schema<IUserCard>({
   user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   card: { type: Schema.Types.ObjectId, ref: "Card", required: true },
-  count: { type: Number, default: 1 },
-  owned: { type: Boolean, default: true },
+  count: { type: Number, default: 0 },
+  owned: { type: Boolean, default: false },
 });
 
 export default mongoose.model<IUserCard>("UserCard", UserCardSchema);

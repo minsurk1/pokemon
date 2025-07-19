@@ -2,7 +2,7 @@ import React from "react"
 import { useState } from "react"
 import { Link } from "react-router-dom"
 import "./Inventory.css"
-import BackgroundVideo from "../../components/common/global.tsx"
+import BackgroundVideo from "../../components/common/global"
 import inventoryVideo from "../../assets/videos/arceus.mp4"
 
 import fireTier1 from "../../assets/images/firetier1.png"
@@ -126,17 +126,10 @@ export interface CardPack {
   type: "B" | "A" | "S"
 }
 
-// 인벤토리 컴포넌트 props 인터페이스
 interface InventoryProps {
   inventory: CardPack[]
   setInventory: React.Dispatch<React.SetStateAction<CardPack[]>>
 }
-
-// 확률 인터페이스 정의
-interface Probabilities {
-  [key: number]: number
-}
-
 const cardsData: CardData[] = [
   { name: "파이리", tier: 1, image: fireTier1, attack: 10, hp: 25, cost: 1 },
   { name: "포니타", tier: 2, image: fireTier2, attack: 40, hp: 100, cost: 2 },
@@ -234,10 +227,28 @@ const cardsData: CardData[] = [
   { name: "레쿠자", tier: 8, image: legendTier6, attack: 400, hp: 1000, cost: 8 },
   { name: "아르세우스", tier: 8, image: legendTier7, attack: 400, hp: 1000, cost: 8 },
 ]
+// API 호출 함수 
+async function openCardPackApiCall(userId: string, packType: string): Promise<CardData[]> {
+  const response = await fetch("/api/cards/draw-cards", { 
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, packType }),
+  });
+
+  if (!response.ok) throw new Error("카드 뽑기 실패");
+
+  const data = await response.json();
+  return data.drawnCards; // 서버에서 받은 카드 배열
+}
+
 
 function Inventory({ inventory, setInventory }: InventoryProps) {
   const [showModal, setShowModal] = useState<boolean>(false)
   const [openedCards, setOpenedCards] = useState<CardData[]>([])
+
+const user = localStorage.getItem("user");
+const parsedUser = user ? JSON.parse(user) : null;
+const userId = parsedUser?.id;  // id가 실제 user 객체 내 id 필드명임
 
   const drawCards = (cardPack: CardPack): CardData[] => {
     const drawnCards: CardData[] = []
@@ -256,7 +267,9 @@ function Inventory({ inventory, setInventory }: InventoryProps) {
     }
     return drawnCards
   }
-
+type Probabilities = {
+  [tier: number]: number;
+};
   const getProbabilities = (packType: "B" | "A" | "S"): Probabilities => {
     switch (packType) {
       case "B":
@@ -269,7 +282,6 @@ function Inventory({ inventory, setInventory }: InventoryProps) {
         return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 } 
     }
   }
-
   const getRandomTier = (probabilities: Probabilities, maxTier: number): number => {
     const rand = Math.random()
     let cumulativeProb = 0
@@ -290,22 +302,26 @@ function Inventory({ inventory, setInventory }: InventoryProps) {
     return tierCards[randomIndex] || null
   }
 
-  const openCardPack = (index: number): void => {
-    const cardPack = inventory[index]
-    if (!cardPack) {
-      console.error("Card pack not found")
-      return
-    }
-    const newCards = drawCards(cardPack)
-    setOpenedCards(newCards)
-    setShowModal(true)
+  const openCardPack = async (index: number) => {
+    const cardPack = inventory[index];
+      console.log("유저 상태:", userId)
+      console.log("카드팩 타입:", cardPack?.type)
+    if (!cardPack) return;
 
-    setInventory((prevInventory) => {
-      const newInventory = [...prevInventory]
-      newInventory.splice(index, 1)
-      return newInventory
-    })
-  }
+    try {
+      const drawnCardsFromServer = await openCardPackApiCall(userId, cardPack.type);
+      setOpenedCards(drawnCardsFromServer);
+      setShowModal(true);
+      setInventory((prev) => {
+        const newInventory = [...prev];
+        newInventory.splice(index, 1);
+        return newInventory;
+      });
+    } catch (error) {
+      console.error(error);
+      alert("카드팩 개봉 실패");
+    }
+  };
 
   const closeModal = (): void => {
     setShowModal(false)
@@ -390,4 +406,3 @@ function Inventory({ inventory, setInventory }: InventoryProps) {
 }
 export default Inventory
 export { cardsData }
-

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import type React from "react"
-import { CiClock1 } from "react-icons/ci";
+import { CiClock1 } from "react-icons/ci"
 import { useDrag, useDrop } from "react-dnd"
 import "./BattlePage.css"
 import MessageBox from "../../components/common/MessageBox"
@@ -121,8 +121,8 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   const [animatingCard, setAnimatingCard] = useState<Card | null>(null)
   const [animationPosition, setAnimationPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
 
-  // ref 객체 생성
-  const enemyAvatarRef = useRef<HTMLDivElement>(null)
+  const enemyCardZoneRef = useRef<HTMLDivElement>(null)
+  const enemyAvatarRef = useRef<HTMLDivElement>(null) // 실제 적 아바타용
   const myZoneRef = useRef<HTMLDivElement>(null)
   const playerZoneRef = useRef<HTMLDivElement>(null)
 
@@ -141,30 +141,30 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       }
     })
 
-const oneCostCards = allCards.filter(card => card.cost === 1)
-const otherCards = allCards.filter(card => card.cost !== 1)
+    const oneCostCards = allCards.filter((card) => card.cost === 1)
+    const otherCards = allCards.filter((card) => card.cost !== 1)
 
-let initialHand: Card[] = []
-let remainingDeck: Card[] = []
+    let initialHand: Card[] = []
+    let remainingDeck: Card[] = []
 
-if (oneCostCards.length > 0) {
-  const guaranteedOneCost = oneCostCards[Math.floor(Math.random() * oneCostCards.length)]
-  initialHand.push(guaranteedOneCost)
+    if (oneCostCards.length > 0) {
+      const guaranteedOneCost = oneCostCards[Math.floor(Math.random() * oneCostCards.length)]
+      initialHand.push(guaranteedOneCost)
 
-  const remainingCards = [...oneCostCards.filter(c => c.id !== guaranteedOneCost.id), ...otherCards]
-  const shuffledRemaining = remainingCards.sort(() => Math.random() - 0.5)
-  
-  initialHand.push(...shuffledRemaining.slice(0, 2))
-  remainingDeck = shuffledRemaining.slice(2)
-} else {
-  const shuffledCards = [...allCards].sort(() => Math.random() - 0.5)
-  initialHand = shuffledCards.slice(0, 3)
-  remainingDeck = shuffledCards.slice(3)
-}
+      const remainingCards = [...oneCostCards.filter((c) => c.id !== guaranteedOneCost.id), ...otherCards]
+      const shuffledRemaining = remainingCards.sort(() => Math.random() - 0.5)
 
-setHandCards(initialHand)
-setDeckCards(remainingDeck)
-}, [selectedDeck])
+      initialHand.push(...shuffledRemaining.slice(0, 2))
+      remainingDeck = shuffledRemaining.slice(2)
+    } else {
+      const shuffledCards = [...allCards].sort(() => Math.random() - 0.5)
+      initialHand = shuffledCards.slice(0, 3)
+      remainingDeck = shuffledCards.slice(3)
+    }
+
+    setHandCards(initialHand)
+    setDeckCards(remainingDeck)
+  }, [selectedDeck])
 
   // 카드 드로우 함수
   const drawCard = (): void => {
@@ -300,9 +300,39 @@ setDeckCards(remainingDeck)
   // HP 업데이트 함수
   const playerupdateHP = (player: "player" | "enemy" | "enemyCard", amount: number): void => {
     if (player === "player") {
-      setPlayerHP((prevHP) => Math.max(0, Math.min(2000, prevHP + amount)))
+      setPlayerHP((prevHP) => {
+        const newHP = Math.max(0, Math.min(2000, prevHP + amount))
+        if (newHP <= 0) {
+          setTimeout(() => {
+            setMessage("💀 패배했습니다!")
+            setShowMessage(true)
+            // 게임 종료 처리 (예: 메인 메뉴로 이동)
+          }, 1000)
+        }
+
+        return newHP
+      })
     } else {
-      setEnemyHP((prevHP) => Math.max(0, Math.min(2000, prevHP + amount)))
+      setEnemyHP((prevHP) => {
+        const newHP = Math.max(0, Math.min(2000, prevHP + amount))
+
+        if (newHP <= 0) {
+          setTimeout(() => {
+            setMessage("🎉 승리했습니다!")
+            setShowMessage(true)
+            // 승리 보상 처리
+          }, 1000)
+        }
+
+        return newHP
+      })
+    }
+
+    // 공격 성공 메시지
+    if (amount < 0) {
+      setMessage(`${Math.abs(amount)} 데미지를 입혔습니다!`)
+      setShowMessage(true)
+      setTimeout(() => setShowMessage(false), 2000)
     }
   }
 
@@ -399,12 +429,14 @@ setDeckCards(remainingDeck)
     },
   })
 
-  // 적 드롭 핸들러
+  // 적 드롭 핸들러 - 디버깅 로그 추가
   const [, dropEnemy] = useDrop<DragItem, void, {}>({
     accept: "CARD",
     drop: (item, monitor) => {
+      console.log("🎯 적에게 카드 드롭됨!", item) // 디버깅 로그
       const droppedCard = myCardsInZone.find((card) => card.id === item.id)
       if (droppedCard && typeof droppedCard.attack === "number") {
+        console.log(`💥 ${droppedCard.attack} 데미지 공격!`) // 디버깅 로그
         playerupdateHP("enemy", -droppedCard.attack)
       } else {
         console.error("Invalid attack value:", droppedCard)
@@ -438,12 +470,6 @@ setDeckCards(remainingDeck)
     })
   }
 
-  const checkGameEnd = () => {
-    if (playerHP <= 0 ) return "defeat"
-    if (enemyHP >= 0 ) return "victory"
-    if (deckCards.length === 0 && handCards.length === 0) return "fatigue"
-  }
-
   // 내 카드 렌더링 함수 - 타입 수정
   const renderMyCard = (card: Card, fromZone: boolean, index: number) => {
     // 호버 효과 적용 여부 확인
@@ -467,7 +493,12 @@ setDeckCards(remainingDeck)
     )
   }
 
-  // useEffect를 사용하여 ref와 drop 함수 연결
+  useEffect(() => {
+    if (enemyCardZoneRef.current) {
+      dropEnemyCard(enemyCardZoneRef.current)
+    }
+  }, [dropEnemyCard])
+
   useEffect(() => {
     if (enemyAvatarRef.current) {
       dropEnemy(enemyAvatarRef.current)
@@ -519,8 +550,7 @@ setDeckCards(remainingDeck)
       <div className="field-container">
         {/* 적 필드 */}
         <div className="enemy-field">
-          {/* 적 카드존 */}
-          <div ref={enemyAvatarRef} className="enemy-card-zone">
+          <div ref={enemyCardZoneRef} className="enemy-card-zone">
             {[...Array(5)].map((_, index) => (
               <div key={`enemy-card-${index}`} className="enemy-card-slot">
                 <div className="enemy-card">
@@ -546,8 +576,8 @@ setDeckCards(remainingDeck)
           )}
         </div>
         <div className="time-zone">
-            <div className="turn-indicator">턴: {turn}</div>
-            <div className="timer">시간: {timeLeft}초</div>
+          <div className="turn-indicator">턴: {turn}</div>
+          <div className="timer">시간: {timeLeft}초</div>
         </div>
         {/* 덱과 손패 영역 */}
         <div className="deck-area">
@@ -578,7 +608,7 @@ setDeckCards(remainingDeck)
       <div className="right-container">
         {/* 적 정보 */}
         <div className="enemy-info">
-          <div className="enemy-avatar" />
+          <div ref={enemyAvatarRef} className="enemy-avatar" />
           <div className="hp-bar">
             <div className="hp-bar-inner" style={{ width: `${(enemyHP / 2000) * 100}%` }}></div>
             <div className="hp-text">{enemyHP}/2000</div>
@@ -593,7 +623,8 @@ setDeckCards(remainingDeck)
             ))}
           </div>
           <button className="endturn-button" onClick={handleendturn}>
-            턴 종료<CiClock1 size={24}/>
+            턴 종료
+            <CiClock1 size={24} />
           </button>
         </div>
 
@@ -673,7 +704,7 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
     <div
       ref={cardRef}
       className={`my-card ${fromZone ? "in-zone" : ""} ${isDragging ? "dragging" : ""}`}
-      onClick={onClick} 
+      onClick={onClick}
       onContextMenu={onContextMenu}
       style={cardStyle}
     >

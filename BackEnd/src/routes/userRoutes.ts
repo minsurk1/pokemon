@@ -17,7 +17,7 @@ router.get(
 
     try {
       const user = await User.findById(req.user.userId).select(
-        "username email nickname money"
+        "username nickname money"
       );
       if (!user) {
         return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });

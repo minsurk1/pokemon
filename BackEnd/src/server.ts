@@ -79,10 +79,11 @@ server.listen(PORT, () => {
 });
 
 // ✅ 헬스 체크 엔드포인트
-app.get("/health", (req: Request, res: Response) => {
+app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
 
+// ✅ 요청 로깅 미들웨어
 app.use((req, res, next) => {
   console.log(`[📥 요청 수신] ${req.method} ${req.url}`);
   next();

@@ -4,7 +4,6 @@ import http from "http";
 import mongoose from "mongoose";
 import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
-import "./types/express"; // 실제 경로에 맞게 조정
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import cardRoutes from "./routes/cards";

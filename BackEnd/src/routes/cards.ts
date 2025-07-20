@@ -82,11 +82,11 @@ router.post("/draw-cards", async (req, res) => {
   message: "카드 뽑기 성공",
   drawnCards: drawnCards.map((c) => ({
     id: c._id,
-    name: c.cardName,          
-    image3D: c.image3DColor,  
-    image3DGray: c.image3DGray,
-    damage: c.attack,         
-    hp: c.hp,
+    name: c.cardName,           
+    image3D: c.image3DColor,    
+    image3DGray: c.image3DGray, 
+    damage: c.attack,           
+    hp: c.hp,                   
   })),
 });
 

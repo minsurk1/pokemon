@@ -12,6 +12,7 @@ import costImage from "../../assets/images/cost.png"
 import healImage from "../../assets/images/heal.png"
 import bombImage from "../../assets/images/bomb.png"
 import EventItem from "./components/Eventitem"
+import { Navigate, useNavigate } from "react-router-dom"
 
 // 카드 인터페이스 정의
 interface Card {
@@ -83,6 +84,8 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   const [enemyHP, setEnemyHP] = useState<number>(2000)
   const [timeLeft, setTimeLeft] = useState<number>(30)
   const [myCardsInZone, setMyCardsInZone] = useState<Card[]>([])
+  const navigate = useNavigate();
+  const [shouldNavigate, setShouldNavigate] = useState(false);
 
   // 덱과 손패 분리
   const [deckCards, setDeckCards] = useState<Card[]>([])
@@ -320,8 +323,9 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           setTimeout(() => {
             setMessage("🎉 승리했습니다!")
             setShowMessage(true)
-            // 승리 보상 처리
+            setShouldNavigate(true);
           }, 1000)
+
         }
 
         return newHP

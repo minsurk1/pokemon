@@ -167,7 +167,7 @@
             </button>
           ))}
          <HomeButton onClick={handleMain} bgColor="white" marginLeft="auto" 
-                      marginRight="20px" hoverOpacity="0.8" transition="all 0.5s ease" transform="scale(1.01)"
+                      marginRight="20px" hoverOpacity="0.8" transform="scale(1.01)"
                       borderRadius="50%" 
                       ><AiFillHome color="black" size={22}/></HomeButton>
         </div>

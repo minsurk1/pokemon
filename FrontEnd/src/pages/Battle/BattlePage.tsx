@@ -553,6 +553,9 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
       <div className="field-container">
         {/* 적 필드 */}
+        
+        <div className="enemy-card-bg"/>
+ 
         <div className="enemy-field">
           <div ref={enemyCardZoneRef} className="enemy-card-zone">
             {[...Array(5)].map((_, index) => (
@@ -570,7 +573,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
         {/* 플레이어 필드 */}
         <div ref={playerZoneRef} className="player-field"></div>
-
+        <div className="player-card-bg"/>
         {/* 플레이어 카드존을 독립적으로 배치 */}
         <div ref={myZoneRef} className="player-card-zone">
           {myCardsInZone.length > 0 ? (

@@ -3,6 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useCallback } from "react"
 import { useNavigate } from "react-router-dom"
+import {motion} from "framer-motion"
 import "./MainPage.css"
 import io, { type Socket } from "socket.io-client"
 import BackgroundVideo from "../../components/common/global"
@@ -88,8 +89,25 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   const themeName = videoThemes[randomVideo].name
   const themeImage = videoThemes[randomVideo].image
 
+  const list = {
+    hidden: {
+      opacity: 0
+    },
+    visible: {
+      opacity: 1,
+      transition: {
+        when: "beforeChildren",
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   useEffect(() => {
-    // CSS 변수 설정 (오타 수정: --theme--accent-color → --theme-accent-color)
     document.documentElement.style.setProperty("--theme-color", `var(--${themeColorClass}-color)`)
     document.documentElement.style.setProperty("--theme-hover-color", `var(--${themeColorClass}-hover-color)`)
     document.documentElement.style.setProperty("--theme-accent-color", `var(--${themeColorClass}-accent-color)`)
@@ -178,7 +196,6 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     }
   }, [roomCode, socket])
 
-  // Enter 키로 방 입장 처리
   const onRoomCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleJoinRoom()
@@ -188,14 +205,17 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   return (
     <div className="main-container">
       <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
-      <div className="sidebar">
-        <MenuButton onClick={handleStore}>상점</MenuButton>
-        <MenuButton onClick={handleDeck}>카드</MenuButton>
-        <MenuButton onClick={handledex}>도감</MenuButton>
-        <MenuButton onClick={handleBattle}>배틀</MenuButton>
-        <MenuButton onClick={handleRule}>Rule</MenuButton>
-        <MenuButton onClick={toggleRoomTab}>{showRoomTab ? "탭 닫기" : "방 만들기/입장"}</MenuButton>
-        <MenuButton onClick={handleProfile}>마이페이지</MenuButton>
+      <div className="sidebar" >
+      <motion.ul variants={list} initial="hidden" animate="visible" style={{ overflow: "hidden" }}>
+        <motion.li variants={item}><MenuButton onClick={handleStore} marginBottom="2.7rem" marginTop="0.4rem">상점</MenuButton></motion.li>
+        <motion.li variants={item}><MenuButton onClick={handleDeck} marginBottom="2.7rem">카드</MenuButton></motion.li>
+        <motion.li variants={item}><MenuButton onClick={handledex}marginBottom="2.7rem">도감</MenuButton></motion.li>
+        <motion.li variants={item}><MenuButton onClick={handleBattle}marginBottom="2.7rem">배틀</MenuButton></motion.li>
+        <motion.li variants={item}><MenuButton onClick={handleRule}marginBottom="2.7rem">Rule</MenuButton></motion.li>
+        <motion.li variants={item}><MenuButton onClick={toggleRoomTab}marginBottom="2.7rem">{showRoomTab ? "탭 닫기" : "방 만들기/입장"}</MenuButton></motion.li>
+        <motion.li variants={item}><MenuButton onClick={handleProfile}marginBottom="2.7rem">마이페이지</MenuButton></motion.li>
+      </motion.ul>
+
       </div>
 
       {showCardTab && (
@@ -231,9 +251,13 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
       <div className="main-content">
         <div className="main-header">
-          <button className="theme-name" onClick={toggleCardTab}>
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }} 
+            className="theme-name" onClick={toggleCardTab}>
             {themeName}
-          </button>
+          </motion.button>
 
           <span className="money">현재 돈: {currency}원</span>
           <button className="logout-button" onClick={handleLogout}>

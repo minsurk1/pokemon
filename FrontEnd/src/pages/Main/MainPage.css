@@ -21,6 +21,12 @@
   gap: 1.5rem;
 }
 
+ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
 .main-content {
   font-family: "Do hyeon", serif;
   flex-grow: 1;

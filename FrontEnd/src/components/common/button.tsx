@@ -1,8 +1,7 @@
-"use client"
-
 import type React from "react"
 import styled from "styled-components"
 import { AiFillHome } from "react-icons/ai"
+import { motion } from "framer-motion";
 
 interface ButtonProps {
   color?: string
@@ -56,6 +55,7 @@ const StyleHomeButton = styled.button<ButtonProps>`
 
 const StyleMenuButton = styled.button<ButtonProps>`
     font-family: "Do hyeon",serif;
+    margin-top:${(props) => props.marginTop || "0rem"};
     margin-bottom:${(props) => props.marginBottom || "1.5rem"};
     padding:${(props) => props.padding || "1rem"};
     font-size: ${(props) => props.fontSize || "1.3rem"};
@@ -63,16 +63,17 @@ const StyleMenuButton = styled.button<ButtonProps>`
     background: ${(props) => props.background || "var(--theme-color)"};
     border: ${(props) => props.border || "none"};
     border-radius:${(props) => props.borderRadius || "15px"};
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     transition: background 0.3s ease,transform 0.3s ease;
     cursor: pointer;
-    box-shadow: 0 0 12px var(--theme-accent-color);
-    
+    box-shadow: inset 0 0 6px var(--theme-accent-color);
+    width: 100%;
+    overflow: hidden;
     &:hover {
         background: var(--theme-hover-color);
         opacity: ${(props) => props.hoverOpacity || 0.8};
         transform: ${(props) => props.transform || "scale(1.03)"}; 
         transition: ${(props) => props.transition || "all 0.2s ease-in-out"};
+        border-radius:${(props) => props.borderRadius || "15px"};
     }
 `
 
@@ -120,6 +121,7 @@ export function MenuButton({
   children,
   background,
   marginBottom,
+  marginTop,
   padding,
   color,
   border,
@@ -129,12 +131,15 @@ export function MenuButton({
   transition,
   fontSize,
   boxShadow,
+  width,
   onClick,
 }: ButtonProps) {
   return (
     <StyleMenuButton
+      width={width}
       background={background}
       marginBottom={marginBottom}
+      marginTop={marginTop}
       boxShadow={boxShadow}
       color={color}
       padding={padding}

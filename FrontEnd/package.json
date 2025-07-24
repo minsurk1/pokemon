@@ -9,7 +9,7 @@
     "@tweenjs/tween.js": "^25.0.0",
     "axios": "^1.8.4",
     "cra-template": "1.2.0",
-    "framer-motion": "^12.6.3",
+    "framer-motion": "^12.23.6",
     "react": "^19.0.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",

@@ -63,24 +63,24 @@ router.post("/signup", async (req: Request, res: Response) => {
       money: 1200,
     });
 
-    await newUser.save();
-    console.log("✅ 회원가입 성공, ID:", newUser._id);
+    const savedUser = await newUser.save();
+    console.log("✅ 회원가입 성공, ID:", savedUser._id);
 
     // ✅ 모든 카드 불러오기
     const allCards = await Card.find();
+    if (allCards.length === 0) {
+      return res.status(500).json({ message: "카드 데이터가 존재하지 않습니다." });
+    }
 
-    // ✅ 유저 카드 도감 생성
-    const userCardPromises = allCards.map((card) => {
-      const isOwned = card.cardName === "파이리"; // 파이리만 보유
-      return new UserCard({
-        userId: newUser._id,
-        cardId: card._id,
-        owned: true, // 도감에는 항상 true
-        count: isOwned ? 1 : 0,
-      }).save();
-    });
+    // ✅ 유저 카드 도감 생성 (user, card 필드 _id 로 정확히 넣기)
+    const userCards = allCards.map((card) => ({
+      user: savedUser._id,            // user 필드명 정확히
+      card: card._id,                 // card 필드명 정확히
+      count: card.cardName === "파이리" ? 1 : 0, // 파이리만 count 1
+      owned: true,                   // 도감에는 항상 true (필요 시 조절 가능)
+    }));
 
-    await Promise.all(userCardPromises);
+    await UserCard.insertMany(userCards);
     console.log("📘 도감 카드 생성 완료");
 
     res.status(201).json({ message: "회원가입 성공!" });
@@ -142,6 +142,17 @@ router.post("/login", async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("❌ 로그인 중 오류:", error.message);
     res.status(500).json({ message: "로그인 실패", error: error.message });
+  }
+});
+
+// 유저 정보 조회
+router.get("/user-cards/:userId", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const userCards = await UserCard.find({ user: userId }).populate("card");
+    res.json(userCards);
+  } catch (err) {
+    res.status(500).json({ message: "유저 카드 정보 불러오기 실패" });
   }
 });
 

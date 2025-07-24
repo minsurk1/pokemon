@@ -120,6 +120,9 @@ interface InventoryProps {
   inventory: CardPack[];
   setInventory: React.Dispatch<React.SetStateAction<CardPack[]>>;
 }
+interface CardWithOwned extends CardData {
+  owned: boolean;
+}
 
 // UserCard 타입 (보유 정보)
 interface UserCard {
@@ -244,9 +247,7 @@ function getCardImageByNameAndTier(name: string, tier: number, owned: boolean): 
     8: legendTier7,
   }
 
-  // 포켓몬 이름과 tier로 이미지 찾기 위한 매핑 (예시, 실제 속성별로 분류한 매핑 추가 가능)
-  // 여기서는 예시로 파이리 시리즈 → fireImages, 꼬부기 시리즈 → waterImages 등
-  // 각 포켓몬 이름에 맞는 속성별 이미지 맵 넣기
+  // 포켓몬 이름과 tier로 이미지 찾기 위한 매핑
   const nameToTypeImageMap: { [name: string]: { [tier: number]: string } } = {
     // fire 속성 포켓몬들
     파이리: fireImages,
@@ -347,7 +348,7 @@ function getCardImageByNameAndTier(name: string, tier: number, owned: boolean): 
     뮤: esperImages,
     뮤츠: esperImages,
 
-    // legend 속성 포켓몬들 (tier 8)
+    // legend 속성 포켓몬들 
     디아루가: legendImages,
     펄기아: legendImages,
     기라티나: legendImages,
@@ -463,7 +464,7 @@ const cardsData: CardData[] = [
 ]
 
 async function openCardPackApiCall(userId: string, packType: string): Promise<CardData[]> {
-  const response = await fetch("/api/cards/draw-cards", {
+  const response = await fetch("http://localhost:5001/api/user/draw-cards", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, packType }),
@@ -472,12 +473,12 @@ async function openCardPackApiCall(userId: string, packType: string): Promise<Ca
   if (!response.ok) throw new Error("카드 뽑기 실패");
 
   const data = await response.json();
-  return data.drawnCards;
+  return data.drawnCards; // 또는 data, 응답 형식에 맞춰
 }
 
 // 유저 카드 보유 상태 가져오는 API 호출 함수
 async function fetchUserCardsApiCall(userId: string): Promise<UserCard[]> {
-  const response = await fetch(`/api/user-cards/${userId}`);
+  const response = await fetch(`/api/user-cards/:userId}`);
   if (!response.ok) throw new Error("유저 카드 정보 불러오기 실패");
   const data = await response.json();
   return data.userCards;
@@ -485,8 +486,8 @@ async function fetchUserCardsApiCall(userId: string): Promise<UserCard[]> {
 
 function Inventory({ inventory, setInventory }: InventoryProps) {
   const [showModal, setShowModal] = useState<boolean>(false);
-  const [openedCards, setOpenedCards] = useState<CardData[]>([]);
-  const [userCards, setUserCards] = useState<UserCard[]>([]);
+const [openedCards, setOpenedCards] = useState<CardWithOwned[]>([]);
+const [userCards, setUserCards] = useState<UserCard[]>([]);
 
   const user = localStorage.getItem("user");
   const parsedUser = user ? JSON.parse(user) : null;
@@ -508,29 +509,34 @@ function Inventory({ inventory, setInventory }: InventoryProps) {
     loadUserCards();
   }, [userId]);
 
-  const openCardPack = async (index: number) => {
-    const cardPack = inventory[index];
-    if (!cardPack) return;
+const openCardPack = async (index: number) => {
+  const cardPack = inventory[index];
+  if (!cardPack) return;
 
-    try {
-      const drawnCardsFromServer = await openCardPackApiCall(userId, cardPack.type);
-      console.log("뽑힌 카드들:", drawnCardsFromServer);
-      setOpenedCards(drawnCardsFromServer);
-      setShowModal(true);
-      setInventory((prev) => {
-        const newInventory = [...prev];
-        newInventory.splice(index, 1);
-        return newInventory;
-        
-      });
+  try {
+    const drawnCardsFromServer = await openCardPackApiCall(userId, cardPack.type);
+    console.log("뽑힌 카드들:", drawnCardsFromServer);
 
-      // 카드팩 개봉 후 최신 유저 카드 상태 다시 불러오기
-      await loadUserCards();
-    } catch (error) {
-      console.error(error);
-      alert("카드팩 개봉 실패");
-    }
-  };
+    const cardsWithOwned = drawnCardsFromServer.map(card => ({
+      ...card,
+      owned: true,
+    }));
+
+    setOpenedCards(cardsWithOwned);  // 수정된 배열로 상태 설정
+    setShowModal(true);
+
+    setInventory((prev) => {
+      const newInventory = [...prev];
+      newInventory.splice(index, 1);
+      return newInventory;
+    });
+
+    await loadUserCards();  // 최신 유저 카드 상태 불러오기
+  } catch (error) {
+    console.error(error);
+    alert("카드팩 개봉 실패");
+  }
+};
 
   const closeModal = (): void => {
     setShowModal(false);
@@ -575,29 +581,28 @@ function Inventory({ inventory, setInventory }: InventoryProps) {
           </div>
         </div>
       )}
-
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-card-message">새로운 카드가 나왔습니다!</div>
             <div className="modal-cards">
-              {openedCards.map((card, index) => (
-                <div key={index} className="modal-card">
-                  <img
-                    src={getCardImageByNameAndTier(card.name, card.tier, true)} 
-                    alt={card.name}
-                    className="modal-card-image"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = "/placeholder.svg";
-                    }}
-                  />
-                  <p>
-                    {card.name} (Tier {card.tier})
-                  </p>
-                </div>
-              ))}
+                {openedCards.map((card, index) => (
+        <div key={index} className="modal-card">
+          <img
+            src={getCardImageByNameAndTier(card.name, card.tier, card.owned)}  // card.owned 사용
+            alt={card.name}
+            className="modal-card-image"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src = "/placeholder.svg";
+            }}
+          />
+          <p>
+            {card.name} (Tier {card.tier})
+          </p>
+        </div>
+      ))}
             </div>
             <button className="close-modal" onClick={closeModal}>
               X

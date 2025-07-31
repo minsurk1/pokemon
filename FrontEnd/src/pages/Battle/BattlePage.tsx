@@ -12,7 +12,7 @@ import costImage from "../../assets/images/cost.png"
 import healImage from "../../assets/images/heal.png"
 import bombImage from "../../assets/images/bomb.png"
 import EventItem from "./components/Eventitem"
-import { Navigate, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
 // 카드 인터페이스 정의
 interface Card {
@@ -47,13 +47,13 @@ interface BattlePageProps {
   selectedDeck: string[]
 }
 
-// Card 컴포넌트 props 인터페이스 - onClick 타입 수정
+// Card 컴포넌트 props 인터페이스
 interface CardProps {
   card: Card
   fromZone: boolean
   index: number
   moveCard: (fromIndex: number, toIndex: number) => void
-  onClick: (e: React.MouseEvent<HTMLDivElement>) => void // 타입 수정
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void
   onContextMenu: (e: React.MouseEvent<HTMLDivElement>) => void
   costIcons: number
   isHovered: boolean
@@ -82,10 +82,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   const [turn, setTurn] = useState<number>(1)
   const [playerHP, setPlayerHP] = useState<number>(2000)
   const [enemyHP, setEnemyHP] = useState<number>(2000)
-  const [timeLeft, setTimeLeft] = useState<number>(30)
+
+  const INITIAL_TIME = 30
+  const [timeLeft, setTimeLeft] = useState<number>(INITIAL_TIME)
+
   const [myCardsInZone, setMyCardsInZone] = useState<Card[]>([])
-  const navigate = useNavigate();
-  const [shouldNavigate, setShouldNavigate] = useState(false);
+  const navigate = useNavigate()
+  const [shouldNavigate, setShouldNavigate] = useState(false)
 
   // 덱과 손패 분리
   const [deckCards, setDeckCards] = useState<Card[]>([])
@@ -124,8 +127,11 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   const [animatingCard, setAnimatingCard] = useState<Card | null>(null)
   const [animationPosition, setAnimationPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
 
+  // 타이머 애니메이션 상태
+  const [timerKey, setTimerKey] = useState<number>(0)
+
   const enemyCardZoneRef = useRef<HTMLDivElement>(null)
-  const enemyAvatarRef = useRef<HTMLDivElement>(null) // 실제 적 아바타용
+  const enemyAvatarRef = useRef<HTMLDivElement>(null)
   const myZoneRef = useRef<HTMLDivElement>(null)
   const playerZoneRef = useRef<HTMLDivElement>(null)
 
@@ -204,9 +210,9 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     const newTotal = Math.min(turn + 1, 8)
     setPlayerCostIcons(newTotal)
     setOpponentCostIcons(newTotal)
-    setTimeLeft(30)
-    setCanDrawThisTurn(true) // 새 턴에는 다시 드로우 가능
-
+    setTimeLeft(INITIAL_TIME)
+    setCanDrawThisTurn(true)
+    setTimerKey((prev) => prev + 1) 
     // 5턴마다 이벤트 발생
     if ((turn + 1) % 5 === 0) {
       showEvent()
@@ -233,13 +239,14 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     setSelectedCardId(null)
   }
 
-  // 턴 종료 함수
+  // 턴 종료 함수 
   const endTurn = useCallback((): void => {
     setTurn((prevTurn) => {
       const newTurn = prevTurn + 1
-      setPlayerCostIcons(Math.min(newTurn + 1, 8))
-      setTimeLeft(30)
-      setCanDrawThisTurn(true) // 새 턴에는 다시 드로우 가능
+      setPlayerCostIcons(Math.min(newTurn, 8))
+      setOpponentCostIcons(Math.min(newTurn, 8))
+      setCanDrawThisTurn(true)
+      setTimerKey((prev) => prev + 1) // 타이머 애니메이션 재시작
 
       // 5턴마다 이벤트 발생
       if (newTurn % 5 === 0) {
@@ -248,9 +255,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
       return newTurn
     })
-  }, [])
+    
+    setTimeout(() => {
+      setTimeLeft(INITIAL_TIME)
+    }, 100)
+  }, [INITIAL_TIME])
 
-  // 이벤트 표시 함수 수정
+  // 이벤트 표시 함수
   const showEvent = (): void => {
     const event = Math.floor(Math.random() * 3)
     let eventMsg = ""
@@ -275,14 +286,12 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     setEventImage(eventImg)
     setShowMessage(true)
 
-    //턴 지날떄 마다 이벤트 HP증가
     const calculateEventHP = (): number => {
       const baseHP = 100
       const turnMultiplier = Math.floor(turn / 5)
       return baseHP + turnMultiplier * 100
     }
 
-    // 이벤트 존에 이벤트 추가
     const newEvent: Event = {
       id: Date.now(),
       type: event,
@@ -309,30 +318,24 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           setTimeout(() => {
             setMessage("💀 패배했습니다!")
             setShowMessage(true)
-            // 게임 종료 처리 (예: 메인 메뉴로 이동)
           }, 1000)
         }
-
         return newHP
       })
     } else {
       setEnemyHP((prevHP) => {
         const newHP = Math.max(0, Math.min(2000, prevHP + amount))
-
         if (newHP <= 0) {
           setTimeout(() => {
             setMessage("🎉 승리했습니다!")
             setShowMessage(true)
-            setShouldNavigate(true);
+            setShouldNavigate(true)
           }, 1000)
-
         }
-
         return newHP
       })
     }
 
-    // 공격 성공 메시지
     if (amount < 0) {
       setMessage(`${Math.abs(amount)} 데미지를 입혔습니다!`)
       setShowMessage(true)
@@ -340,13 +343,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     }
   }
 
-  // 타이머 효과
+  // 타이머 효과 (
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
-        if (prevTime <= 0) {
-          endTurn()
-          return 30
+        if (prevTime <= 1) {
+          setTimeout(() => endTurn(), 100)
+          return 0
         }
         return prevTime - 1
       })
@@ -355,18 +358,16 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     return () => clearInterval(timer)
   }, [endTurn])
 
-  // 카드 클릭 핸들러 (손패에서 필드로) - 타입 수정
+  // 카드 클릭 핸들러
   const handleCardClick = (cardId: string, fromZone: boolean, e: React.MouseEvent<HTMLDivElement>): void => {
     if (fromZone) {
       return
     } else {
       const cardToMove = handCards.find((c) => c.id === cardId)
       if (cardToMove && playerCostIcons >= cardToMove.cost) {
-        // 클릭한 카드의 위치 정보 가져오기
         const rect = (e.target as HTMLElement).getBoundingClientRect()
         setAnimationPosition({ x: rect.left, y: rect.top })
 
-        // 애니메이션용 카드 설정
         setAnimatingCard(cardToMove)
         setHoveredCardId(cardId)
 
@@ -375,8 +376,8 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           setMyCardsInZone([...myCardsInZone, cardToMove])
           setPlayerCostIcons((prevIcons) => prevIcons - cardToMove.cost)
           setHoveredCardId(null)
-          setAnimatingCard(null) // 애니메이션 종료
-        }, 700) // 애니메이션 시간과 맞춤
+          setAnimatingCard(null)
+        }, 700)
       } else {
         setMessage("코스트가 부족하여 이 카드를 사용할 수 없습니다!")
         setShowMessage(true)
@@ -408,7 +409,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     })
   }, [])
 
-  // 드롭 핸들러
+  // 드롭 핸들러들
   const [, drop] = useDrop<DragItem, void, {}>({
     accept: "CARD",
     drop: (item, monitor) => {
@@ -420,63 +421,51 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     },
   })
 
-  // 적 카드 드롭 핸들러
   const [, dropEnemyCard] = useDrop<DragItem, void, {}>({
     accept: "CARD",
     drop: (item, monitor) => {
       const droppedCard = myCardsInZone.find((card) => card.id === item.id)
       if (droppedCard && typeof droppedCard.attack === "number") {
         playerupdateHP("enemyCard", -droppedCard.attack)
-      } else {
-        console.error("Invalid attack value:", droppedCard)
       }
     },
   })
 
-  // 적 드롭 핸들러 - 디버깅 로그 추가
   const [, dropEnemy] = useDrop<DragItem, void, {}>({
     accept: "CARD",
     drop: (item, monitor) => {
-      console.log("🎯 적에게 카드 드롭됨!", item) // 디버깅 로그
       const droppedCard = myCardsInZone.find((card) => card.id === item.id)
       if (droppedCard && typeof droppedCard.attack === "number") {
-        console.log(`💥 ${droppedCard.attack} 데미지 공격!`) // 디버깅 로그
         playerupdateHP("enemy", -droppedCard.attack)
-      } else {
-        console.error("Invalid attack value:", droppedCard)
       }
     },
   })
 
-  // 특정 이벤트의 HP를 업데이트하도록 변경합니다.
+  // 이벤트 HP 업데이트
   const updateEventHP = (eventId: number, amount: number): void => {
     setActiveEvents((prevEvents) => {
       const updatedEvents = prevEvents
         .map((event) => {
           if (event.id === eventId) {
             const newHP = Math.max(0, event.hp + amount)
-
-            // HP가 0 이하가 되면 효과 실행 후 이벤트 제거
             if (newHP <= 0) {
               if (event.effect) {
-                event.effect() // 효과 실행
+                event.effect()
               }
-              return null // 이벤트 제거를 위해 null 반환
+              return null
             }
-
             return { ...event, hp: newHP }
           }
           return event
         })
-        .filter(Boolean) as Event[] // null 값 제거
+        .filter(Boolean) as Event[]
 
       return updatedEvents
     })
   }
 
-  // 내 카드 렌더링 함수 - 타입 수정
+  // 카드 렌더링 함수
   const renderMyCard = (card: Card, fromZone: boolean, index: number) => {
-    // 호버 효과 적용 여부 확인
     const isHovered = hoveredCardId === card.id
 
     return (
@@ -497,6 +486,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     )
   }
 
+  // useEffect들
   useEffect(() => {
     if (enemyCardZoneRef.current) {
       dropEnemyCard(enemyCardZoneRef.current)
@@ -521,6 +511,76 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     }
   }, [drop])
 
+  //중앙 horizontal line컴포넌트 
+  const BurnLineComponent = () => {
+    const [burnProgress, setBurnProgress] = useState(0)
+
+    useEffect(() => {
+      const progress = ((INITIAL_TIME - timeLeft) / INITIAL_TIME) * 100
+      setBurnProgress(Math.min(progress, 100))
+    }, [timeLeft])
+
+    const getFireColor = (progress: number) => {
+      if (progress < 25) {
+        return "#00FF00" 
+      } else if (progress < 50) {
+        return "#FFFF00" 
+      } else if (progress < 75) {
+        return "#FF8800" 
+      } else {
+        return "#FF0000" 
+      }
+    }
+
+    return (
+      <div
+        className="horizontal-line"
+        style={{
+          background:
+            burnProgress > 0
+              ? `linear-gradient(to right, ${getFireColor(burnProgress)} ${burnProgress}%, #ffffff ${burnProgress}%)`
+              : "linear-gradient(to right, #ffffff 0%, #ffffff 100%)",
+        }}
+      />
+    )
+  }
+
+  // 타이머 색상 함수
+  const getTimerColor = (timeLeft: number) => {
+    const timeRatio = timeLeft / INITIAL_TIME
+
+    if (timeRatio > 0.75) {
+      return "#00FF00" 
+    } else if (timeRatio > 0.5) {
+      return "#FFFF00" 
+    } else if (timeRatio > 0.25) {
+      return "#FF8800" 
+    } else {
+      return "#FF0000" 
+    }
+  }
+
+  // 원형 타이머 컴포넌트 
+  const CircularTimer = () => {
+    const timerColor = getTimerColor(timeLeft)
+    const progress = ((INITIAL_TIME - timeLeft) / INITIAL_TIME) * 100
+
+    return (
+      <div className="timer-container">
+        <div
+          className="timer"
+          style={{
+            background: `conic-gradient(${timerColor} ${progress * 3.6}deg, #eee 0deg)`,
+          }}
+        >
+          <div className="timer-inner">
+            <div className="timer-text">{timeLeft}초</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="battle-container">
       {showMessage && (
@@ -535,7 +595,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
         </MessageBox>
       )}
 
-      {/* 애니메이션 중인 카드를 독립적으로 렌더링 */}
+      {/* 애니메이션 중인 카드 */}
       {animatingCard && (
         <div className="animating-card-overlay">
           <div
@@ -553,9 +613,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
       <div className="field-container">
         {/* 적 필드 */}
-        
-        <div className="enemy-card-bg"/>
- 
+        <div className="enemy-card-bg" />
         <div className="enemy-field">
           <div ref={enemyCardZoneRef} className="enemy-card-zone">
             {[...Array(5)].map((_, index) => (
@@ -569,12 +627,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
         </div>
 
         {/* 중앙 구분선 */}
-        <div className="horizontal-line"></div>
+        <BurnLineComponent />
 
         {/* 플레이어 필드 */}
         <div ref={playerZoneRef} className="player-field"></div>
-        <div className="player-card-bg"/>
-        {/* 플레이어 카드존을 독립적으로 배치 */}
+        <div className="player-card-bg" />
+
+        {/* 플레이어 카드존 */}
         <div ref={myZoneRef} className="player-card-zone">
           {myCardsInZone.length > 0 ? (
             myCardsInZone.map((card, index) => renderMyCard(card, true, index))
@@ -582,10 +641,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
             <div className="empty-zone">카드를 여기에 배치하세요</div>
           )}
         </div>
+
+        {/* 타이머 존 */}
         <div className="time-zone">
           <div className="turn-indicator">턴: {turn}</div>
-          <div className="timer">시간: {timeLeft}초</div>
+          <CircularTimer />
         </div>
+
         {/* 덱과 손패 영역 */}
         <div className="deck-area">
           <button
@@ -660,14 +722,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   )
 }
 
-// Card 컴포넌트 - 타입 수정
+// Card 컴포넌트
 const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIcons, isHovered }: CardProps) => {
-  // useRef를 사용하여 ref 객체 생성
   const cardRef = useRef<HTMLDivElement>(null)
 
   const [{ isDragging }, drag] = useDrag<DragItem, unknown, { isDragging: boolean }>({
     type: "CARD",
-    item: { id: card.id, fromZone, index, card }, // card 객체 전체를 item에 포함
+    item: { id: card.id, fromZone, index, card },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -692,14 +753,12 @@ const Card = ({ card, fromZone, index, moveCard, onClick, onContextMenu, costIco
     },
   })
 
-  // useEffect를 사용하여 ref와 drag, drop 함수 연결
   useEffect(() => {
     if (cardRef.current) {
       drag(drop(cardRef.current))
     }
   }, [drag, drop])
 
-  // 호버 효과를 위한 스타일 계산
   const cardStyle = {
     position: "relative" as const,
     transform: isHovered ? "scale(2.5) translateY(-145px)" : "scale(1)",

@@ -73,10 +73,12 @@
 
 .horizontal-line {
   width: 100%;
-  height: 0.2vh;
-  background: #000000;
-  opacity: 0.5;
+  height: 0.4vh;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   z-index: 20;
+  opacity: 0.8;
+  transition: background 0.3s ease;
 }
 
 .enemy-field {
@@ -94,7 +96,7 @@
 .player-field {
   width: 100%;
   height: 49.9vh;
-  background-color: #2d2d2d;  
+  background-color: #2d2d2d;
   clip-path: polygon(0 100%, 100% 100%, 100% 20%, 95% 56%, 10% 56%, 0 45%);
   display: flex;
   justify-content: center;
@@ -145,8 +147,9 @@
   padding-bottom: 60px;
   z-index: 200;
   clip-path: polygon(0 0%, 100% 0%, 100% 20%, 95% 56%, 10% 56%, 0 45%);
-  background-image: url("../../assets/images/test11.png");
-  background-size: cover;
+  background-color: #000000;
+  /* background-image: url("../../assets/images/test11.png");
+  background-size: cover; */
 }
 .enemy-card-bg {
   position: absolute;
@@ -159,11 +162,12 @@
   gap: 50px;
   justify-content: center;
   align-items: center;
-  top:60px;
+  top: 60px;
   z-index: 200;
   clip-path: polygon(10% 33%, 94.9% 33%, 100% 76%, 100% 100%, 0% 100%, 0 46.3%);
-  background-image: url("../../assets/images/test22.png");
-  background-size: cover;
+  /* background-image: url("../../assets/images/test22.png");
+  background-size: cover; */
+  background-color: #000000;
 }
 .enemy-card-slot,
 .card-slot {
@@ -183,14 +187,51 @@
   position: absolute;
   height: 208.5px;
   clip-path: polygon(0 0, 100% 22.6%, 100% 100%, 0 100%);
-  background-color: #f200ff;
+  background-color: transparent;
   z-index: 100;
   width: 130px;
   left: 0;
-  bottom: 0 ;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  color: white;
+}
+
+/* 수정된 타이머 스타일 */
+.timer-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.timer {
+  border-radius: 50%;
+  height: 100px;
+  width: 100px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.1s ease;
+}
+
+.timer-inner {
+  background: #2d2d2d;
+  border-radius: 50%;
+  height: 80px;
+  width: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.timer-text {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  z-index: 101;
 }
 
 .deck-area {
@@ -208,7 +249,6 @@
   height: 140px;
   background-image: url("../../assets/images/default.png");
   background-size: cover;
-  /* border: 3px solid #2b00ff; */
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -227,7 +267,6 @@
 
 .deck-card:hover:not(:disabled) {
   transform: scale(1.05);
-  /* border-color: #66b3ff; */
   box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
 }
 
@@ -346,13 +385,8 @@
   text-align: center;
 }
 
-.turn-indicator
-{
-  margin-top:50px;
-  font-size: 1.1rem;
-  font-weight: bold;
-}
-.timer {
+.turn-indicator {
+  margin-top: 50px;
   font-size: 1.1rem;
   font-weight: bold;
 }

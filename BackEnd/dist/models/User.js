@@ -34,16 +34,12 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-// 사용자 스키마 정의
-const UserSchema = new mongoose_1.Schema({
+const userSchema = new mongoose_1.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     nickname: { type: String, required: true },
-    money: { type: Number, default: 1200 }, // 초기 금액 1200원
-    createdAt: { type: Date, default: Date.now },
-}, {
-    versionKey: false, // __v 필드 제거
+    money: { type: Number, default: 0 },
 });
-// 모델 생성 및 내보내기
-exports.default = mongoose_1.default.model("User", UserSchema);
+const User = mongoose_1.default.model("User", userSchema);
+exports.default = User;

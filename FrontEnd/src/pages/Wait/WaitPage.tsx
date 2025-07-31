@@ -13,7 +13,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import io, { type Socket } from "socket.io-client"; // Socket 타입 추가
 import "./WaitPage.css";
 import waitVideo from "../../assets/videos/waitvideo.mp4";
-import BackgroundVideo from "../../components/common/global.tsx";
+import BackgroundVideo from "../../components/common/global";
 
 // location.state의 타입 정의
 interface LocationState {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "./Inventory.css";
-import BackgroundVideo from "../../components/common/global.tsx";
+import BackgroundVideo from "../../components/common/global";
 import inventoryVideo from "../../assets/videos/arceus.mp4";
 
 import fireTier1 from "../../assets/images/firetier1.png"
@@ -99,6 +99,14 @@ import legendTier4 from "../../assets/images/legendtier4.png"
 import legendTier5 from "../../assets/images/legendtier5.png"
 import legendTier6 from "../../assets/images/legendtier6.png"
 import legendTier7 from "../../assets/images/legendtier7.png"
+
+export interface Card {
+  image: string;   // 이미지 경로
+  name: string;    // 카드 이름
+  price: number;   // 가격
+  packImage: string; // 카드팩 이미지 (필요하다면)
+}
+
 
 export interface CardData {
   name: string;
@@ -464,7 +472,7 @@ const cardsData: CardData[] = [
 ]
 
 async function openCardPackApiCall(userId: string, packType: string): Promise<CardData[]> {
-  const response = await fetch("http://localhost:5001/api/user/draw-cards", {
+  const response = await fetch("https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/user/draw-cards", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, packType }),

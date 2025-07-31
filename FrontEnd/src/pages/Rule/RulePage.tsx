@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom"
 import "./RulePage.css"
 import rulevideo from "../../assets/videos/rulevideo.mp4"
 import { FaHome } from "react-icons/fa";
-import BackgroundVideo from "../../components/common/global.tsx"
-import { HomeButton } from "../../components/common/button.tsx"
+import BackgroundVideo from "../../components/common/global"
+import { HomeButton } from "../../components/common/button"
 
 function RulePage() {
   const [ruleText, setRuleText] = useState<string>("확인할 설명을 선택하세요.")

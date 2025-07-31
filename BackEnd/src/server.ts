@@ -7,8 +7,7 @@ import { Server as SocketIOServer } from "socket.io";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import userCardRoutes from "./routes/userCardRoutes";
-import cardRoutes from "./routes/cards";
-import { setupRoomHandlers } from "./routes/room"; // 소켓 핸들러
+import { setupRoomHandlers } from "./routes/room";
 
 dotenv.config(); // .env 환경변수 로드
 
@@ -57,8 +56,7 @@ app.use((req, res, next) => {
 // ✅ API 라우트 등록
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/cards", cardRoutes);
-app.use("/api/user-cards", userCardRoutes); 
+app.use("/api/user-cards", userCardRoutes);
 
 // ✅ 헬스 체크 (라우트 등록 아래에 둬도 됨)
 app.get("/health", (req, res) => {

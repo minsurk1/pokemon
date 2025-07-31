@@ -3,62 +3,28 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const isAuthenticated_1 = require("../middleware/isAuthenticated"); // 여기서만 import
-const User_1 = __importDefault(require("../models/User"));
+const express_1 = __importDefault(require("express"));
 const UserCard_1 = __importDefault(require("../models/UserCard"));
 const Card_1 = __importDefault(require("../models/Card"));
-const router = (0, express_1.Router)();
-console.log("userRoutes 라우터 로드됨");
-router.get("/me", isAuthenticated_1.isAuthenticated, async (req, res) => {
-    // 내부에서 타입 단언 (검증 필수)
-    const userReq = req;
-    console.log("/api/user/me 요청 처리");
-    if (!userReq.user) {
-        return res.status(401).json({ message: "인증이 필요합니다." });
-    }
-    try {
-        const user = await User_1.default.findById(userReq.user.id).select("username nickname money");
-        if (!user) {
-            return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-        }
-        res.json(user);
-    }
-    catch (err) {
-        res.status(500).json({ message: "서버 오류", error: err });
-    }
-});
-router.get("/user-cards/:userId", isAuthenticated_1.isAuthenticated, async (req, res) => {
-    const userId = req.params.userId;
-    try {
-        const userCards = await UserCard_1.default.find({ user: userId }).populate('card');
-        if (!userCards) {
-            return res.status(404).json({ message: "해당 유저의 카드 정보를 찾을 수 없습니다." });
-        }
-        res.json(userCards);
-    }
-    catch (error) {
-        console.error("유저 카드 조회 오류:", error);
-        res.status(500).json({ message: "서버 오류", error });
-    }
-});
+const isAuthenticated_1 = require("../middleware/isAuthenticated");
+const router = express_1.default.Router();
+// 카드 뽑기 API
+// 인증 미들웨어 적용: 요청에 유효한 JWT가 있어야 하고, req.user.id로 사용자 ID 사용 가능
 router.post("/draw-cards", isAuthenticated_1.isAuthenticated, async (req, res) => {
-    const userReq = req;
     try {
-        console.log("[draw-cards] req.user:", userReq.user);
-        console.log("[draw-cards] userId:", userReq.user?.id);
-        console.log("[draw-cards] req.body:", req.body);
-        const userId = userReq.user?.id;
+        // 인증 미들웨어가 넣어준 req.user.id를 userId로 사용
+        const userId = req.user?.id;
+        if (!userId) {
+            // userId 없으면 401 에러 반환
+            return res.status(401).json({ message: "유효하지 않은 사용자입니다." });
+        }
+        // 클라이언트에서 카드팩 종류 전달 받음
         const { packType } = req.body;
-        if (!userId || !packType) {
-            return res.status(400).json({ message: "userId 또는 packType 누락" });
-        }
-        const allCards = await Card_1.default.find();
-        if (allCards.length === 0) {
-            return res.status(500).json({ message: "카드 데이터가 존재하지 않습니다." });
-        }
-        const getProbabilities = (pack) => {
-            switch (pack) {
+        // 모든 카드 정보를 DB에서 조회
+        const allCards = await Card_1.default.find({}).exec();
+        // 카드팩 종류에 따른 등급별 확률 반환 함수
+        const getProbabilities = (packType) => {
+            switch (packType) {
                 case "B":
                     return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
                 case "A":
@@ -70,6 +36,7 @@ router.post("/draw-cards", isAuthenticated_1.isAuthenticated, async (req, res) =
             }
         };
         const probabilities = getProbabilities(packType);
+        // 확률 분포에 따라 등급을 랜덤 추출하는 함수
         function getRandomTier(probabilities) {
             const rand = Math.random();
             let cumulative = 0;
@@ -78,8 +45,11 @@ router.post("/draw-cards", isAuthenticated_1.isAuthenticated, async (req, res) =
                 if (rand <= cumulative)
                     return +tier;
             }
+            // 확률 합산 오류 대비 가장 높은 등급 반환
             return Math.max(...Object.keys(probabilities).map(Number));
         }
+        // tier(등급)에 맞는 카드 중 랜덤으로 한 장 선택
+        // ★ 수정: 공격력(attack) 또는 체력(hp)으로 필터링하지 말고 카드 모델에 tier 필드가 있다면 tier로 필터해야 함
         function getRandomCardFromTier(tier) {
             const tierCards = allCards.filter((card) => card.tier === tier);
             if (tierCards.length === 0)
@@ -87,14 +57,13 @@ router.post("/draw-cards", isAuthenticated_1.isAuthenticated, async (req, res) =
             return tierCards[Math.floor(Math.random() * tierCards.length)];
         }
         const drawnCards = [];
-        let attempts = 0;
-        while (drawnCards.length < 5 && attempts < 20) {
+        for (let i = 0; i < 5; i++) {
             const tier = getRandomTier(probabilities);
             const card = getRandomCardFromTier(tier);
             if (card)
                 drawnCards.push(card);
-            attempts++;
         }
+        // 뽑은 카드들을 유저의 카드 컬렉션에 저장 또는 수량 증가 처리
         for (const card of drawnCards) {
             const existingUserCard = await UserCard_1.default.findOne({ user: userId, card: card._id });
             if (existingUserCard) {
@@ -112,6 +81,7 @@ router.post("/draw-cards", isAuthenticated_1.isAuthenticated, async (req, res) =
                 await newUserCard.save();
             }
         }
+        // 성공 응답과 함께 뽑은 카드 데이터 반환
         res.status(200).json({
             message: "카드 뽑기 성공",
             drawnCards: drawnCards.map((c) => ({
@@ -125,8 +95,9 @@ router.post("/draw-cards", isAuthenticated_1.isAuthenticated, async (req, res) =
         });
     }
     catch (error) {
-        console.error("카드팩 개봉 오류:", error);
-        res.status(500).json({ message: "카드팩 개봉 실패", error });
+        // 에러 로그 출력 및 500 에러 반환
+        console.error(error);
+        res.status(500).json({ message: "카드 뽑기 실패", error });
     }
 });
 exports.default = router;

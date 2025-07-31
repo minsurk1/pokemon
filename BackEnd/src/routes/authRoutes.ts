@@ -122,11 +122,13 @@ router.post("/login", async (req: Request, res: Response) => {
 
     console.log("✅ 로그인 성공, 사용자 ID:", user._id);
 
-    const token = jwt.sign(
-      { userId: user._id, username: user.username },
-      jwtSecret,
-      { expiresIn: "1h" }
-    );
+  const token = jwt.sign(
+  { userId: user._id.toString(), username: user.username },
+  jwtSecret,
+  { expiresIn: "1h" }
+);
+
+
 
     res.json({
       message: "로그인 성공!",

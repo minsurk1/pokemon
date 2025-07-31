@@ -4,8 +4,8 @@ import "./MainPage.css";
 import mainImage from "../../assets/images/default.png";
 import { CardAnimation } from "@lasbe/react-card-animation";
 import io, { type Socket } from "socket.io-client";
-import BackgroundVideo from "../../components/common/global.tsx";
-import { MenuButton } from "../../components/common/button.tsx";
+import BackgroundVideo from "../../components/common/global";
+import { MenuButton } from "../../components/common/button";
 import axios from "axios";
 
 import phantomVideo from "../../assets/videos/phantom.mp4";
@@ -24,7 +24,9 @@ const videoThemes = {
 
 interface MainPageProps {
   selectedDeck: string[];
+  currency: number;
 }
+
 
 function MainPage({ selectedDeck }: MainPageProps) {
   const navigate = useNavigate();

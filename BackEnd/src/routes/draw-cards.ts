@@ -1,18 +1,29 @@
-// routes/cardRoutes.ts
-import express from "express";
+import express, { Response } from "express";
 import UserCard from "../models/UserCard";
 import Card from "../models/Card";
 import { Types } from "mongoose";
+import { isAuthenticated, AuthenticatedRequest } from "../middleware/isAuthenticated";
 
 const router = express.Router();
 
 // 카드 뽑기 API
-router.post("/draw-cards", async (req, res) => {
-  try {
-    const { userId, packType } = req.body;
+// 인증 미들웨어 적용: 요청에 유효한 JWT가 있어야 하고, req.user.id로 사용자 ID 사용 가능
+router.post("/draw-cards", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
+ try {
+    // 인증 미들웨어가 넣어준 req.user.id를 userId로 사용
+    const userId = req.user?.id;
+    if (!userId) {
+      // userId 없으면 401 에러 반환
+      return res.status(401).json({ message: "유효하지 않은 사용자입니다." });
+    }
 
+    // 클라이언트에서 카드팩 종류 전달 받음
+    const { packType } = req.body;
+
+    // 모든 카드 정보를 DB에서 조회
     const allCards = await Card.find({}).exec();
 
+    // 카드팩 종류에 따른 등급별 확률 반환 함수
     const getProbabilities = (packType: string): { [key: number]: number } => {
       switch (packType) {
         case "B":
@@ -28,6 +39,7 @@ router.post("/draw-cards", async (req, res) => {
 
     const probabilities = getProbabilities(packType);
 
+    // 확률 분포에 따라 등급을 랜덤 추출하는 함수
     function getRandomTier(probabilities: { [key: number]: number }) {
       const rand = Math.random();
       let cumulative = 0;
@@ -35,16 +47,17 @@ router.post("/draw-cards", async (req, res) => {
         cumulative += probabilities[+tier] || 0;
         if (rand <= cumulative) return +tier;
       }
+      // 확률 합산 오류 대비 가장 높은 등급 반환
       return Math.max(...Object.keys(probabilities).map(Number));
     }
 
-function getRandomCardFromTier(tier: number) {
-  const tierCards = allCards.filter(
-    (card) => card.attack === tier || card.hp === tier
-  );
-  if (tierCards.length === 0) return null;
-  return tierCards[Math.floor(Math.random() * tierCards.length)];
-}
+    // tier(등급)에 맞는 카드 중 랜덤으로 한 장 선택
+    // ★ 수정: 공격력(attack) 또는 체력(hp)으로 필터링하지 말고 카드 모델에 tier 필드가 있다면 tier로 필터해야 함
+    function getRandomCardFromTier(tier: number) {
+      const tierCards = allCards.filter((card) => card.tier === tier);
+      if (tierCards.length === 0) return null;
+      return tierCards[Math.floor(Math.random() * tierCards.length)];
+    }
 
     const drawnCards = [];
     for (let i = 0; i < 5; i++) {
@@ -53,6 +66,7 @@ function getRandomCardFromTier(tier: number) {
       if (card) drawnCards.push(card);
     }
 
+    // 뽑은 카드들을 유저의 카드 컬렉션에 저장 또는 수량 증가 처리
     for (const card of drawnCards) {
       const existingUserCard = await UserCard.findOne({ user: userId, card: card._id });
       if (existingUserCard) {
@@ -70,6 +84,7 @@ function getRandomCardFromTier(tier: number) {
       }
     }
 
+    // 성공 응답과 함께 뽑은 카드 데이터 반환
     res.status(200).json({
       message: "카드 뽑기 성공",
       drawnCards: drawnCards.map((c) => ({
@@ -82,6 +97,7 @@ function getRandomCardFromTier(tier: number) {
       })),
     });
   } catch (error) {
+    // 에러 로그 출력 및 500 에러 반환
     console.error(error);
     res.status(500).json({ message: "카드 뽑기 실패", error });
   }

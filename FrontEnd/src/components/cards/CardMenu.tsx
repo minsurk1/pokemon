@@ -1,8 +1,25 @@
-import React from "react"
-import "./CardMenu.css"
+import React from "react";
+import "./CardMenu.css";
 
-const CardMenu = ({ x, y, onClose, card }) => {
-  if (!card) return null
+// 카드 타입 정의
+interface Card {
+  name?: string;
+  attack?: number;
+  hp?: number;
+  cost?: number;
+}
+
+// props 타입 정의
+interface CardMenuProps {
+  x: number;
+  y: number;
+  onClose: () => void;
+  card?: Card | null;
+}
+
+// 타입 적용된 컴포넌트
+const CardMenu: React.FC<CardMenuProps> = ({ x, y, onClose, card }) => {
+  if (!card) return null;
 
   return (
     <div
@@ -20,7 +37,7 @@ const CardMenu = ({ x, y, onClose, card }) => {
       </div>
       <button onClick={onClose}>닫기</button>
     </div>
-  )
-}
+  );
+};
 
-export default CardMenu
+export default CardMenu;

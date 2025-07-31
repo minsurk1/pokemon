@@ -8,6 +8,7 @@ export interface ICard extends Document {
   image2D: string;
   image3DColor: string;
   image3DGray: string;
+  tier: number;
 }
 
 const CardSchema: Schema = new Schema({

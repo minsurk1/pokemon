@@ -4,13 +4,13 @@ import React from "react"
 import { useDrag, useDrop } from "react-dnd"
 import * as TWEEN from '@tweenjs/tween.js';
 import "./BattlePage.css"
-import MessageBox from "../../components/common/MessageBox.tsx"
-import CardMenu from "../../components/cards/CardMenu.tsx"
-import { cardsData } from "../Inventory/Inventory.tsx"
+import MessageBox from "../../components/common/MessageBox"
+import CardMenu from "../../components/cards/CardMenu"
+import { cardsData } from "../Inventory/Inventory"
 import costImage from "../../assets/images/cost.png"
 import healImage from "../../assets/images/heal.png"
 import bombImage from "../../assets/images/bomb.png"
-import EventItem from "./components/Eventitem.tsx"
+import EventItem from "./components/Eventitem"
 
 // 카드 인터페이스 정의
 interface Card {

@@ -32,4 +32,11 @@ declare module "*.png" {
     const src: string;
     export default src;
   }
-  
+
+  declare module "assets/*" {
+    const value: string;
+    export default value;
+  }
+
+  declare module "components/*"
+  declare module "pages/*"

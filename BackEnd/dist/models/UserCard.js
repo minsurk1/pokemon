@@ -37,7 +37,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const UserCardSchema = new mongoose_1.Schema({
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
     card: { type: mongoose_1.Schema.Types.ObjectId, ref: "Card", required: true },
-    count: { type: Number, default: 0 },
-    owned: { type: Boolean, default: false },
+    count: { type: Number, default: 1 },
+    owned: { type: Boolean, default: true },
 });
 exports.default = mongoose_1.default.model("UserCard", UserCardSchema);

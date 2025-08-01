@@ -7,7 +7,6 @@ import waitVideo from "../../assets/videos/waitvideo.mp4";
 import BackgroundVideo from "../../components/common/global";
 import MessageBox from "../../components/common/MessageBox";
 
-
 // location.state의 타입 정의
 interface LocationState {
   roomCode?: string;
@@ -104,16 +103,16 @@ function WaitPage() {
       <div className="wait-page">
         <BackgroundVideo src={waitVideo} opacity={1} zIndex={-1} />
         {showMessage && (
-                <MessageBox
-                  bgColor="#e3f2fd"
-                  borderColor="#2196f3"
-                  textColor="#0d47a1"
-                  onClose={closeMessage}
-                  closeborderColor="black"
-                >
-                  {message}
-                </MessageBox>
-              )}
+          <MessageBox
+            bgColor="#e3f2fd"
+            borderColor="#2196f3"
+            textColor="#0d47a1"
+            onClose={closeMessage}
+            closeborderColor="black"
+          >
+            {message}
+          </MessageBox>
+        )}
         <div className="room-info">
           <h2>대기실</h2>
           <p>방 코드: {roomCode}</p>

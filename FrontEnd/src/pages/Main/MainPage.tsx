@@ -3,6 +3,7 @@
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { motion } from "framer-motion";
 import "./MainPage.css";
 import io, { type Socket } from "socket.io-client";
@@ -77,17 +78,12 @@ const videoThemes = {
 interface MainPageProps {
   currency: number;
   selectedDeck: string[];
-  userMoney?: number;
-  userNickname?: string;
 }
 
-function MainPage({
-  currency,
-  selectedDeck,
-  userMoney,
-  userNickname,
-}: MainPageProps) {
+function MainPage({ currency, selectedDeck }: MainPageProps) {
   const navigate = useNavigate();
+  const [nickname, setNickname] = useState<string>("");
+  const [money, setMoney] = useState<number>(0);
   const [showRoomTab, setShowRoomTab] = useState<boolean>(false);
   const [showCardTab, setShowCardTab] = useState<boolean>(false);
   const [roomCode, setRoomCode] = useState<string>("");
@@ -105,15 +101,10 @@ function MainPage({
   const themeImage = videoThemes[randomVideo].image;
 
   const list = {
-    hidden: {
-      opacity: 0,
-    },
+    hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        when: "beforeChildren",
-        staggerChildren: 0.2,
-      },
+      transition: { when: "beforeChildren", staggerChildren: 0.2 },
     },
   };
 
@@ -142,58 +133,55 @@ function MainPage({
     );
     setSocket(newSocket);
 
-    const onMessage = (data: string) => {
-      setServerResponse(data);
-      setServerError("");
-    };
-    const onRoomCreated = (newRoomCode: string) => {
-      navigate("/wait", { state: { roomCode: newRoomCode } });
-    };
-    const onRoomJoined = (joinedRoomCode: string) => {
-      navigate("/wait", { state: { roomCode: joinedRoomCode } });
-    };
-    const onError = (error: string) => {
-      setServerError(error);
-    };
-
-    newSocket.on("message", onMessage);
-    newSocket.on("roomCreated", onRoomCreated);
-    newSocket.on("roomJoined", onRoomJoined);
-    newSocket.on("error", onError);
+    newSocket.on("message", (data: string) => setServerResponse(data));
+    newSocket.on("roomCreated", (code: string) =>
+      navigate("/wait", { state: { roomCode: code } })
+    );
+    newSocket.on("roomJoined", (code: string) =>
+      navigate("/wait", { state: { roomCode: code } })
+    );
+    newSocket.on("error", (error: string) => setServerError(error));
 
     return () => {
-      newSocket.off("message", onMessage);
-      newSocket.off("roomCreated", onRoomCreated);
-      newSocket.off("roomJoined", onRoomJoined);
-      newSocket.off("error", onError);
       newSocket.close();
     };
   }, [navigate, themeColorClass]);
 
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await axios.get(
+          "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/user/me",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
+
+        setNickname(res.data.nickname);
+        setMoney(res.data.money);
+      } catch (err) {
+        console.error("유저 정보 로딩 실패:", err);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
   const handleLogout = useCallback(() => {
-    localStorage.removeItem("token"); // 토큰 삭제
+    localStorage.removeItem("token");
     navigate("/");
   }, [navigate]);
 
-  const handleStore = useCallback(() => {
-    navigate("/store");
-  }, [navigate]);
-
-  const handleDeck = useCallback(() => {
-    navigate("/deck");
-  }, [navigate]);
-
-  const handledex = useCallback(() => {
-    navigate("/dex");
-  }, [navigate]);
-
-  const handleBattle = useCallback(() => {
-    navigate("/battle");
-  }, [navigate]);
-
-  const handleRule = useCallback(() => {
-    navigate("/rule");
-  }, [navigate]);
+  const handleStore = useCallback(() => navigate("/store"), [navigate]);
+  const handleDeck = useCallback(() => navigate("/deck"), [navigate]);
+  const handledex = useCallback(() => navigate("/dex"), [navigate]);
+  const handleBattle = useCallback(() => navigate("/battle"), [navigate]);
+  const handleRule = useCallback(() => navigate("/rule"), [navigate]);
+  const handleProfile = useCallback(() => navigate("/profile"), [navigate]);
 
   const toggleRoomTab = useCallback(() => {
     setShowRoomTab((prev) => !prev);
@@ -203,10 +191,6 @@ function MainPage({
   const toggleCardTab = useCallback(() => {
     setShowCardTab((prev) => !prev);
   }, []);
-
-  const handleProfile = useCallback(() => {
-    navigate("/profile");
-  }, [navigate]);
 
   const handleCreateRoom = useCallback(() => {
     if (socket) {
@@ -225,59 +209,36 @@ function MainPage({
   }, [roomCode, socket]);
 
   const onRoomCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleJoinRoom();
-    }
+    if (e.key === "Enter") handleJoinRoom();
   };
 
   return (
     <div className="main-container">
       <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
       <div className="sidebar">
-        <motion.ul
-          variants={list}
-          initial="hidden"
-          animate="visible"
-          style={{ overflow: "hidden" }}
-        >
+        <motion.ul variants={list} initial="hidden" animate="visible">
           <motion.li variants={item}>
-            <MenuButton
-              onClick={handleStore}
-              marginBottom="2.7rem"
-              marginTop="0.4rem"
-            >
-              상점
-            </MenuButton>
+            <MenuButton onClick={handleStore}>상점</MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleDeck} marginBottom="2.7rem">
-              카드
-            </MenuButton>
+            <MenuButton onClick={handleDeck}>카드</MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handledex} marginBottom="2.7rem">
-              도감
-            </MenuButton>
+            <MenuButton onClick={handledex}>도감</MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleBattle} marginBottom="2.7rem">
-              배틀
-            </MenuButton>
+            <MenuButton onClick={handleBattle}>배틀</MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleRule} marginBottom="2.7rem">
-              Rule
-            </MenuButton>
+            <MenuButton onClick={handleRule}>Rule</MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={toggleRoomTab} marginBottom="2.7rem">
+            <MenuButton onClick={toggleRoomTab}>
               {showRoomTab ? "탭 닫기" : "방 만들기/입장"}
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleProfile} marginBottom="2.7rem">
-              마이페이지
-            </MenuButton>
+            <MenuButton onClick={handleProfile}>마이페이지</MenuButton>
           </motion.li>
         </motion.ul>
       </div>
@@ -289,25 +250,11 @@ function MainPage({
               <CardAnimation>
                 <img
                   src={themeImage || "/placeholder.svg"}
-                  alt={`${themeName} 대표 카드`}
+                  alt="대표 카드"
                   className="theme-card-image"
                 />
               </CardAnimation>
               <div className="theme-card-name">{themeName}</div>
-            </div>
-
-            <div className="user-deck-section">
-              {/* <h4>내 덱 카드</h4> */}
-              {/* <div className="user-cards-container">
-                {selectedDeck.slice(0, 30).map((cardUrl, index) => (
-                  <img
-                    key={index}
-                    src={cardUrl || "/placeholder.svg"}
-                    alt={`카드 ${index}`}
-                    className="user-card-image"
-                  />
-                ))}
-              </div> */}
             </div>
           </div>
         </div>
@@ -325,20 +272,12 @@ function MainPage({
             {themeName}
           </motion.button>
 
-          {/* 닉네임 추가 표시 */}
-          {userNickname ? (
-            <span className="user-nickname" style={{ marginLeft: "1rem" }}>
-              안녕하세요, {userNickname}님
-            </span>
-          ) : (
-            <span className="user-nickname" style={{ marginLeft: "1rem" }}>
-              로그인 해주세요
-            </span>
-          )}
+          <span className="user-nickname" style={{ marginLeft: "1rem" }}>
+            안녕하세요, {nickname || "로그인 해주세요"}님
+          </span>
 
-          {/* 현재 돈 표시 */}
           <span className="money" style={{ marginLeft: "1rem" }}>
-            현재 돈: {userMoney !== undefined ? userMoney : currency}원
+            현재 돈: {money.toLocaleString()}원
           </span>
 
           <button className="logout-button" onClick={handleLogout}>

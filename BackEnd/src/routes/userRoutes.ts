@@ -1,8 +1,8 @@
-import { Router, Response, Request } from "express";
+import { Router, Response } from "express";
 import {
   isAuthenticated,
   AuthenticatedRequest,
-} from "../middleware/isAuthenticated";  // 여기서만 import
+} from "../middleware/isAuthenticated";
 
 import User from "../models/User";
 import UserCard from "../models/UserCard";
@@ -12,20 +12,19 @@ const router = Router();
 
 console.log("userRoutes 라우터 로드됨");
 
+// GET /api/user/me
 router.get(
   "/me",
   isAuthenticated,
-  async (req: Request, res: Response) => {
-    // 내부에서 타입 단언 (검증 필수)
-    const userReq = req as AuthenticatedRequest;
-
+  async (req: AuthenticatedRequest, res: Response) => {
     console.log("/api/user/me 요청 처리");
-    if (!userReq.user) {
+
+    if (!req.user) {
       return res.status(401).json({ message: "인증이 필요합니다." });
     }
 
     try {
-      const user = await User.findById(userReq.user.id).select(
+      const user = await User.findById(req.user.id).select(
         "username nickname money"
       );
       if (!user) {
@@ -37,15 +36,20 @@ router.get(
     }
   }
 );
+
+// GET /api/user/user-cards/:userId
 router.get(
   "/user-cards/:userId",
   isAuthenticated,
   async (req: AuthenticatedRequest, res: Response) => {
-     const userId = req.params.userId;
+    const userId = req.params.userId;
+
     try {
-      const userCards = await UserCard.find({ user: userId }).populate('card');
+      const userCards = await UserCard.find({ user: userId }).populate("card");
       if (!userCards) {
-        return res.status(404).json({ message: "해당 유저의 카드 정보를 찾을 수 없습니다." });
+        return res
+          .status(404)
+          .json({ message: "해당 유저의 카드 정보를 찾을 수 없습니다." });
       }
       res.json(userCards);
     } catch (error) {
@@ -55,19 +59,13 @@ router.get(
   }
 );
 
-
+// POST /api/user/draw-cards
 router.post(
   "/draw-cards",
   isAuthenticated,
-  async (req: Request, res: Response) => {
-    const userReq = req as AuthenticatedRequest;
-
+  async (req: AuthenticatedRequest, res: Response) => {
     try {
-      console.log("[draw-cards] req.user:", userReq.user);
-      console.log("[draw-cards] userId:", userReq.user?.id);
-      console.log("[draw-cards] req.body:", req.body);
-
-      const userId = userReq.user?.id;
+      const userId = req.user?.id;
       const { packType } = req.body;
 
       if (!userId || !packType) {
@@ -76,7 +74,9 @@ router.post(
 
       const allCards = await Card.find();
       if (allCards.length === 0) {
-        return res.status(500).json({ message: "카드 데이터가 존재하지 않습니다." });
+        return res
+          .status(500)
+          .json({ message: "카드 데이터가 존재하지 않습니다." });
       }
 
       const getProbabilities = (pack: string): { [tier: number]: number } => {
@@ -84,9 +84,26 @@ router.post(
           case "B":
             return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
           case "A":
-            return { 1: 0.23, 2: 0.2, 3: 0.18, 4: 0.15, 5: 0.12, 6: 0.08, 7: 0.04 };
+            return {
+              1: 0.23,
+              2: 0.2,
+              3: 0.18,
+              4: 0.15,
+              5: 0.12,
+              6: 0.08,
+              7: 0.04,
+            };
           case "S":
-            return { 1: 0.18, 2: 0.16, 3: 0.15, 4: 0.14, 5: 0.12, 6: 0.1, 7: 0.08, 8: 0.07 };
+            return {
+              1: 0.18,
+              2: 0.16,
+              3: 0.15,
+              4: 0.14,
+              5: 0.12,
+              6: 0.1,
+              7: 0.08,
+              8: 0.07,
+            };
           default:
             return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
         }
@@ -94,7 +111,7 @@ router.post(
 
       const probabilities = getProbabilities(packType);
 
-      function getRandomTier(probabilities: { [tier: number]: number }) {
+      const getRandomTier = (probabilities: { [tier: number]: number }) => {
         const rand = Math.random();
         let cumulative = 0;
         for (const tier in probabilities) {
@@ -102,26 +119,28 @@ router.post(
           if (rand <= cumulative) return +tier;
         }
         return Math.max(...Object.keys(probabilities).map(Number));
+      };
+
+      const getRandomCardFromTier = (tier: number) => {
+        const tierCards = allCards.filter((card) => card.tier === tier);
+        if (tierCards.length === 0) return null;
+        return tierCards[Math.floor(Math.random() * tierCards.length)];
+      };
+
+      const drawnCards = [];
+      let attempts = 0;
+      while (drawnCards.length < 5 && attempts < 20) {
+        const tier = getRandomTier(probabilities);
+        const card = getRandomCardFromTier(tier);
+        if (card) drawnCards.push(card);
+        attempts++;
       }
 
-    function getRandomCardFromTier(tier: number) {
-  const tierCards = allCards.filter((card) => card.tier === tier);
-  if (tierCards.length === 0) return null;
-  return tierCards[Math.floor(Math.random() * tierCards.length)];
-}
-
-const drawnCards = [];
-let attempts = 0;
-while (drawnCards.length < 5 && attempts < 20) {
-  const tier = getRandomTier(probabilities);
-  const card = getRandomCardFromTier(tier);
-  if (card) drawnCards.push(card);
-  attempts++;
-}
-
-
       for (const card of drawnCards) {
-        const existingUserCard = await UserCard.findOne({ user: userId, card: card._id });
+        const existingUserCard = await UserCard.findOne({
+          user: userId,
+          card: card._id,
+        });
         if (existingUserCard) {
           existingUserCard.count += 1;
           existingUserCard.owned = true;

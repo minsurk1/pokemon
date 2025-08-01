@@ -77,9 +77,16 @@ const videoThemes = {
 interface MainPageProps {
   currency: number;
   selectedDeck: string[];
+  userMoney?: number;
+  userNickname?: string;
 }
 
-function MainPage({ currency, selectedDeck }: MainPageProps) {
+function MainPage({
+  currency,
+  selectedDeck,
+  userMoney,
+  userNickname,
+}: MainPageProps) {
   const navigate = useNavigate();
   const [showRoomTab, setShowRoomTab] = useState<boolean>(false);
   const [showCardTab, setShowCardTab] = useState<boolean>(false);
@@ -318,7 +325,22 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
             {themeName}
           </motion.button>
 
-          <span className="money">현재 돈: {currency}원</span>
+          {/* 닉네임 추가 표시 */}
+          {userNickname ? (
+            <span className="user-nickname" style={{ marginLeft: "1rem" }}>
+              안녕하세요, {userNickname}님
+            </span>
+          ) : (
+            <span className="user-nickname" style={{ marginLeft: "1rem" }}>
+              로그인 해주세요
+            </span>
+          )}
+
+          {/* 현재 돈 표시 */}
+          <span className="money" style={{ marginLeft: "1rem" }}>
+            현재 돈: {userMoney !== undefined ? userMoney : currency}원
+          </span>
+
           <button className="logout-button" onClick={handleLogout}>
             로그아웃
           </button>

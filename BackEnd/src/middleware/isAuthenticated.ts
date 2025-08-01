@@ -1,11 +1,10 @@
-// src/middleware/isAuthenticated.ts
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
-    username: string; // 여기서도 string으로!
+    username: string;
   };
 }
 

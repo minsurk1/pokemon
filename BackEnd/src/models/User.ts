@@ -14,7 +14,7 @@ const userSchema = new Schema<IUser>({
   password: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   nickname: { type: String, required: true },
-  money: { type: Number, default: 0 },
+  money: { type: Number, default: 1200 },
 });
 
 const User = mongoose.model<IUser>("User", userSchema);

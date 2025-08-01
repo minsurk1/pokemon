@@ -60,7 +60,6 @@ app.use("/api/user", userRoutes);
 app.use("/api", userCardRoutes);
 app.use("/api/pack", packRoutes);
 
-
 // ✅ 헬스 체크 (라우트 등록 아래에 둬도 됨)
 app.get("/health", (req, res) => {
   res.status(200).send("OK");

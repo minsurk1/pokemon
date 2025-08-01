@@ -69,15 +69,17 @@ router.post("/signup", async (req: Request, res: Response) => {
     // ✅ 모든 카드 불러오기
     const allCards = await Card.find();
     if (allCards.length === 0) {
-      return res.status(500).json({ message: "카드 데이터가 존재하지 않습니다." });
+      return res
+        .status(500)
+        .json({ message: "카드 데이터가 존재하지 않습니다." });
     }
 
     // ✅ 유저 카드 도감 생성 (user, card 필드 _id 로 정확히 넣기)
     const userCards = allCards.map((card) => ({
-      user: savedUser._id,            // user 필드명 정확히
-      card: card._id,                 // card 필드명 정확히
+      user: savedUser._id, // user 필드명 정확히
+      card: card._id, // card 필드명 정확히
       count: card.cardName === "파이리" ? 1 : 0, // 파이리만 count 1
-      owned: true,                   // 도감에는 항상 true (필요 시 조절 가능)
+      owned: true, // 도감에는 항상 true (필요 시 조절 가능)
     }));
 
     await UserCard.insertMany(userCards);
@@ -122,13 +124,11 @@ router.post("/login", async (req: Request, res: Response) => {
 
     console.log("✅ 로그인 성공, 사용자 ID:", user._id);
 
-  const token = jwt.sign(
-  { userId: user._id.toString(), username: user.username },
-  jwtSecret,
-  { expiresIn: "1h" }
-);
-
-
+    const token = jwt.sign(
+      { id: user._id.toString(), username: user.username },
+      jwtSecret,
+      { expiresIn: "1h" }
+    );
 
     res.json({
       message: "로그인 성공!",

@@ -13,6 +13,7 @@ import healImage from "../../assets/images/heal.png"
 import bombImage from "../../assets/images/bomb.png"
 import EventItem from "./components/Eventitem"
 import { useNavigate } from "react-router-dom"
+import GameOverScreen from "./components/GameOverScreen" 
 
 // 카드 인터페이스 정의
 interface Card {
@@ -129,14 +130,16 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
   // 타이머 애니메이션 상태
   const [timerKey, setTimerKey] = useState<number>(0)
+  const [showGameOver, setShowGameOver] = useState<boolean>(false) // 게임 오버 화면 표시 여부
+  const [gameOverMessage, setGameOverMessage] = useState<string>("") // 게임 오버 메시지
 
   const enemyCardZoneRef = useRef<HTMLDivElement>(null)
   const enemyAvatarRef = useRef<HTMLDivElement>(null)
   const myZoneRef = useRef<HTMLDivElement>(null)
   const playerZoneRef = useRef<HTMLDivElement>(null)
 
-  // 초기 덱과 손패 설정
-  useEffect(() => {
+  // 초기 덱과 손패 설정 함수 (재사용을 위해 분리)
+  const initializeDeckAndHand = useCallback(() => {
     const allCards = selectedDeck.map((cardImage, index) => {
       const cardData = (cardsData as any[]).find((card) => card.image === cardImage)
       return {
@@ -175,6 +178,11 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     setDeckCards(remainingDeck)
   }, [selectedDeck])
 
+  // 초기 덱과 손패 설정
+  useEffect(() => {
+    initializeDeckAndHand()
+  }, [initializeDeckAndHand])
+
   // 카드 드로우 함수
   const drawCard = (): void => {
     if (!canDrawThisTurn) {
@@ -212,7 +220,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     setOpponentCostIcons(newTotal)
     setTimeLeft(INITIAL_TIME)
     setCanDrawThisTurn(true)
-    setTimerKey((prev) => prev + 1) 
+    setTimerKey((prev) => prev + 1)
     // 5턴마다 이벤트 발생
     if ((turn + 1) % 5 === 0) {
       showEvent()
@@ -239,7 +247,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     setSelectedCardId(null)
   }
 
-  // 턴 종료 함수 
+  // 턴 종료 함수
   const endTurn = useCallback((): void => {
     setTurn((prevTurn) => {
       const newTurn = prevTurn + 1
@@ -255,7 +263,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
       return newTurn
     })
-    
+
     setTimeout(() => {
       setTimeLeft(INITIAL_TIME)
     }, 100)
@@ -316,8 +324,8 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
         const newHP = Math.max(0, Math.min(2000, prevHP + amount))
         if (newHP <= 0) {
           setTimeout(() => {
-            setMessage("💀 패배했습니다!")
-            setShowMessage(true)
+            setGameOverMessage("💀 패배했습니다!")
+            setShowGameOver(true)
           }, 1000)
         }
         return newHP
@@ -327,9 +335,8 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
         const newHP = Math.max(0, Math.min(2000, prevHP + amount))
         if (newHP <= 0) {
           setTimeout(() => {
-            setMessage("🎉 승리했습니다!")
-            setShowMessage(true)
-            setShouldNavigate(true)
+            setGameOverMessage("🎉 승리했습니다!")
+            setShowGameOver(true)
           }, 1000)
         }
         return newHP
@@ -343,7 +350,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     }
   }
 
-  // 타이머 효과 (
+  // 타이머 효과
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft((prevTime) => {
@@ -511,7 +518,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     }
   }, [drop])
 
-  //중앙 horizontal line컴포넌트 
+  //중앙 horizontal line컴포넌트
   const BurnLineComponent = () => {
     const [burnProgress, setBurnProgress] = useState(0)
 
@@ -522,13 +529,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
     const getFireColor = (progress: number) => {
       if (progress < 25) {
-        return "#00FF00" 
+        return "#00FF00"
       } else if (progress < 50) {
-        return "#FFFF00" 
+        return "#FFFF00"
       } else if (progress < 75) {
-        return "#FF8800" 
+        return "#FF8800"
       } else {
-        return "#FF0000" 
+        return "#FF0000"
       }
     }
 
@@ -550,17 +557,17 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     const timeRatio = timeLeft / INITIAL_TIME
 
     if (timeRatio > 0.75) {
-      return "#00FF00" 
+      return "#00FF00"
     } else if (timeRatio > 0.5) {
-      return "#FFFF00" 
+      return "#FFFF00"
     } else if (timeRatio > 0.25) {
-      return "#FF8800" 
+      return "#FF8800"
     } else {
-      return "#FF0000" 
+      return "#FF0000"
     }
   }
 
-  // 원형 타이머 컴포넌트 
+  // 원형 타이머 컴포넌트
   const CircularTimer = () => {
     const timerColor = getTimerColor(timeLeft)
     const progress = ((INITIAL_TIME - timeLeft) / INITIAL_TIME) * 100
@@ -580,6 +587,32 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       </div>
     )
   }
+
+  // 게임 다시 시작 함수
+  const handleRestartGame = useCallback(() => {
+    setTurn(1)
+    setPlayerHP(2000)
+    setEnemyHP(2000)
+    setTimeLeft(INITIAL_TIME)
+    setMyCardsInZone([])
+    initializeDeckAndHand() // 덱과 손패 초기화
+    setCanDrawThisTurn(true)
+    setPlayerCostIcons(1)
+    setOpponentCostIcons(1)
+    setActiveEvents([])
+    setAnimatingCard(null)
+    setAnimationPosition({ x: 0, y: 0 })
+    setTimerKey(0) // 타이머 애니메이션 재시작
+    setShowGameOver(false)
+    setGameOverMessage("")
+    setShowMessage(false) // 메시지 박스 숨기기
+    setMessage("") // 메시지 초기화
+  }, [INITIAL_TIME, initializeDeckAndHand])
+
+  // 메인 메뉴로 이동 함수
+  const handleGoToMainMenu = useCallback(() => {
+    navigate("/") // 메인 메뉴 경로로 이동
+  }, [navigate])
 
   return (
     <div className="battle-container">
@@ -717,6 +750,10 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
             handCards.find((card) => card.id === selectedCardId)
           }
         />
+      )}
+
+      {showGameOver && (
+        <GameOverScreen message={gameOverMessage} onRestart={handleRestartGame} onGoToMainMenu={handleGoToMainMenu} />
       )}
     </div>
   )

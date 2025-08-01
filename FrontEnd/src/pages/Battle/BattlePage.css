@@ -606,6 +606,61 @@
   }
 }
 
+.game-over-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.game-over-panel {
+  background-color: #4e4343;
+  border: 2px solid #ff0000;
+  border-radius: 15px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  color: white;
+  font-family: "Do Hyeon", serif;
+}
+
+.game-over-message {
+  color: white;
+  font-size: 3rem;
+  margin-bottom: 30px;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+}
+
+.game-over-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.game-over-button {
+  padding: 15px 30px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  background-color: #000000; 
+  color: white;
+  border: none;
+  font-family: "Do Hyeon", serif;
+}
+
+.game-over-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+}
+
 @media (max-width: 768px) {
   .right-container {
     width: 200px;
@@ -653,5 +708,24 @@
       transform: scale(1) translate(200px, -200px);
       opacity: 0;
     }
+  }
+
+  .game-over-panel {
+    padding: 20px;
+    width: 90%;
+  }
+
+  .game-over-message {
+    font-size: 2rem;
+  }
+
+  .game-over-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .game-over-button {
+    width: 100%;
+    font-size: 1.2rem;
   }
 }

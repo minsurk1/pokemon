@@ -3,13 +3,15 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import User from "../models/User";
+import Card from "../models/Card";
+import UserCard from "../models/UserCard";
 
 dotenv.config();
 
 const router = Router();
 const jwtSecret = process.env.JWT_SECRET as string;
 
-// CORS 처리 미들웨어
+// ✅ CORS 처리 미들웨어
 router.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "http://localhost:3000");
   res.header(
@@ -33,11 +35,13 @@ router.post("/signup", async (req: Request, res: Response) => {
   const { username, password, email, nickname } = req.body;
 
   try {
+    // 입력값 유효성 검사
     if (!username || !password || !email || !nickname) {
       console.log("❌ 필수 필드 누락");
       return res.status(400).json({ message: "모든 필드를 입력해주세요" });
     }
 
+    // 이미 존재하는 유저인지 확인
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
       console.log("❌ 이미 존재하는 사용자:", existingUser);
@@ -46,9 +50,11 @@ router.post("/signup", async (req: Request, res: Response) => {
         .json({ message: "이미 사용 중인 아이디 또는 이메일입니다." });
     }
 
+    // 비밀번호 해싱
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log("🔐 비밀번호 해싱 완료");
 
+    // 새 유저 생성
     const newUser = new User({
       username,
       password: hashedPassword,
@@ -57,8 +63,25 @@ router.post("/signup", async (req: Request, res: Response) => {
       money: 1200,
     });
 
-    await newUser.save();
-    console.log("✅ 회원가입 성공, ID:", newUser._id);
+    const savedUser = await newUser.save();
+    console.log("✅ 회원가입 성공, ID:", savedUser._id);
+
+    // ✅ 모든 카드 불러오기
+    const allCards = await Card.find();
+    if (allCards.length === 0) {
+      return res.status(500).json({ message: "카드 데이터가 존재하지 않습니다." });
+    }
+
+    // ✅ 유저 카드 도감 생성 (user, card 필드 _id 로 정확히 넣기)
+    const userCards = allCards.map((card) => ({
+      user: savedUser._id,            // user 필드명 정확히
+      card: card._id,                 // card 필드명 정확히
+      count: card.cardName === "파이리" ? 1 : 0, // 파이리만 count 1
+      owned: true,                   // 도감에는 항상 true (필요 시 조절 가능)
+    }));
+
+    await UserCard.insertMany(userCards);
+    console.log("📘 도감 카드 생성 완료");
 
     res.status(201).json({ message: "회원가입 성공!" });
   } catch (err: any) {
@@ -99,11 +122,13 @@ router.post("/login", async (req: Request, res: Response) => {
 
     console.log("✅ 로그인 성공, 사용자 ID:", user._id);
 
-    const token = jwt.sign(
-      { userId: user._id, username: user.username },
-      jwtSecret,
-      { expiresIn: "1h" }
-    );
+  const token = jwt.sign(
+  { userId: user._id.toString(), username: user.username },
+  jwtSecret,
+  { expiresIn: "1h" }
+);
+
+
 
     res.json({
       message: "로그인 성공!",
@@ -119,6 +144,17 @@ router.post("/login", async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("❌ 로그인 중 오류:", error.message);
     res.status(500).json({ message: "로그인 실패", error: error.message });
+  }
+});
+
+// 유저 정보 조회
+router.get("/user-cards/:userId", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const userCards = await UserCard.find({ user: userId }).populate("card");
+    res.json(userCards);
+  } catch (err) {
+    res.status(500).json({ message: "유저 카드 정보 불러오기 실패" });
   }
 });
 

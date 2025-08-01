@@ -1,13 +1,16 @@
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
+import express from "express";
 import http from "http";
-import { Server as SocketIOServer } from "socket.io";
 import mongoose from "mongoose";
 import cors from "cors";
+import { Server as SocketIOServer } from "socket.io";
 import authRoutes from "./routes/authRoutes";
-import { setupRoomHandlers } from "./routes/room"; // 소켓 방 핸들러
+import userRoutes from "./routes/userRoutes";
+import userCardRoutes from "./routes/userCardRoutes";
+import packRoutes from "./routes/packRoutes";
+import { setupRoomHandlers } from "./routes/room";
 
-dotenv.config(); // 루트의 .env 파일을 자동으로 로드
+dotenv.config(); // .env 환경변수 로드
 
 const app = express();
 
@@ -16,8 +19,8 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://pokemon-server-529a.onrender.com",
+  "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app", // 프론트 또는 백엔드가 여기 있다면 포함
 ];
-
 app.use(
   cors({
     origin: allowedOrigins,
@@ -34,25 +37,49 @@ app.options(
   })
 );
 
-// ✅ JSON 바디 파싱
+const corsOptions = {
+  origin: allowedOrigins,
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Preflight 대응
+
+// ✅ JSON 바디 파서
 app.use(express.json());
 
-// ✅ HTTP + Socket 서버 생성
-const server = http.createServer(app);
+// ✅ 요청 로깅
+app.use((req, res, next) => {
+  console.log(`[📥 요청] ${req.method} ${req.url}`);
+  next();
+});
 
-const io = new SocketIOServer(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
+// ✅ API 라우트 등록
+app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api", userCardRoutes);
+app.use("/api/pack", packRoutes);
+
+
+// ✅ 헬스 체크 (라우트 등록 아래에 둬도 됨)
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+app.use((req, res, next) => {
+  console.log(`[📥 요청 수신] ${req.method} ${req.url}`);
+  next();
+});
+
+// ✅ 404 처리
+app.use((req, res) => {
+  res.status(404).json({ message: "페이지를 찾을 수 없습니다." });
 });
 
 // ✅ MongoDB 연결
 const dbURI = process.env.MONGO_URI;
 
 if (!dbURI) {
-  console.error("❌ MONGO_URI 환경변수가 없습니다!");
+  console.error("❌ MONGO_URI 환경변수가 설정되어 있지 않습니다.");
   process.exit(1);
 }
 
@@ -64,24 +91,23 @@ mongoose
     process.exit(1);
   });
 
-// ✅ 라우터 등록
-app.use("/api/auth", authRoutes);
+// ✅ HTTP + Socket.io 서버 생성
+const server = http.createServer(app);
 
-// ✅ Socket.io 이벤트 핸들러
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+// ✅ 소켓 이벤트 등록
 setupRoomHandlers(io);
 
 // ✅ 서버 시작
 const PORT = process.env.PORT || 5001;
+
 server.listen(PORT, () => {
   console.log(`🚀 서버가 포트 ${PORT}에서 실행 중...`);
-});
-
-// ✅ 헬스 체크 엔드포인트
-app.get("/health", (req: Request, res: Response) => {
-  res.status(200).send("OK");
-});
-
-app.use((req, res, next) => {
-  console.log(`[📥 요청 수신] ${req.method} ${req.url}`);
-  next();
 });

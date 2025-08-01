@@ -1,5 +1,5 @@
 import React from "react";
-import { useState,FormEvent  } from "react";
+import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -34,7 +34,7 @@ function SignUpPage() {
     setMessage("");
   };
 
-  const handleSignUp = (e: FormEvent<HTMLFormElement>) => {
+  const handleSignUp = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // 비밀번호 일치 체크

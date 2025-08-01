@@ -147,3 +147,11 @@
   object-fit: contain;
 }
 
+.card-list .grayscale {
+  filter: grayscale(100%);
+  opacity: 0.4;
+}
+
+.card.unowned {
+  pointer-events: none;
+}

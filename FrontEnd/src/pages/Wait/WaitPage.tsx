@@ -1,31 +1,28 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import io, { type Socket } from "socket.io-client"; // Socket 타입 추가
 import "./WaitPage.css";
 import waitVideo from "../../assets/videos/waitvideo.mp4";
 import BackgroundVideo from "../../components/common/global";
 import MessageBox from "../../components/common/MessageBox";
 
-// location.state의 타입 정의
-interface LocationState {
-  roomCode?: string;
-}
-
 function WaitPage() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { roomCode } = useParams<{ roomCode: string }>(); // URL 파라미터로 받음
   const [isReady, setIsReady] = useState<boolean>(false);
   const [opponentReady, setOpponentReady] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [showMessage, setShowMessage] = useState<boolean>(false);
   const [socket, setSocket] = useState<Socket | null>(null); // WebSocket 연결 상태에 타입 추가
 
-  // location.state 타입 안전하게 접근
-  const state = location.state as LocationState;
-  const roomCode = state?.roomCode || "UNKNOWN"; // 방 코드
-
   useEffect(() => {
+    if (!roomCode) {
+      setMessage("잘못된 방 코드입니다.");
+      setShowMessage(true);
+      return;
+    }
+
     // 서버와 WebSocket 연결
     const newSocket = io(
       "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
@@ -77,15 +74,18 @@ function WaitPage() {
   };
 
   const handleReady = (): void => {
-    setIsReady(!isReady);
-    if (socket) {
-      socket.emit("playerReady", { roomCode, isReady: !isReady });
-    }
+    setIsReady((prevReady) => {
+      const newReady = !prevReady;
+      if (socket && roomCode) {
+        socket.emit("playerReady", { roomCode, isReady: newReady });
+      }
+      return newReady;
+    });
   };
 
   const handleStart = (): void => {
     if (isReady && opponentReady) {
-      if (socket) {
+      if (socket && roomCode) {
         socket.emit("startGame", roomCode);
       }
     } else {

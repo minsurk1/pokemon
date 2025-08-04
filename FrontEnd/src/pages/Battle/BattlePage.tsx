@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import type React from "react"
-import { CiClock1 } from "react-icons/ci"
-import { useDrag, useDrop } from "react-dnd"
-import "./BattlePage.css"
-import MessageBox from "../../components/common/MessageBox"
-import CardMenu from "../../components/cards/CardMenu"
-import { cardsData } from "../Inventory/Inventory"
-import costImage from "../../assets/images/cost.png"
-import healImage from "../../assets/images/heal.png"
-import bombImage from "../../assets/images/bomb.png"
-import EventItem from "./components/Eventitem"
-import { useNavigate } from "react-router-dom"
-import GameOverScreen from "./components/GameOverScreen" 
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useDrag, useDrop } from "react-dnd";
+import { socket } from "../../utils/socket";
+import { CiClock1 } from "react-icons/ci";
+
+import "./BattlePage.css";
+
+import MessageBox from "../../components/common/MessageBox";
+import CardMenu from "../../components/cards/CardMenu";
+import { cardsData } from "../Inventory/Inventory";
+import costImage from "../../assets/images/cost.png";
+import healImage from "../../assets/images/heal.png";
+import bombImage from "../../assets/images/bomb.png";
+import EventItem from "./components/Eventitem";
+import GameOverScreen from "./components/GameOverScreen";
 
 // 카드 인터페이스 정의
 interface Card {
@@ -68,15 +70,6 @@ interface DragItem {
   card: Card;
 }
 
-interface CardData {
-  name: string;
-  tier?: number;
-  image: string;
-  attack: number;
-  hp: number;
-  cost: number;
-}
-
 function BattlePage({ selectedDeck }: BattlePageProps) {
   const [message, setMessage] = useState<string>("");
   const [showMessage, setShowMessage] = useState<boolean>(false);
@@ -88,6 +81,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   const [timeLeft, setTimeLeft] = useState<number>(INITIAL_TIME);
 
   const [myCardsInZone, setMyCardsInZone] = useState<Card[]>([]);
+  const [enemyCardsInZone, setEnemyCardsInZone] = useState<Card[]>([]);
   const navigate = useNavigate();
   const [shouldNavigate, setShouldNavigate] = useState(false);
 
@@ -126,6 +120,9 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   const [eventHP, setEventHP] = useState<number>(400);
   const [eventmaxHP, setEventMaxHP] = useState<number>(400);
 
+  // useState에 내 턴 여부 상태 추가
+  const [isMyTurn, setIsMyTurn] = useState<boolean>(false);
+
   // 애니메이션 중인 카드 상태 추가
   const [animatingCard, setAnimatingCard] = useState<Card | null>(null);
   const [animationPosition, setAnimationPosition] = useState<{
@@ -134,16 +131,19 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   }>({ x: 0, y: 0 });
 
   // 타이머 애니메이션 상태
-  const [timerKey, setTimerKey] = useState<number>(0)
-  const [showGameOver, setShowGameOver] = useState<boolean>(false) // 게임 오버 화면 표시 여부
-  const [gameOverMessage, setGameOverMessage] = useState<string>("") // 게임 오버 메시지
+  const [timerKey, setTimerKey] = useState<number>(0);
+  const [showGameOver, setShowGameOver] = useState<boolean>(false);
+  const [gameOverMessage, setGameOverMessage] = useState<string>("");
 
   const enemyCardZoneRef = useRef<HTMLDivElement>(null);
   const enemyAvatarRef = useRef<HTMLDivElement>(null);
   const myZoneRef = useRef<HTMLDivElement>(null);
   const playerZoneRef = useRef<HTMLDivElement>(null);
 
-  // 초기 덱과 손패 설정 함수 (재사용을 위해 분리)
+  // roomCode 는 실제 게임에서 받아오는 값이어야 하니 임시값으로 대체 (수정 필요)
+  const roomCode = "defaultRoomCode";
+
+  // 초기 덱과 손패 설정 함수
   const initializeDeckAndHand = useCallback(() => {
     const allCards = selectedDeck.map((cardImage, index) => {
       const cardData = (cardsData as any[]).find(
@@ -185,14 +185,14 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       remainingDeck = shuffledCards.slice(3);
     }
 
-    setHandCards(initialHand)
-    setDeckCards(remainingDeck)
-  }, [selectedDeck])
+    setHandCards(initialHand);
+    setDeckCards(remainingDeck);
+  }, [selectedDeck]);
 
   // 초기 덱과 손패 설정
   useEffect(() => {
-    initializeDeckAndHand()
-  }, [initializeDeckAndHand])
+    initializeDeckAndHand();
+  }, [initializeDeckAndHand]);
 
   // 카드 드로우 함수
   const drawCard = (): void => {
@@ -223,47 +223,6 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     setShowMessage(true);
   };
 
-  // 턴 종료 버튼 핸들러
-  const handleendturn = (): void => {
-    setTurn(turn + 1)
-    const newTotal = Math.min(turn + 1, 8)
-    setPlayerCostIcons(newTotal)
-    setOpponentCostIcons(newTotal)
-    setTimeLeft(INITIAL_TIME)
-    setCanDrawThisTurn(true)
-    setTimerKey((prev) => prev + 1)
-    // 5턴마다 이벤트 발생
-    if ((turn + 1) % 5 === 0) {
-      showEvent();
-    }
-  };
-
-  // 카드 우클릭 핸들러
-  const handleCardRightClick = (
-    e: React.MouseEvent<HTMLDivElement>,
-    cardId: string
-  ): void => {
-    e.preventDefault();
-    e.currentTarget.classList.toggle("righthover");
-  };
-
-  // 존 우클릭 핸들러
-  const handleZoneRightClick = (
-    e: React.MouseEvent<HTMLDivElement>,
-    cardId: string
-  ): void => {
-    e.preventDefault();
-    setMenuPosition({ x: e.clientX, y: e.clientY });
-    setSelectedCardId(cardId);
-    setShowMenu(true);
-  };
-
-  // 메뉴 닫기
-  const closeMenu = (): void => {
-    setShowMenu(false);
-    setSelectedCardId(null);
-  };
-
   // 턴 종료 함수
   const endTurn = useCallback((): void => {
     setTurn((prevTurn) => {
@@ -278,204 +237,50 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
         showEvent();
       }
 
-      return newTurn
-    })
+      return newTurn;
+    });
 
     setTimeout(() => {
       setTimeLeft(INITIAL_TIME);
     }, 100);
   }, [INITIAL_TIME]);
 
-  // 이벤트 표시 함수
-  const showEvent = (): void => {
-    const event = Math.floor(Math.random() * 3);
-    let eventMsg = "";
-    let eventImg = "";
-    let eventEffect: () => void = () => {};
-
-    if (event === 0) {
-      eventMsg = "코스트 1 추가 이벤트";
-      eventImg = costImage;
-      eventEffect = () => setPlayerCostIcons((prev) => Math.min(prev + 1, 8));
-    } else if (event === 1) {
-      eventMsg = "체력 200 회복 이벤트";
-      eventImg = healImage;
-      eventEffect = () => setPlayerHP((prev) => Math.min(prev + 200, 2000));
-    } else if (event === 2) {
-      eventMsg = "적에게 200 데미지 이벤트";
-      eventImg = bombImage;
-      eventEffect = () => setEnemyHP((prev) => Math.max(prev - 200, 0));
-    }
-
-    setMessage(`이벤트가 교체되었습니다: ${eventMsg}`);
-    setEventImage(eventImg);
-    setShowMessage(true);
-
-    const calculateEventHP = (): number => {
-      const baseHP = 100;
-      const turnMultiplier = Math.floor(turn / 5);
-      return baseHP + turnMultiplier * 100;
-    };
-
-    const newEvent: Event = {
-      id: Date.now(),
-      type: event,
-      image: eventImg,
-      message: eventMsg,
-      hp: calculateEventHP(),
-      maxHp: calculateEventHP(),
-      effect: eventEffect,
-    };
-
-    setActiveEvents([newEvent]);
-
-    setTimeout(() => {
-      setShowMessage(false);
-    }, 3000);
-  };
-
-  // HP 업데이트 함수
-  const playerupdateHP = (
-    player: "player" | "enemy" | "enemyCard",
-    amount: number
-  ): void => {
-    if (player === "player") {
-      setPlayerHP((prevHP) => {
-        const newHP = Math.max(0, Math.min(2000, prevHP + amount));
-        if (newHP <= 0) {
-          setTimeout(() => {
-            setGameOverMessage("💀 패배했습니다!")
-            setShowGameOver(true)
-          }, 1000)
-        }
-        return newHP;
-      });
+  // '턴 종료' 버튼 이벤트 핸들러 이름 통일
+  const handleendturn = () => {
+    if (isMyTurn) {
+      endTurn();
     } else {
-      setEnemyHP((prevHP) => {
-        const newHP = Math.max(0, Math.min(2000, prevHP + amount));
-        if (newHP <= 0) {
-          setTimeout(() => {
-            setGameOverMessage("🎉 승리했습니다!")
-            setShowGameOver(true)
-          }, 1000)
-        }
-        return newHP;
-      });
-    }
-
-    if (amount < 0) {
-      setMessage(`${Math.abs(amount)} 데미지를 입혔습니다!`);
+      setMessage("상대방 턴입니다.");
       setShowMessage(true);
-      setTimeout(() => setShowMessage(false), 2000);
-    }
-  };
-
-  // 타이머 효과
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          setTimeout(() => endTurn(), 100);
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [endTurn]);
-
-  // 카드 클릭 핸들러
-  const handleCardClick = (
-    cardId: string,
-    fromZone: boolean,
-    e: React.MouseEvent<HTMLDivElement>
-  ): void => {
-    if (fromZone) {
-      return;
-    } else {
-      const cardToMove = handCards.find((c) => c.id === cardId);
-      if (cardToMove && playerCostIcons >= cardToMove.cost) {
-        const rect = (e.target as HTMLElement).getBoundingClientRect();
-        setAnimationPosition({ x: rect.left, y: rect.top });
-
-        setAnimatingCard(cardToMove);
-        setHoveredCardId(cardId);
-
-        setTimeout(() => {
-          setHandCards(handCards.filter((c) => c.id !== cardId));
-          setMyCardsInZone([...myCardsInZone, cardToMove]);
-          setPlayerCostIcons((prevIcons) => prevIcons - cardToMove.cost);
-          setHoveredCardId(null);
-          setAnimatingCard(null);
-        }, 700);
-      } else {
-        setMessage("코스트가 부족하여 이 카드를 사용할 수 없습니다!");
-        setShowMessage(true);
-      }
-    }
-  };
-
-  // 메시지 닫기
-  const closeMessage = (): void => {
-    setShowMessage(false);
-    setMessage("");
-  };
-
-  // 적 공격 함수
-  const attackEnemy = (cardId: string): void => {
-    const attackingCard = myCardsInZone.find((card) => card.id === cardId);
-    if (attackingCard && typeof attackingCard.attack === "number") {
-      playerupdateHP("enemy", -attackingCard.attack);
     }
   };
 
   // 카드 이동 함수
-  const moveCardInZone = useCallback(
-    (fromIndex: number, toIndex: number): void => {
-      setMyCardsInZone((prevCards) => {
-        const newCards = [...prevCards];
-        const [movedCard] = newCards.splice(fromIndex, 1);
-        newCards.splice(toIndex, 0, movedCard);
-        return newCards;
+  const moveCardInZone = (fromIndex: number, toIndex: number) => {
+    setMyCardsInZone((prevCards) => {
+      const updatedCards = [...prevCards];
+      const [removed] = updatedCards.splice(fromIndex, 1);
+      updatedCards.splice(toIndex, 0, removed);
+      return updatedCards;
+    });
+  };
+
+  // 플레이어 HP 업데이트 함수
+  const playerupdateHP = (
+    target: "player" | "enemy" | "enemyCard",
+    amount: number
+  ) => {
+    if (target === "player") {
+      setPlayerHP((prev) => Math.max(0, prev + amount));
+    } else if (target === "enemy") {
+      setEnemyHP((prev) => Math.max(0, prev + amount));
+    } else if (target === "enemyCard") {
+      setEnemyCardsInZone((prevCards) => {
+        // 적 카드 HP 업데이트 로직 필요 시 구현
+        return prevCards;
       });
-    },
-    []
-  );
-
-  // 드롭 핸들러들
-  const [, drop] = useDrop<DragItem, void, {}>({
-    accept: "CARD",
-    drop: (item, monitor) => {
-      if (item.fromZone) {
-        const fromIndex = myCardsInZone.findIndex(
-          (card) => card.id === item.id
-        );
-        const toIndex = myCardsInZone.length - 1;
-        moveCardInZone(fromIndex, toIndex);
-      }
-    },
-  });
-
-  const [, dropEnemyCard] = useDrop<DragItem, void, {}>({
-    accept: "CARD",
-    drop: (item, monitor) => {
-      const droppedCard = myCardsInZone.find((card) => card.id === item.id);
-      if (droppedCard && typeof droppedCard.attack === "number") {
-        playerupdateHP("enemyCard", -droppedCard.attack);
-      }
-    },
-  });
-
-  const [, dropEnemy] = useDrop<DragItem, void, {}>({
-    accept: "CARD",
-    drop: (item, monitor) => {
-      const droppedCard = myCardsInZone.find((card) => card.id === item.id);
-      if (droppedCard && typeof droppedCard.attack === "number") {
-        playerupdateHP("enemy", -droppedCard.attack);
-      }
-    },
-  });
+    }
+  };
 
   // 이벤트 HP 업데이트
   const updateEventHP = (eventId: number, amount: number): void => {
@@ -500,33 +305,138 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     });
   };
 
-  // 카드 렌더링 함수
-  const renderMyCard = (card: Card, fromZone: boolean, index: number) => {
-    const isHovered = hoveredCardId === card.id;
-
-    return (
-      <div key={card.id} className="card-slot">
-        <Card
-          card={card}
-          fromZone={fromZone}
-          index={index}
-          moveCard={moveCardInZone}
-          onClick={(e: React.MouseEvent<HTMLDivElement>) =>
-            handleCardClick(card.id, fromZone, e)
-          }
-          onContextMenu={(e: React.MouseEvent<HTMLDivElement>) =>
-            fromZone
-              ? handleZoneRightClick(e, card.id)
-              : handleCardRightClick(e, card.id)
-          }
-          costIcons={playerCostIcons}
-          isHovered={isHovered}
-        />
-      </div>
-    );
+  // 카드 클릭 이벤트 처리
+  const handleCardClick = (
+    cardId: string,
+    fromZone: boolean,
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
+    e.preventDefault();
+    setSelectedCardId(cardId);
+    setShowMenu(true);
+    setMenuPosition({ x: e.clientX, y: e.clientY });
   };
 
-  // useEffect들
+  // 오른쪽 클릭 카드 핸들러
+  const handleCardRightClick = (
+    e: React.MouseEvent<HTMLDivElement>,
+    cardId: string
+  ) => {
+    e.preventDefault();
+    // TODO: 오른쪽 클릭 시 메뉴 구현 또는 카드 정보 표시
+    setMessage("카드 우클릭 메뉴 준비중입니다.");
+    setShowMessage(true);
+  };
+
+  // 오른쪽 클릭 존 카드 핸들러
+  const handleZoneRightClick = (
+    e: React.MouseEvent<HTMLDivElement>,
+    cardId: string
+  ) => {
+    e.preventDefault();
+    setMessage("존 카드 우클릭 메뉴 준비중입니다.");
+    setShowMessage(true);
+  };
+
+  // 메시지 박스 닫기
+  const closeMessage = () => {
+    setShowMessage(false);
+  };
+
+  // 메뉴 닫기
+  const closeMenu = () => {
+    setShowMenu(false);
+    setSelectedCardId(null);
+  };
+
+  // 이벤트 표시 함수 (5턴마다 실행)
+  const showEvent = () => {
+    const eventId = Math.floor(Math.random() * 100000);
+    const newEvent: Event = {
+      id: eventId,
+      type: 1,
+      image: healImage,
+      message: "체력을 회복합니다!",
+      hp: 400,
+      maxHp: 400,
+      effect: () => {
+        setPlayerHP((prev) => Math.min(2000, prev + 500));
+        setMessage("체력 500 회복!");
+        setShowMessage(true);
+      },
+    };
+
+    setActiveEvents((prev) => [...prev, newEvent]);
+  };
+
+  // socket 이벤트 등록 및 해제
+  useEffect(() => {
+    socket.connect();
+    socket.emit("joinRoom", roomCode);
+
+    socket.on("gameStart", ({ currentTurn }) => {
+      setIsMyTurn(socket.id === currentTurn);
+    });
+
+    socket.on("turnChanged", (newTurnPlayerId: string) => {
+      setIsMyTurn(socket.id === newTurnPlayerId);
+      setTimeLeft(INITIAL_TIME);
+      setCanDrawThisTurn(true);
+    });
+
+    socket.on("opponentPlayCard", (card: Card) => {
+      setEnemyCardsInZone((prev) => [...prev, card]);
+    });
+
+    socket.on("opponentLeft", () => {
+      alert("상대방이 나갔습니다.");
+      navigate("/");
+    });
+
+    return () => {
+      socket.off("gameStart");
+      socket.off("turnChanged");
+      socket.off("opponentPlayCard");
+      socket.off("opponentLeft");
+      socket.disconnect();
+    };
+  }, [roomCode, navigate]);
+
+  // 드롭 핸들러들
+  const [, drop] = useDrop<DragItem, void, {}>({
+    accept: "CARD",
+    drop: (item) => {
+      if (item.fromZone) {
+        const fromIndex = myCardsInZone.findIndex(
+          (card) => card.id === item.id
+        );
+        const toIndex = myCardsInZone.length - 1;
+        moveCardInZone(fromIndex, toIndex);
+      }
+    },
+  });
+
+  const [, dropEnemyCard] = useDrop<DragItem, void, {}>({
+    accept: "CARD",
+    drop: (item) => {
+      const droppedCard = myCardsInZone.find((card) => card.id === item.id);
+      if (droppedCard && typeof droppedCard.attack === "number") {
+        playerupdateHP("enemyCard", -droppedCard.attack);
+      }
+    },
+  });
+
+  const [, dropEnemy] = useDrop<DragItem, void, {}>({
+    accept: "CARD",
+    drop: (item) => {
+      const droppedCard = myCardsInZone.find((card) => card.id === item.id);
+      if (droppedCard && typeof droppedCard.attack === "number") {
+        playerupdateHP("enemy", -droppedCard.attack);
+      }
+    },
+  });
+
+  // useEffect로 드롭 영역 ref 연결
   useEffect(() => {
     if (enemyCardZoneRef.current) {
       dropEnemyCard(enemyCardZoneRef.current);
@@ -551,7 +461,31 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     }
   }, [drop]);
 
-  //중앙 horizontal line컴포넌트
+  // 카드 렌더링 함수
+  const renderMyCard = (card: Card, fromZone: boolean, index: number) => {
+    const isHovered = hoveredCardId === card.id;
+
+    return (
+      <div key={card.id} className="card-slot">
+        <Card
+          card={card}
+          fromZone={fromZone}
+          index={index}
+          moveCard={moveCardInZone}
+          onClick={(e) => handleCardClick(card.id, fromZone, e)}
+          onContextMenu={(e) =>
+            fromZone
+              ? handleZoneRightClick(e, card.id)
+              : handleCardRightClick(e, card.id)
+          }
+          costIcons={playerCostIcons}
+          isHovered={isHovered}
+        />
+      </div>
+    );
+  };
+
+  // 중앙 horizontal line 컴포넌트
   const BurnLineComponent = () => {
     const [burnProgress, setBurnProgress] = useState(0);
 
@@ -562,13 +496,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
     const getFireColor = (progress: number) => {
       if (progress < 25) {
-        return "#00FF00"
+        return "#00FF00";
       } else if (progress < 50) {
-        return "#FFFF00"
+        return "#FFFF00";
       } else if (progress < 75) {
-        return "#FF8800"
+        return "#FF8800";
       } else {
-        return "#FF0000"
+        return "#FF0000";
       }
     };
 
@@ -592,13 +526,13 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     const timeRatio = timeLeft / INITIAL_TIME;
 
     if (timeRatio > 0.75) {
-      return "#00FF00"
+      return "#00FF00";
     } else if (timeRatio > 0.5) {
-      return "#FFFF00"
+      return "#FFFF00";
     } else if (timeRatio > 0.25) {
-      return "#FF8800"
+      return "#FF8800";
     } else {
-      return "#FF0000"
+      return "#FF0000";
     }
   };
 
@@ -622,34 +556,48 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           </div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   // 게임 다시 시작 함수
   const handleRestartGame = useCallback(() => {
-    setTurn(1)
-    setPlayerHP(2000)
-    setEnemyHP(2000)
-    setTimeLeft(INITIAL_TIME)
-    setMyCardsInZone([])
-    initializeDeckAndHand() // 덱과 손패 초기화
-    setCanDrawThisTurn(true)
-    setPlayerCostIcons(1)
-    setOpponentCostIcons(1)
-    setActiveEvents([])
-    setAnimatingCard(null)
-    setAnimationPosition({ x: 0, y: 0 })
-    setTimerKey(0) // 타이머 애니메이션 재시작
-    setShowGameOver(false)
-    setGameOverMessage("")
-    setShowMessage(false) // 메시지 박스 숨기기
-    setMessage("") // 메시지 초기화
-  }, [INITIAL_TIME, initializeDeckAndHand])
+    setTurn(1);
+    setPlayerHP(2000);
+    setEnemyHP(2000);
+    setTimeLeft(INITIAL_TIME);
+    setMyCardsInZone([]);
+    initializeDeckAndHand(); // 덱과 손패 초기화
+    setCanDrawThisTurn(true);
+    setPlayerCostIcons(1);
+    setOpponentCostIcons(1);
+    setActiveEvents([]);
+    setAnimatingCard(null);
+    setAnimationPosition({ x: 0, y: 0 });
+    setTimerKey(0); // 타이머 애니메이션 재시작
+    setShowGameOver(false);
+    setGameOverMessage("");
+    setShowMessage(false); // 메시지 박스 숨기기
+    setMessage(""); // 메시지 초기화
+  }, [INITIAL_TIME, initializeDeckAndHand]);
 
   // 메인 메뉴로 이동 함수
   const handleGoToMainMenu = useCallback(() => {
-    navigate("/") // 메인 메뉴 경로로 이동
-  }, [navigate])
+    navigate("/"); // 메인 메뉴 경로로 이동
+  }, [navigate]);
+
+  // 타이머 카운트다운 (매초 감소)
+  useEffect(() => {
+    if (!isMyTurn) return;
+    if (timeLeft <= 0) {
+      handleendturn();
+      return;
+    }
+    const timer = setTimeout(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [timeLeft, isMyTurn]);
 
   return (
     <div className="battle-container">
@@ -805,13 +753,17 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       )}
 
       {showGameOver && (
-        <GameOverScreen message={gameOverMessage} onRestart={handleRestartGame} onGoToMainMenu={handleGoToMainMenu} />
+        <GameOverScreen
+          message={gameOverMessage}
+          onRestart={handleRestartGame}
+          onGoToMainMenu={handleGoToMainMenu}
+        />
       )}
     </div>
   );
 }
 
-// Card 컴포넌트
+// Card 컴포넌트 (ref 문제 해결용 수정됨)
 const Card = ({
   card,
   fromZone,
@@ -824,11 +776,7 @@ const Card = ({
 }: CardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const [{ isDragging }, drag] = useDrag<
-    DragItem,
-    unknown,
-    { isDragging: boolean }
-  >({
+  const [{ isDragging }, drag] = useDrag({
     type: "CARD",
     item: { id: card.id, fromZone, index, card },
     collect: (monitor) => ({
@@ -837,9 +785,9 @@ const Card = ({
     canDrag: fromZone,
   });
 
-  const [, drop] = useDrop<DragItem, void, {}>({
+  const [, drop] = useDrop({
     accept: "CARD",
-    hover(item, monitor) {
+    hover(item: DragItem, monitor) {
       if (!fromZone) {
         return;
       }
@@ -857,44 +805,44 @@ const Card = ({
 
   useEffect(() => {
     if (cardRef.current) {
-      drag(drop(cardRef.current));
+      drag(cardRef.current);
+      drop(cardRef.current);
     }
   }, [drag, drop]);
 
-  const cardStyle = {
-    position: "relative" as const,
-    transform: isHovered ? "scale(2.5) translateY(-145px)" : "scale(1)",
-    zIndex: isHovered ? 100 : 1,
-    transition: "transform 0.7s ease-in-out",
-  };
+  const cardClassName = `my-card ${fromZone ? "in-zone" : ""} ${
+    isDragging ? "dragging" : ""
+  }`;
 
   return (
     <div
       ref={cardRef}
-      className={`my-card ${fromZone ? "in-zone" : ""} ${
-        isDragging ? "dragging" : ""
-      }`}
+      className={cardClassName}
       onClick={onClick}
       onContextMenu={onContextMenu}
-      style={cardStyle}
+      style={{
+        opacity: isDragging ? 0.5 : 1,
+        position: "relative",
+        transform: isHovered ? "scale(2.5)" : "scale(1)",
+        transition: "transform 0.2s ease-in-out",
+        zIndex: isHovered ? 10 : 1,
+      }}
     >
-      <div className="card-front">
-        <img src={card.image || "/placeholder.svg"} alt="내 카드" />
-        <div className="card-cost">{card.cost}</div>
-      </div>
-      {fromZone && (
-        <div className="card-hp-bar">
-          <div
-            className="card-hp-bar-inner"
-            style={{ width: `${(card.hp / card.maxhp) * 100}%` }}
-          ></div>
-          <div className="card-hp-text">
-            {card.hp}/{card.maxhp}
-          </div>
+      <img src={card.image} alt={card.name} />
+      <div className="card-info">
+        <div className="card-name">{card.name}</div>
+        <div className="card-attack">{card.attack}</div>
+        <div className="card-hp">
+          {card.hp}/{card.maxhp}
         </div>
-      )}
+        <div className="card-cost">
+          {Array.from({ length: card.cost }).map((_, i) => (
+            <img key={i} src={costImage} alt="cost icon" />
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
 
-export default BattlePage
+export default BattlePage;

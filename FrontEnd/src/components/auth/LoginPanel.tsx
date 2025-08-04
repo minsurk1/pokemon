@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./LoginPanel.css";
 
@@ -38,16 +38,17 @@ function LoginPanel() {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post<LoginResponse>(
-        "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/auth/login",
-        {
-          username,
-          password,
-        },
-        {
-          withCredentials: true, // 이 부분 추가
-        }
-      );
+      const response: AxiosResponse<LoginResponse> =
+        await axios.post<LoginResponse>(
+          "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/auth/login",
+          {
+            username,
+            password,
+          },
+          {
+            withCredentials: true, // 이 부분 추가
+          }
+        );
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));

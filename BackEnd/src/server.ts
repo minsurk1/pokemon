@@ -14,36 +14,28 @@ dotenv.config(); // .env 환경변수 로드
 
 const app = express();
 
-// ✅ CORS 설정
+// ✅ CORS 허용 도메인
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://pokemon-server-529a.onrender.com",
-  "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app", // 프론트 또는 백엔드가 여기 있다면 포함
+  "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app",
 ];
+
+// ✅ CORS 미들웨어 (origin 함수 방식)
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true); // 서버 간 요청 허용
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
-
-// ✅ Preflight 요청 응답 헤더 추가
-app.options(
-  "*",
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
-
-const corsOptions = {
-  origin: allowedOrigins,
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // Preflight 대응
 
 // ✅ JSON 바디 파서
 app.use(express.json());
@@ -60,10 +52,12 @@ app.use("/api/user", userRoutes);
 app.use("/api", userCardRoutes);
 app.use("/api/pack", packRoutes);
 
-// ✅ 헬스 체크 (라우트 등록 아래에 둬도 됨)
+// ✅ 헬스 체크
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
+
+// ✅ 요청 수신 로그
 app.use((req, res, next) => {
   console.log(`[📥 요청 수신] ${req.method} ${req.url}`);
   next();
@@ -95,9 +89,16 @@ const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
   cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by socket CORS"));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST"],
   },
 });
 

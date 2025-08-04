@@ -20,14 +20,14 @@ function LoginPanel() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const openButtonRef = useRef<HTMLButtonElement>(null);
 
   const togglePanel = () => setIsOpen(!isOpen);
-  
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -43,6 +43,9 @@ function LoginPanel() {
         {
           username,
           password,
+        },
+        {
+          withCredentials: true, // 이 부분 추가
         }
       );
       if (response.data.token) {
@@ -106,8 +109,8 @@ function LoginPanel() {
               }
             />
             <span onClick={togglePasswordVisibility}>
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                      </span>
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
             <button className="login-button" type="submit" disabled={isLoading}>
               {isLoading ? "로그인 중..." : "로그인"}
             </button>
@@ -125,8 +128,13 @@ function LoginPanel() {
           className="toggle-button open"
           onClick={togglePanel}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " " || e.key === "Spacebar" || e.key === "Tab") {
-              e.preventDefault(); 
+            if (
+              e.key === "Enter" ||
+              e.key === " " ||
+              e.key === "Spacebar" ||
+              e.key === "Tab"
+            ) {
+              e.preventDefault();
               togglePanel();
             }
           }}

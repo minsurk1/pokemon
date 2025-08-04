@@ -59,10 +59,10 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   const [showRoomTab, setShowRoomTab] = useState(false);
   const [showCardTab, setShowCardTab] = useState(false);
   const [roomCode, setRoomCode] = useState("");
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [serverResponse, setServerResponse] = useState("");
   const [serverError, setServerError] = useState("");
+  const [serverResponse, setServerResponse] = useState("");
 
+  // 랜덤 비디오 및 테마 선택
   const [randomVideo] = useState(() => {
     const randomIndex = Math.floor(Math.random() * videoFiles.length);
     return videoFiles[randomIndex];
@@ -71,6 +71,14 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   const themeColorClass = videoThemes[randomVideo].color;
   const themeName = videoThemes[randomVideo].name;
   const themeImage = videoThemes[randomVideo].image;
+
+  // socket 인스턴스 생성 (autoConnect: false로 필요할 때 연결)
+  const [socket] = useState(() =>
+    io("https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/", {
+      autoConnect: false,
+      withCredentials: true,
+    })
+  );
 
   useEffect(() => {
     // CSS 변수 세팅
@@ -87,26 +95,36 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
       `var(--${themeColorClass}-accent-color)`
     );
 
-    // socket.io 연결
-    const newSocket = io(
-      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
-      { withCredentials: true }
-    );
-    setSocket(newSocket);
+    // socket 이벤트 핸들러 등록
+    socket.on("message", (data: string) => setServerResponse(data));
 
-    newSocket.on("message", (data: string) => setServerResponse(data));
-    newSocket.on("roomCreated", (code: string) =>
-      navigate("/wait", { state: { roomCode: code } })
-    );
-    newSocket.on("roomJoined", (code: string) =>
-      navigate("/wait", { state: { roomCode: code } })
-    );
-    newSocket.on("error", (error: string) => setServerError(error));
+    // 방 생성 성공시 wait 페이지로 이동
+    socket.on("roomCreated", (code: string) => {
+      socket.disconnect();
+      navigate(`/wait/${code}`);
+    });
 
+    // 방 입장 성공시 wait 페이지로 이동
+    socket.on("roomJoined", (code: string) => {
+      socket.disconnect();
+      navigate("/wait", { state: { roomCode: code } });
+    });
+
+    // 에러 메시지 수신시 화면에 표시
+    socket.on("error", (error: string) => {
+      setServerError(error);
+      socket.disconnect();
+    });
+
+    // 컴포넌트 언마운트 시 이벤트 핸들러 해제 및 소켓 연결 종료
     return () => {
-      newSocket.close();
+      socket.off("message");
+      socket.off("roomCreated");
+      socket.off("roomJoined");
+      socket.off("error");
+      socket.disconnect();
     };
-  }, [navigate, themeColorClass]);
+  }, [socket, navigate, themeColorClass]);
 
   useEffect(() => {
     // 사용자 정보 API 호출
@@ -145,22 +163,25 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     setShowCardTab((prev) => !prev);
   }, []);
 
+  // 방 생성 이벤트 핸들러
   const handleCreateRoom = useCallback(() => {
-    if (socket) {
-      socket.emit("createRoom");
-      setServerError("");
-    }
+    setServerError("");
+    socket.connect();
+    socket.emit("createRoom");
   }, [socket]);
 
+  // 방 입장 이벤트 핸들러
   const handleJoinRoom = useCallback(() => {
-    if (roomCode.length === 6 && socket) {
-      socket.emit("joinRoom", roomCode.trim().toUpperCase());
+    if (roomCode.length === 6) {
       setServerError("");
+      socket.connect();
+      socket.emit("joinRoom", roomCode.trim().toUpperCase());
     } else {
       setServerError("올바른 방 코드를 입력해주세요.");
     }
   }, [roomCode, socket]);
 
+  // 입력 엔터키 처리
   const onRoomCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleJoinRoom();
   };
@@ -295,6 +316,14 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
                 style={{ color: "red", marginTop: "8px" }}
               >
                 {serverError}
+              </div>
+            )}
+            {serverResponse && (
+              <div
+                className="server-response"
+                style={{ color: "green", marginTop: "8px" }}
+              >
+                {serverResponse}
               </div>
             )}
           </div>

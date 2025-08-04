@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "./axiosInstance";
 import { motion } from "framer-motion";
 import "./MainPage.css";
 import io, { type Socket } from "socket.io-client";
@@ -38,58 +38,24 @@ const videoFiles = [
 ];
 
 const videoThemes = {
-  [phantomVideo]: {
-    name: "팬텀",
-    color: "phantom",
-    image: phantomImage,
-  },
-  [gaiogaVideo]: {
-    name: "가이오가",
-    color: "gaioga",
-    image: gaiogaImage,
-  },
-  [grandonVideo]: {
-    name: "그란돈",
-    color: "grandon",
-    image: grandonImage,
-  },
-  [thunderVideo]: {
-    name: "썬더",
-    color: "thunder",
-    image: thunderImage,
-  },
-  [lekuzaVideo]: {
-    name: "레쿠자",
-    color: "lekuza",
-    image: rekuzaImage,
-  },
-  [lugiaVideo]: {
-    name: "루기아",
-    color: "lugia",
-    image: ligiaImage,
-  },
-  [darkraiVideo]: {
-    name: "다크라이",
-    color: "darkrai",
-    image: darkraiImage,
-  },
+  [phantomVideo]: { name: "팬텀", color: "phantom", image: phantomImage },
+  [gaiogaVideo]: { name: "가이오가", color: "gaioga", image: gaiogaImage },
+  [grandonVideo]: { name: "그란돈", color: "grandon", image: grandonImage },
+  [thunderVideo]: { name: "썬더", color: "thunder", image: thunderImage },
+  [lekuzaVideo]: { name: "레쿠자", color: "lekuza", image: rekuzaImage },
+  [lugiaVideo]: { name: "루기아", color: "lugia", image: ligiaImage },
+  [darkraiVideo]: { name: "다크라이", color: "darkrai", image: darkraiImage },
 };
 
-interface MainPageProps {
-  currency: number;
-  selectedDeck: string[];
-}
-
-function MainPage({ currency, selectedDeck }: MainPageProps) {
+function MainPage() {
   const navigate = useNavigate();
-  const [nickname, setNickname] = useState<string>("");
-  const [money, setMoney] = useState<number>(0);
-  const [showRoomTab, setShowRoomTab] = useState<boolean>(false);
-  const [showCardTab, setShowCardTab] = useState<boolean>(false);
-  const [roomCode, setRoomCode] = useState<string>("");
+  const [nickname, setNickname] = useState<string | null>(null);
+  const [money, setMoney] = useState<number | null>(null);
+  const [showRoomTab, setShowRoomTab] = useState(false);
+  const [showCardTab, setShowCardTab] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [serverResponse, setServerResponse] = useState<string>("");
-  const [serverError, setServerError] = useState<string>("");
+  const [serverError, setServerError] = useState("");
 
   const [randomVideo] = useState(() => {
     const randomIndex = Math.floor(Math.random() * videoFiles.length);
@@ -133,7 +99,6 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     );
     setSocket(newSocket);
 
-    newSocket.on("message", (data: string) => setServerResponse(data));
     newSocket.on("roomCreated", (code: string) =>
       navigate("/wait", { state: { roomCode: code } })
     );
@@ -148,27 +113,18 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   }, [navigate, themeColorClass]);
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
+    const fetchUser = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const res = await axios.get(
-          "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/user/me",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
-
+        const res = await axiosInstance.get("/user/me");
         setNickname(res.data.nickname);
         setMoney(res.data.money);
       } catch (err) {
-        console.error("유저 정보 로딩 실패:", err);
+        console.error("유저 정보 가져오기 실패:", err);
+        setNickname(null);
+        setMoney(null);
       }
     };
-
-    fetchUserInfo();
+    fetchUser();
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -215,6 +171,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   return (
     <div className="main-container">
       <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
+
       <div className="sidebar">
         <motion.ul variants={list} initial="hidden" animate="visible">
           <motion.li variants={item}>
@@ -249,7 +206,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
             <div className="theme-main-card">
               <CardAnimation>
                 <img
-                  src={themeImage || "/placeholder.svg"}
+                  src={themeImage}
                   alt="대표 카드"
                   className="theme-card-image"
                 />
@@ -273,11 +230,11 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           </motion.button>
 
           <span className="user-nickname" style={{ marginLeft: "1rem" }}>
-            안녕하세요, {nickname || "로그인 해주세요"}님
+            {nickname ? `환영합니다, ${nickname}님!` : "로그인 해주세요"}
           </span>
 
           <span className="money" style={{ marginLeft: "1rem" }}>
-            현재 돈: {money.toLocaleString()}원
+            {money !== null ? `보유 머니: ${money.toLocaleString()}원` : ""}
           </span>
 
           <button className="logout-button" onClick={handleLogout}>

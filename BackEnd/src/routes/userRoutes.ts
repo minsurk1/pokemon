@@ -24,13 +24,14 @@ router.get(
     }
 
     try {
-      const user = await User.findById(req.user.id).select(
-        "username nickname money"
-      );
+      const user = await User.findById(req.user.id).select("nickname money");
       if (!user) {
         return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
       }
-      res.json(user);
+      res.json({
+        nickname: user.nickname,
+        money: user.money,
+      });
     } catch (err) {
       res.status(500).json({ message: "서버 오류", error: err });
     }
@@ -46,7 +47,7 @@ router.get(
 
     try {
       const userCards = await UserCard.find({ user: userId }).populate("card");
-      if (!userCards) {
+      if (!userCards || userCards.length === 0) {
         return res
           .status(404)
           .json({ message: "해당 유저의 카드 정보를 찾을 수 없습니다." });

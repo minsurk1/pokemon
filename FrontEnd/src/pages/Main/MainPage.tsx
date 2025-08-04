@@ -47,7 +47,12 @@ const videoThemes = {
   [darkraiVideo]: { name: "다크라이", color: "darkrai", image: darkraiImage },
 };
 
-function MainPage() {
+interface MainPageProps {
+  currency: number;
+  selectedDeck: string[];
+}
+
+function MainPage({ currency, selectedDeck }: MainPageProps) {
   const navigate = useNavigate();
   const [nickname, setNickname] = useState<string | null>(null);
   const [money, setMoney] = useState<number | null>(null);
@@ -55,6 +60,7 @@ function MainPage() {
   const [showCardTab, setShowCardTab] = useState(false);
   const [roomCode, setRoomCode] = useState("");
   const [socket, setSocket] = useState<Socket | null>(null);
+  const [serverResponse, setServerResponse] = useState("");
   const [serverError, setServerError] = useState("");
 
   const [randomVideo] = useState(() => {
@@ -66,20 +72,8 @@ function MainPage() {
   const themeName = videoThemes[randomVideo].name;
   const themeImage = videoThemes[randomVideo].image;
 
-  const list = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { when: "beforeChildren", staggerChildren: 0.2 },
-    },
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0 },
-  };
-
   useEffect(() => {
+    // CSS 변수 세팅
     document.documentElement.style.setProperty(
       "--theme-color",
       `var(--${themeColorClass}-color)`
@@ -93,12 +87,14 @@ function MainPage() {
       `var(--${themeColorClass}-accent-color)`
     );
 
+    // socket.io 연결
     const newSocket = io(
       "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
       { withCredentials: true }
     );
     setSocket(newSocket);
 
+    newSocket.on("message", (data: string) => setServerResponse(data));
     newSocket.on("roomCreated", (code: string) =>
       navigate("/wait", { state: { roomCode: code } })
     );
@@ -113,6 +109,7 @@ function MainPage() {
   }, [navigate, themeColorClass]);
 
   useEffect(() => {
+    // 사용자 정보 API 호출
     const fetchUser = async () => {
       try {
         const res = await axiosInstance.get("/user/me");
@@ -157,7 +154,7 @@ function MainPage() {
 
   const handleJoinRoom = useCallback(() => {
     if (roomCode.length === 6 && socket) {
-      socket.emit("joinRoom", roomCode);
+      socket.emit("joinRoom", roomCode.trim().toUpperCase());
       setServerError("");
     } else {
       setServerError("올바른 방 코드를 입력해주세요.");
@@ -168,34 +165,67 @@ function MainPage() {
     if (e.key === "Enter") handleJoinRoom();
   };
 
+  const list = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { when: "beforeChildren", staggerChildren: 0.2 },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
     <div className="main-container">
       <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
-
       <div className="sidebar">
-        <motion.ul variants={list} initial="hidden" animate="visible">
+        <motion.ul
+          variants={list}
+          initial="hidden"
+          animate="visible"
+          style={{ overflow: "hidden" }}
+        >
           <motion.li variants={item}>
-            <MenuButton onClick={handleStore}>상점</MenuButton>
+            <MenuButton
+              onClick={handleStore}
+              marginBottom="2.7rem"
+              marginTop="0.4rem"
+            >
+              상점
+            </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleDeck}>카드</MenuButton>
+            <MenuButton onClick={handleDeck} marginBottom="2.7rem">
+              카드
+            </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handledex}>도감</MenuButton>
+            <MenuButton onClick={handledex} marginBottom="2.7rem">
+              도감
+            </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleBattle}>배틀</MenuButton>
+            <MenuButton onClick={handleBattle} marginBottom="2.7rem">
+              배틀
+            </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleRule}>Rule</MenuButton>
+            <MenuButton onClick={handleRule} marginBottom="2.7rem">
+              Rule
+            </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={toggleRoomTab}>
+            <MenuButton onClick={toggleRoomTab} marginBottom="2.7rem">
               {showRoomTab ? "탭 닫기" : "방 만들기/입장"}
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleProfile}>마이페이지</MenuButton>
+            <MenuButton onClick={handleProfile} marginBottom="2.7rem">
+              마이페이지
+            </MenuButton>
           </motion.li>
         </motion.ul>
       </div>
@@ -230,11 +260,11 @@ function MainPage() {
           </motion.button>
 
           <span className="user-nickname" style={{ marginLeft: "1rem" }}>
-            {nickname ? `환영합니다, ${nickname}님!` : "로그인 해주세요"}
+            {nickname ? `환영합니다, ${nickname}님` : "로그인 해주세요"}
           </span>
 
           <span className="money" style={{ marginLeft: "1rem" }}>
-            {money !== null ? `보유 머니: ${money.toLocaleString()}원` : ""}
+            {money !== null ? `현재 돈: ${money.toLocaleString()}원` : ""}
           </span>
 
           <button className="logout-button" onClick={handleLogout}>

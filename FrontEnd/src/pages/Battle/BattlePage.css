@@ -147,9 +147,9 @@
   align-items: center;
   z-index: 200;
   clip-path: polygon(0 0%, 100% 0%, 100% 20%, 95% 61%, 10% 61%, 0 45%);
-  background-color: #000000;
-  /* background-image: url("../../assets/images/test11.png");
-  background-size: cover; */
+  /* background-color: #000000; */
+  background-image: url("../../assets/images/BottomGrass.png");
+  background-size: cover;
 }
 .enemy-card-bg {
   position: absolute;
@@ -446,11 +446,11 @@ background-color: transparent;
   border-radius: 20%;
   color: #ffffff;
   background: radial-gradient(#000000, #000000, #270834);
-  border: 2px solid rgb(31, 27, 48);
+  border: 2px solid rgb(255, 255, 255);
   font-weight: 900;
   cursor: pointer;
   position: absolute;
-  bottom: 55px;
+  bottom: 60px;
   right: 147px;
   font-family: "Do Hyeon", serif;
   transition: transform 0.3s ease;

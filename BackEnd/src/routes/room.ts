@@ -57,13 +57,11 @@ export function setupRoomHandlers(io: Server) {
       room.players.push(socket.id);
       room.ready[socket.id] = false;
 
-      const isHost = room.hostId === socket.id;
-
-      // 방장 여부 포함하여 전달
-      socket.emit("roomJoined", { isHost, roomCode });
-      console.log(
-        `👤 ${socket.id} → 방 ${roomCode} 입장, 호스트 여부: ${isHost}`
-      );
+      socket.emit("roomJoined", {
+        roomCode,
+        isHost: socket.id === room.hostId,
+      });
+      console.log(`👤 ${socket.id} → 방 ${roomCode} 입장`);
 
       socket.to(roomCode).emit("opponentJoined");
     });
@@ -95,7 +93,6 @@ export function setupRoomHandlers(io: Server) {
         return;
       }
 
-      // 모든 플레이어가 준비했는지 확인
       const allReady =
         room.players.length === 2 && Object.values(room.ready).every(Boolean);
       if (!allReady) {
@@ -183,18 +180,14 @@ export function setupRoomHandlers(io: Server) {
           socket.to(roomCode).emit("opponentLeft");
           console.log(`🚪 ${socket.id} → 방 ${roomCode} 퇴장`);
 
-          // 호스트가 나갔으면 남은 플레이어를 새 호스트로 지정
-          if (room.hostId === socket.id) {
-            if (room.players.length > 0) {
-              room.hostId = room.players[0];
-              io.to(room.hostId).emit("hostAssigned");
-              console.log(`👑 새 호스트 지정: ${room.hostId}`);
-            }
-          }
-
           if (room.players.length === 0) {
             delete rooms[roomCode];
             console.log(`🗑 방 ${roomCode} 삭제됨`);
+          } else if (room.hostId === socket.id) {
+            // 호스트가 나가면 새로운 호스트 지정
+            room.hostId = room.players[0];
+            io.to(roomCode).emit("newHost", room.hostId);
+            console.log(`♻️ 새로운 방장 지정: ${room.hostId}`);
           }
 
           break;

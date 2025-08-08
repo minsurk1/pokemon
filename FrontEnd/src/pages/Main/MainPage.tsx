@@ -107,7 +107,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     // 방 입장 성공시 wait 페이지로 이동
     socket.on("roomJoined", (code: string) => {
       socket.disconnect();
-      navigate("/wait", { state: { roomCode: code } });
+      navigate(`/wait/${code}`);
     });
 
     // 에러 메시지 수신시 화면에 표시

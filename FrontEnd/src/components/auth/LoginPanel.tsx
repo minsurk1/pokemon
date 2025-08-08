@@ -40,7 +40,7 @@ function LoginPanel() {
     try {
       const response: AxiosResponse<LoginResponse> =
         await axios.post<LoginResponse>(
-          "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/auth/login",
+          "/api/auth/login",
           {
             username,
             password,

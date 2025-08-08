@@ -1,22 +1,19 @@
 import { Server, Socket } from "socket.io";
 
-// 게임 상태 타입
 interface GameState {
   currentTurn: string;
   cardsPlayed: { [playerId: string]: any | null };
 }
 
-// 방 타입
 interface Room {
   players: string[];
   ready: { [playerId: string]: boolean };
+  hostId: string; // 호스트 소켓 아이디 추가
   gameState?: GameState;
 }
 
-// 전체 방 저장소
 const rooms: { [roomCode: string]: Room } = {};
 
-// 방 코드 생성
 const generateRoomCode = (): string => {
   let code: string;
   do {
@@ -25,7 +22,6 @@ const generateRoomCode = (): string => {
   return code;
 };
 
-// 메인 소켓 설정 함수
 export function setupRoomHandlers(io: Server) {
   io.on("connection", (socket: Socket) => {
     console.log("🔌 클라이언트 연결됨:", socket.id);
@@ -33,8 +29,13 @@ export function setupRoomHandlers(io: Server) {
     // 방 생성
     socket.on("createRoom", () => {
       const roomCode = generateRoomCode();
-      rooms[roomCode] = { players: [], ready: {} };
-      console.log(`✅ 방 생성됨: ${roomCode}`);
+      rooms[roomCode] = {
+        players: [socket.id],
+        ready: { [socket.id]: false },
+        hostId: socket.id,
+      };
+      socket.join(roomCode);
+      console.log(`✅ 방 생성됨: ${roomCode}, 호스트: ${socket.id}`);
       socket.emit("roomCreated", roomCode);
     });
 
@@ -55,16 +56,14 @@ export function setupRoomHandlers(io: Server) {
       socket.join(roomCode);
       room.players.push(socket.id);
       room.ready[socket.id] = false;
-      socket.emit("roomJoined", roomCode);
 
+      socket.emit("roomJoined", roomCode);
       console.log(`👤 ${socket.id} → 방 ${roomCode} 입장`);
 
-      if (room.players.length === 2) {
-        socket.to(roomCode).emit("opponentJoined");
-      }
+      socket.to(roomCode).emit("opponentJoined");
     });
 
-    // 준비 완료 처리
+    // 준비 상태 처리
     socket.on(
       "playerReady",
       ({ roomCode, isReady }: { roomCode: string; isReady: boolean }) => {
@@ -74,23 +73,47 @@ export function setupRoomHandlers(io: Server) {
         room.ready[socket.id] = isReady;
         socket.to(roomCode).emit("opponentReady", isReady);
 
-        const allReady = Object.values(room.ready).every(Boolean);
-        if (allReady && room.players.length === 2) {
-          room.gameState = {
-            currentTurn: room.players[0],
-            cardsPlayed: {},
-          };
-
-          io.to(roomCode).emit("gameStart", {
-            currentTurn: room.gameState.currentTurn,
-          });
-
-          console.log(
-            `🎮 게임 시작! 방: ${roomCode}, 첫 턴: ${room.gameState.currentTurn}`
-          );
-        }
+        console.log(`🔔 ${socket.id} 준비 상태: ${isReady}`);
       }
     );
+
+    // 게임 시작 요청 (호스트만 가능)
+    socket.on("startGame", (roomCode: string) => {
+      const room = rooms[roomCode];
+      if (!room) {
+        socket.emit("error", "방이 존재하지 않습니다.");
+        return;
+      }
+
+      if (socket.id !== room.hostId) {
+        socket.emit("error", "방장만 게임을 시작할 수 있습니다.");
+        return;
+      }
+
+      // 모든 플레이어가 준비했는지 확인
+      const allReady =
+        room.players.length === 2 && Object.values(room.ready).every(Boolean);
+      if (!allReady) {
+        socket.emit(
+          "error",
+          "모든 플레이어가 준비 완료 상태여야 게임을 시작할 수 있습니다."
+        );
+        return;
+      }
+
+      room.gameState = {
+        currentTurn: room.players[0],
+        cardsPlayed: {},
+      };
+
+      io.to(roomCode).emit("gameStart", {
+        currentTurn: room.gameState.currentTurn,
+      });
+
+      console.log(
+        `🎮 게임 시작! 방: ${roomCode}, 첫 턴: ${room.gameState.currentTurn}`
+      );
+    });
 
     // 카드 플레이
     socket.on("playCard", ({ roomCode, card }) => {
@@ -101,10 +124,8 @@ export function setupRoomHandlers(io: Server) {
       }
 
       if (!room.gameState) {
-        room.gameState = {
-          currentTurn: room.players[0],
-          cardsPlayed: {},
-        };
+        socket.emit("error", "게임이 시작되지 않았습니다.");
+        return;
       }
 
       if (room.gameState.currentTurn !== socket.id) {

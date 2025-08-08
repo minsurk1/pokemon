@@ -57,8 +57,13 @@ export function setupRoomHandlers(io: Server) {
       room.players.push(socket.id);
       room.ready[socket.id] = false;
 
-      socket.emit("roomJoined", roomCode);
-      console.log(`👤 ${socket.id} → 방 ${roomCode} 입장`);
+      const isHost = room.hostId === socket.id;
+
+      // 방장 여부 포함하여 전달
+      socket.emit("roomJoined", { isHost, roomCode });
+      console.log(
+        `👤 ${socket.id} → 방 ${roomCode} 입장, 호스트 여부: ${isHost}`
+      );
 
       socket.to(roomCode).emit("opponentJoined");
     });
@@ -177,6 +182,15 @@ export function setupRoomHandlers(io: Server) {
 
           socket.to(roomCode).emit("opponentLeft");
           console.log(`🚪 ${socket.id} → 방 ${roomCode} 퇴장`);
+
+          // 호스트가 나갔으면 남은 플레이어를 새 호스트로 지정
+          if (room.hostId === socket.id) {
+            if (room.players.length > 0) {
+              room.hostId = room.players[0];
+              io.to(room.hostId).emit("hostAssigned");
+              console.log(`👑 새 호스트 지정: ${room.hostId}`);
+            }
+          }
 
           if (room.players.length === 0) {
             delete rooms[roomCode];

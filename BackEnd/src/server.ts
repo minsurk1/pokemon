@@ -57,7 +57,7 @@ app.use((req, res, next) => {
 // ✅ API 라우트 등록
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api", userCardRoutes);
+app.use("/api/user-cards", userCardRoutes);
 app.use("/api/pack", packRoutes);
 
 

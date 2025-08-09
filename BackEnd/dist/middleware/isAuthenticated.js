@@ -13,7 +13,7 @@ const isAuthenticated = (req, res, next) => {
     try {
         const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET);
         req.user = {
-            id: decoded.id,
+            id: decoded.userId,
             username: decoded.username,
         };
         next();

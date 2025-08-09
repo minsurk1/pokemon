@@ -12,6 +12,7 @@ const socket_io_1 = require("socket.io");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const userCardRoutes_1 = __importDefault(require("./routes/userCardRoutes"));
+const packRoutes_1 = __importDefault(require("./routes/packRoutes"));
 const room_1 = require("./routes/room");
 dotenv_1.default.config(); // .env 환경변수 로드
 const app = (0, express_1.default)();
@@ -48,6 +49,7 @@ app.use((req, res, next) => {
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/user", userRoutes_1.default);
 app.use("/api/user-cards", userCardRoutes_1.default);
+app.use("/api/pack", packRoutes_1.default);
 // ✅ 헬스 체크 (라우트 등록 아래에 둬도 됨)
 app.get("/health", (req, res) => {
     res.status(200).send("OK");

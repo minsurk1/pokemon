@@ -21,12 +21,12 @@ export const isAuthenticated = (
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      id: string;
+      userId: string;
       username: string;
     };
 
     req.user = {
-      id: decoded.id,
+      id: decoded.userId,
       username: decoded.username,
     };
 

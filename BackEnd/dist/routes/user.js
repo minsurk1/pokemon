@@ -21,8 +21,8 @@ router.post("/register", async (req, res) => {
             return {
                 user: newUser._id,
                 card: card._id,
-                count: card.cardName === "파이리" ? 1 : 0, // 파이리만 1개 기본 지급
-                owned: card.cardName === "파이리" ? true : false,
+                count: card.name === "파이리" ? 1 : 0, // 파이리만 1개 기본 지급
+                owned: card.name === "파이리" ? true : false,
             };
         });
         // 4. UserCard 컬렉션에 한꺼번에 저장

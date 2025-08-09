@@ -65,7 +65,7 @@ router.post("/signup", async (req, res) => {
         const userCards = allCards.map((card) => ({
             user: savedUser._id, // user 필드명 정확히
             card: card._id, // card 필드명 정확히
-            count: card.cardName === "파이리" ? 1 : 0, // 파이리만 count 1
+            count: card.name === "파이리" ? 1 : 0, // 파이리만 count 1
             owned: true, // 도감에는 항상 true (필요 시 조절 가능)
         }));
         await UserCard_1.default.insertMany(userCards);

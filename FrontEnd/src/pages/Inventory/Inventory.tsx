@@ -142,12 +142,13 @@ function getCardImageByNameAndTier(
   tier: number,
   owned: boolean
 ): string {
-  // 흑백 이미지 기본 경로
   const grayImage = "/images/default_gray.png";
-
   if (!owned) return grayImage;
 
-  // 각 속성별 tier별 이미지 맵
+  if (!tier || tier < 1 || tier > 7) return grayImage;
+
+  const normalizedName = name.trim();
+
   const fireImages = {
     1: fireTier1,
     2: fireTier2,
@@ -255,10 +256,8 @@ function getCardImageByNameAndTier(
     5: legendTier5,
     6: legendTier6,
     7: legendTier7,
-    8: legendTier7,
   };
 
-  // 포켓몬 이름과 tier로 이미지 찾기 위한 매핑
   const nameToTypeImageMap: { [name: string]: { [tier: number]: string } } = {
     // fire 속성 포켓몬들
     파이리: fireImages,
@@ -369,11 +368,11 @@ function getCardImageByNameAndTier(
     아르세우스: legendImages,
   };
 
-  const tierImageMap = nameToTypeImageMap[name];
+  const tierImageMap = nameToTypeImageMap[normalizedName];
   if (tierImageMap && tierImageMap[tier]) {
     return tierImageMap[tier];
   }
-  return grayImage; // 못 찾으면 흑백 이미지
+  return grayImage;
 }
 
 const cardsData: CardData[] = [
@@ -779,27 +778,36 @@ async function openCardPackApiCall(
   userId: string,
   packType: string
 ): Promise<CardData[]> {
+  // 토큰 가져오기 (예: localStorage에서)
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("로그인이 필요합니다.");
+  }
+
   const response = await fetch(
     "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/user/draw-cards",
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, packType }),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ packType }),
     }
   );
 
   if (!response.ok) throw new Error("카드 뽑기 실패");
 
   const data = await response.json();
-  return data.drawnCards; // 또는 data, 응답 형식에 맞춰
+  return data.drawnCards;
 }
 
 // 유저 카드 보유 상태 가져오는 API 호출 함수
 async function fetchUserCardsApiCall(userId: string): Promise<UserCard[]> {
-  const response = await fetch(`/api/user-cards/:userId}`);
+  const response = await fetch(`/api/user-cards/${userId}`);
   if (!response.ok) throw new Error("유저 카드 정보 불러오기 실패");
   const data = await response.json();
-  return data.userCards;
+  return data;
 }
 
 function Inventory({ inventory, setInventory }: InventoryProps) {

@@ -1,29 +1,51 @@
-import express from "express";
-import mongoose from "mongoose";
+import express, { Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/User";
 import UserCard from "../models/UserCard";
+import Card from "../models/Card";
 
 const router = express.Router();
 
-// 유저 카드 정보 조회 API
-router.get("/user-cards/:userId", async (req, res) => {
+router.post("/register", async (req: Request, res: Response) => {
   try {
-    const userId = req.params.userId;
+    const { username, password } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "유효하지 않은 userId입니다." });
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ message: "이미 존재하는 사용자입니다." });
     }
 
-    const userCards = await UserCard.find({ user: new mongoose.Types.ObjectId(userId) })
-      .populate("card", "cardName image3D image3DGray attack hp"); // 필요한 필드만 선택
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (!userCards || userCards.length === 0) {
-      return res.status(404).json({ message: "유저 카드 정보를 찾을 수 없습니다." });
+    const newUser = new User({
+      username,
+      password: hashedPassword,
+    });
+
+    await newUser.save();
+
+    // === 회원가입 시 파이리 지급 ===
+    const defaultCard = await Card.findOne({ name: "파이리" });
+    if (defaultCard) {
+      const userCard = new UserCard({
+        user: newUser._id,
+        card: defaultCard._id,
+        count: 1,
+      });
+      await userCard.save();
+    } else {
+      console.warn("파이리 카드가 데이터베이스에 없습니다.");
     }
 
-    res.json({ userCards });
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET || "default_secret", {
+      expiresIn: "7d",
+    });
+
+    res.status(201).json({ message: "회원가입 성공", token });
   } catch (error) {
-    console.error("유저 카드 조회 실패:", error);
-    res.status(500).json({ message: "유저 카드 정보 불러오기 실패" });
+    console.error("회원가입 실패:", error);
+    res.status(500).json({ message: "회원가입 실패" });
   }
 });
 

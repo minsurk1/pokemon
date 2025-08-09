@@ -110,16 +110,24 @@ router.post(
   return tierCards[Math.floor(Math.random() * tierCards.length)];
 }
 
-const drawnCards = [];
+const drawnCards: any[] = [];
 let attempts = 0;
+
 while (drawnCards.length < 5 && attempts < 20) {
   const tier = getRandomTier(probabilities);
   const card = getRandomCardFromTier(tier);
-  if (card) drawnCards.push(card);
+  
+  // ✅ 중복 카드 방지
+  if (card && !drawnCards.some(c => c._id.equals(card._id))) {
+    drawnCards.push(card);
+  }
   attempts++;
 }
 
-
+// ✅ 카드가 하나도 안 뽑혔을 경우
+if (drawnCards.length === 0) {
+  return res.status(500).json({ message: "뽑힌 카드가 없습니다. 카드풀 또는 티어 구성을 확인하세요." });
+}
       for (const card of drawnCards) {
         const existingUserCard = await UserCard.findOne({ user: userId, card: card._id });
         if (existingUserCard) {
@@ -141,9 +149,9 @@ while (drawnCards.length < 5 && attempts < 20) {
         message: "카드 뽑기 성공",
         drawnCards: drawnCards.map((c) => ({
           id: c._id,
-          name: c.cardName,
-          image3D: c.image3DColor,
-          image3DGray: c.image3DGray,
+          name: c.name,
+          image3D: c.imageColor,
+          image3DGray: c.imageGray,
           damage: c.attack,
           hp: c.hp,
         })),

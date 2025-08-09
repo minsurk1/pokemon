@@ -35,12 +35,12 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
 const CardSchema = new mongoose_1.Schema({
-    cardName: { type: String, required: true, unique: true },
+    name: { type: String, required: true, unique: true },
     cardType: { type: String, required: true },
     attack: { type: Number, required: true },
     hp: { type: Number, required: true },
     image2D: { type: String, required: true },
-    image3DColor: { type: String, required: true },
-    image3DGray: { type: String, required: true },
+    imageColor: { type: String, required: true },
+    imageGray: { type: String, required: true },
 });
 exports.default = mongoose_1.default.model("Card", CardSchema);

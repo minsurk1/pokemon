@@ -8,7 +8,7 @@ interface GameState {
 interface Room {
   players: string[];
   ready: { [playerId: string]: boolean };
-  hostId: string; // 호스트 소켓 아이디 추가
+  hostId: string;
   gameState?: GameState;
 }
 
@@ -48,6 +48,17 @@ export function setupRoomHandlers(io: Server) {
         return;
       }
 
+      // 이미 방에 있는 socket.id인지 확인
+      if (room.players.includes(socket.id)) {
+        console.log(`⚠️ ${socket.id} 이미 방 ${roomCode}에 있음 (중복 접속 방지)`);
+        socket.emit("roomJoined", {
+          roomCode,
+          isHost: socket.id === room.hostId,
+        });
+        return;
+      }
+
+      // 2명 이상이면 입장 불가
       if (room.players.length >= 2) {
         socket.emit("error", "방이 가득 찼습니다.");
         return;
@@ -164,9 +175,9 @@ export function setupRoomHandlers(io: Server) {
       console.log(`🔄 턴 변경: ${socket.id} → ${nextPlayer}`);
     });
 
-    // 연결 해제
-    socket.on("disconnect", () => {
-      console.log(`❌ 연결 종료: ${socket.id}`);
+    // 연결 해제 직전에 호출 (disconnect보다 먼저)
+    socket.on("disconnecting", () => {
+      console.log(`❌ 연결 종료 예정: ${socket.id}`);
 
       for (const roomCode in rooms) {
         const room = rooms[roomCode];
@@ -189,7 +200,6 @@ export function setupRoomHandlers(io: Server) {
             io.to(roomCode).emit("newHost", room.hostId);
             console.log(`♻️ 새로운 방장 지정: ${room.hostId}`);
           }
-
           break;
         }
       }

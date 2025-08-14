@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "./axiosInstance";
 import { motion } from "framer-motion";
 import "./MainPage.css";
-import io, { type Socket } from "socket.io-client";
+
 import BackgroundVideo from "../../components/common/global";
 import { MenuButton } from "../../components/common/button";
 
@@ -26,6 +26,8 @@ import rekuzaImage from "../../assets/images/legendtier6.png";
 import phantomImage from "../../assets/images/poisontier6.png";
 import ligiaImage from "../../assets/images/flytier7.png";
 import { CardAnimation } from "@lasbe/react-card-animation";
+
+import { useSocket } from "../../context/SocketContext"; // context에서 소켓 가져오기
 
 const videoFiles = [
   phantomVideo,
@@ -54,6 +56,8 @@ interface MainPageProps {
 
 function MainPage({ currency, selectedDeck }: MainPageProps) {
   const navigate = useNavigate();
+  const { socket } = useSocket(); // context에서 소켓 받아옴
+
   const [nickname, setNickname] = useState<string | null>(null);
   const [money, setMoney] = useState<number | null>(null);
   const [showRoomTab, setShowRoomTab] = useState(false);
@@ -72,14 +76,6 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   const themeName = videoThemes[randomVideo].name;
   const themeImage = videoThemes[randomVideo].image;
 
-  // socket 인스턴스 생성 (autoConnect: false로 필요할 때 연결)
-  const [socket] = useState(() =>
-    io("https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/", {
-      autoConnect: false,
-      withCredentials: true,
-    })
-  );
-
   useEffect(() => {
     // CSS 변수 세팅
     document.documentElement.style.setProperty(
@@ -94,37 +90,36 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
       "--theme-accent-color",
       `var(--${themeColorClass}-accent-color)`
     );
+  }, [themeColorClass]);
+
+  useEffect(() => {
+    if (!socket) return; // 소켓 없으면 실행 중단
 
     // socket 이벤트 핸들러 등록
-    socket.on("message", (data: string) => setServerResponse(data));
-
-    // 방 생성 성공시 wait 페이지로 이동
-    socket.on("roomCreated", (code: string) => {
-      socket.disconnect();
+    const onMessage = (data: string) => setServerResponse(data);
+    const onRoomCreated = (code: string) => {
       navigate(`/wait/${code}`);
-    });
-
-    // 방 입장 성공시 wait 페이지로 이동
-    socket.on("roomJoined", (code: string) => {
-      socket.disconnect();
-      navigate(`/wait/${code}`);
-    });
-
-    // 에러 메시지 수신시 화면에 표시
-    socket.on("error", (error: string) => {
-      setServerError(error);
-      socket.disconnect();
-    });
-
-    // 컴포넌트 언마운트 시 이벤트 핸들러 해제 및 소켓 연결 종료
-    return () => {
-      socket.off("message");
-      socket.off("roomCreated");
-      socket.off("roomJoined");
-      socket.off("error");
-      socket.disconnect();
     };
-  }, [socket, navigate, themeColorClass]);
+    const onRoomJoined = (code: string) => {
+      navigate(`/wait/${code}`);
+    };
+    const onError = (error: string) => {
+      setServerError(error);
+    };
+
+    socket.on("message", onMessage);
+    socket.on("roomCreated", onRoomCreated);
+    socket.on("roomJoined", onRoomJoined);
+    socket.on("error", onError);
+
+    // 클린업 함수로 이벤트 해제
+    return () => {
+      socket.off("message", onMessage);
+      socket.off("roomCreated", onRoomCreated);
+      socket.off("roomJoined", onRoomJoined);
+      socket.off("error", onError);
+    };
+  }, [socket, navigate]);
 
   useEffect(() => {
     // 사용자 정보 API 호출
@@ -165,16 +160,22 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
   // 방 생성 이벤트 핸들러
   const handleCreateRoom = useCallback(() => {
+    if (!socket) {
+      setServerError("서버 연결이 되어있지 않습니다.");
+      return;
+    }
     setServerError("");
-    socket.connect();
     socket.emit("createRoom");
   }, [socket]);
 
   // 방 입장 이벤트 핸들러
   const handleJoinRoom = useCallback(() => {
+    if (!socket) {
+      setServerError("서버 연결이 되어있지 않습니다.");
+      return;
+    }
     if (roomCode.length === 6) {
       setServerError("");
-      socket.connect();
       socket.emit("joinRoom", roomCode.trim().toUpperCase());
     } else {
       setServerError("올바른 방 코드를 입력해주세요.");

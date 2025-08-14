@@ -1,21 +1,21 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import io, { type Socket } from "socket.io-client";
 import "./WaitPage.css";
 import waitVideo from "../../assets/videos/waitvideo.mp4";
 import BackgroundVideo from "../../components/common/global";
 import MessageBox from "../../components/common/MessageBox";
+import { useSocket } from "../../context/SocketContext"; // context에서 소켓 가져오기
 
 function WaitPage() {
   const navigate = useNavigate();
   const { roomCode } = useParams<{ roomCode: string }>();
 
+  const { socket } = useSocket(); // context에서 소켓 받아옴
+
   const [isReady, setIsReady] = useState<boolean>(false);
   const [opponentReady, setOpponentReady] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [showMessage, setShowMessage] = useState<boolean>(false);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [isHost, setIsHost] = useState<boolean>(false); // 호스트 여부 상태 추가
 
   useEffect(() => {
@@ -24,52 +24,56 @@ function WaitPage() {
       setShowMessage(true);
       return;
     }
-
-    // 서버와 WebSocket 연결
-    const newSocket = io(
-      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
-      { withCredentials: true }
-    );
-    setSocket(newSocket);
+    if (!socket) return;
 
     // 방 입장 요청
-    newSocket.emit("joinRoom", roomCode);
+    socket.emit("joinRoom", roomCode);
 
     // 서버에서 참가 성공 시 호스트 여부 함께 전달받음
-    newSocket.on("roomJoined", (data: { isHost: boolean }) => {
+    const onRoomJoined = (data: { isHost: boolean }) => {
       setIsHost(data.isHost);
       setMessage("방에 입장하였습니다.");
       setShowMessage(true);
-    });
+    };
 
     // 상대방 접속 알림
-    newSocket.on("opponentJoined", () => {
+    const onOpponentJoined = () => {
       setMessage("상대방이 방에 입장했습니다.");
       setShowMessage(true);
-    });
+    };
 
     // 상대방 준비 상태 업데이트
-    newSocket.on("opponentReady", (readyState: boolean) => {
+    const onOpponentReady = (readyState: boolean) => {
       setOpponentReady(readyState);
-    });
+    };
 
     // 상대방 퇴장 알림
-    newSocket.on("opponentLeft", () => {
+    const onOpponentLeft = () => {
       setMessage("상대방이 방을 나갔습니다.");
       setShowMessage(true);
       setOpponentReady(false);
-    });
+    };
 
     // 게임 시작 이벤트 처리
-    newSocket.on("gameStart", () => {
+    const onGameStart = () => {
       navigate("/battle");
-    });
-
-    // 컴포넌트 언마운트 시 소켓 연결 해제
-    return () => {
-      newSocket.close();
     };
-  }, [navigate, roomCode]);
+
+    socket.on("roomJoined", onRoomJoined);
+    socket.on("opponentJoined", onOpponentJoined);
+    socket.on("opponentReady", onOpponentReady);
+    socket.on("opponentLeft", onOpponentLeft);
+    socket.on("gameStart", onGameStart);
+
+    // 클린업: 컴포넌트 언마운트 시 이벤트 해제
+    return () => {
+      socket.off("roomJoined", onRoomJoined);
+      socket.off("opponentJoined", onOpponentJoined);
+      socket.off("opponentReady", onOpponentReady);
+      socket.off("opponentLeft", onOpponentLeft);
+      socket.off("gameStart", onGameStart);
+    };
+  }, [socket, roomCode, navigate]);
 
   // 메시지 박스 닫기
   const closeMessage = (): void => {

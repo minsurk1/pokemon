@@ -21,6 +21,9 @@ import RulePage from "./pages/Rule/RulePage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import Dex from "./pages/Dex/Dex";
 
+// SocketContext 임포트
+import { SocketProvider } from "./context/SocketContext";
+
 function App() {
   // 상태 관리 로직
   const [inventory, setInventory] = useState<CardPack[]>([]);
@@ -48,55 +51,59 @@ function App() {
   };
 
   return (
-    <Router>
-      <Routes>
-        {/* 시작 페이지는 로그인 페이지 */}
-        <Route path="/" element={<LoginPage />} />
-        <Route
-          path="/main"
-          element={<MainPage currency={currency} selectedDeck={selectedDeck} />}
-        />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route
-          path="/store"
-          element={
-            <StorePage
-              buyCardPack={buyCardPack}
-              currency={currency}
-              addCardsToInventory={addCardsToInventory}
-              setCurrency={setCurrency}
-            />
-          }
-        />
-        <Route
-          path="/inventory"
-          element={
-            <Inventory inventory={inventory} setInventory={setInventory} />
-          }
-        />
-        <Route
-          path="/deck"
-          element={
-            <DeckPage
-              onDeckChange={handleDeckChange}
-              selectedDeck={selectedDeck}
-            />
-          }
-        />
-        <Route
-          path="/battle"
-          element={
-            <DndProvider backend={HTML5Backend}>
-              <BattlePage selectedDeck={selectedDeck} />
-            </DndProvider>
-          }
-        />
-        <Route path="/wait/:roomCode" element={<WaitPage />} />
-        <Route path="/rule" element={<RulePage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/dex" element={<Dex />} />
-      </Routes>
-    </Router>
+    <SocketProvider>
+      <Router>
+        <Routes>
+          {/* 시작 페이지는 로그인 페이지 */}
+          <Route path="/" element={<LoginPage />} />
+          <Route
+            path="/main"
+            element={
+              <MainPage currency={currency} selectedDeck={selectedDeck} />
+            }
+          />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route
+            path="/store"
+            element={
+              <StorePage
+                buyCardPack={buyCardPack}
+                currency={currency}
+                addCardsToInventory={addCardsToInventory}
+                setCurrency={setCurrency}
+              />
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <Inventory inventory={inventory} setInventory={setInventory} />
+            }
+          />
+          <Route
+            path="/deck"
+            element={
+              <DeckPage
+                onDeckChange={handleDeckChange}
+                selectedDeck={selectedDeck}
+              />
+            }
+          />
+          <Route
+            path="/battle"
+            element={
+              <DndProvider backend={HTML5Backend}>
+                <BattlePage selectedDeck={selectedDeck} />
+              </DndProvider>
+            }
+          />
+          <Route path="/wait/:roomCode" element={<WaitPage />} />
+          <Route path="/rule" element={<RulePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/dex" element={<Dex />} />
+        </Routes>
+      </Router>
+    </SocketProvider>
   );
 }
 

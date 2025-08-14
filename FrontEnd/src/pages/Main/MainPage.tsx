@@ -208,7 +208,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           variants={list}
           initial="hidden"
           animate="visible"
-          style={{ overflow: "hidden" }}
+          style={{ overflow: "hidden" } as React.CSSProperties }
         >
           <motion.li variants={item}>
             <MenuButton

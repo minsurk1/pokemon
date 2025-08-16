@@ -23,7 +23,8 @@ function WaitPage() {
       setShowMessage(true);
       return;
     }
-    if (!socket) return;
+    if (!socket || !roomCode) return;
+    socket.emit("joinRoom", roomCode);
 
     console.log("▶ socket emit joinRoom", roomCode); // 추가
     socket.emit("joinRoom", roomCode);

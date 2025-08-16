@@ -56,22 +56,26 @@ export function setupRoomHandlers(io: Server) {
         return;
       }
 
+      // 방이 가득 찼는지 먼저 체크
+      if (room.players.length >= 2 && !room.players.includes(socket.id)) {
+        socket.emit("error", "방이 가득 찼습니다.");
+        return;
+      }
+
+      // 이미 방에 들어간 경우
       if (!room.players.includes(socket.id)) {
-        if (room.players.length >= 2) {
-          socket.emit("error", "방이 가득 찼습니다.");
-          return;
-        }
-        socket.join(roomCode);
         room.players.push(socket.id);
         room.ready[socket.id] = false;
+        socket.join(roomCode);
         socket.to(roomCode).emit("opponentJoined");
       }
 
-      socket.join(roomCode);
-      room.players.push(socket.id);
-      room.ready[socket.id] = false;
+      // 방 참여 정보 emit
+      socket.emit("roomJoined", {
+        roomCode,
+        isHost: socket.id === room.hostId,
+      });
 
-      socket.emit("roomJoined", { roomCode, isHost: socket.id === room.hostId });
       console.log(`👤 ${socket.id} → 방 ${roomCode} 입장`);
     });
 

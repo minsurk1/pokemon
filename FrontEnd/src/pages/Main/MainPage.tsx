@@ -97,11 +97,14 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
 
     // socket 이벤트 핸들러 등록
     const onMessage = (data: string) => setServerResponse(data);
-    const onRoomCreated = (code: string) => {
-      navigate(`/wait/${code}`);
+    const onRoomCreated = (data: { roomCode: string }) => {
+      console.log("방 생성됨:", data.roomCode);
+      navigate(`/wait/${data.roomCode}`);
     };
-    const onRoomJoined = (code: string) => {
-      navigate(`/wait/${code}`);
+
+    const onRoomJoined = (data: { roomCode: string }) => {
+      console.log("방 참가 성공:", data.roomCode);
+      navigate(`/wait/${data.roomCode}`);
     };
     const onError = (error: string) => {
       setServerError(error);

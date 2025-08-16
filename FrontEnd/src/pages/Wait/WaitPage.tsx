@@ -90,7 +90,7 @@ function WaitPage() {
     }
     if (isReady && opponentReady) {
       if (socket && roomCode) {
-        socket.emit("startGame", roomCode);
+        socket.emit("startGame", { roomCode });
       }
     } else {
       setMessage("양쪽 모두 준비 완료해야 합니다.");

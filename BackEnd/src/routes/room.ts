@@ -37,7 +37,7 @@ export function setupRoomHandlers(io: Server) {
       socket.join(roomCode);
       console.log(`✅ 방 생성됨: ${roomCode}, 호스트: ${socket.id}`);
 
-      // 항상 문자열로 전달
+      // 객체로 전달
       socket.emit("roomCreated", { roomCode });
     });
 
@@ -55,10 +55,7 @@ export function setupRoomHandlers(io: Server) {
       }
 
       if (room.players.includes(socket.id)) {
-        socket.emit("roomJoined", {
-          roomCode,
-          isHost: socket.id === room.hostId,
-        });
+        socket.emit("roomJoined", { roomCode, isHost: socket.id === room.hostId });
         return;
       }
 
@@ -71,10 +68,7 @@ export function setupRoomHandlers(io: Server) {
       room.players.push(socket.id);
       room.ready[socket.id] = false;
 
-      socket.emit("roomJoined", {
-        roomCode,
-        isHost: socket.id === room.hostId,
-      });
+      socket.emit("roomJoined", { roomCode, isHost: socket.id === room.hostId });
       console.log(`👤 ${socket.id} → 방 ${roomCode} 입장`);
 
       socket.to(roomCode).emit("opponentJoined");

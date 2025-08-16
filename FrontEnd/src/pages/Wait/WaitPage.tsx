@@ -27,7 +27,6 @@ function WaitPage() {
     socket.emit("joinRoom", roomCode);
 
     console.log("▶ socket emit joinRoom", roomCode); // 추가
-    socket.emit("joinRoom", roomCode);
 
     const onRoomJoined = (data: { roomCode: string; isHost: boolean }) => {
       console.log("◀ roomJoined 수신", data);

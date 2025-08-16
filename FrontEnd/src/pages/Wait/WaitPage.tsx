@@ -48,8 +48,14 @@ function WaitPage() {
       setOpponentReady(false);
     };
 
-    const onGameStart = (data: { roomCode: string }) => {
-      navigate(`/battle/${data.roomCode}`);
+    const onGameStart = (data: { roomCode: string; currentTurn: string }) => {
+      console.log("◀ gameStart 수신:", data);
+      if (data.roomCode) {
+        navigate(`/battle/${data.roomCode}`);
+      } else {
+        setMessage("게임 시작 정보가 올바르지 않습니다.");
+        setShowMessage(true);
+      }
     };
 
     socket.on("roomJoined", onRoomJoined);

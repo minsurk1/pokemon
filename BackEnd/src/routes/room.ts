@@ -78,16 +78,17 @@ export function setupRoomHandlers(io: Server) {
     socket.on("playerReady", ({ roomCode, isReady }: { roomCode: string; isReady: boolean }) => {
       const room = rooms[roomCode];
       if (!room) return;
-      
+
       room.ready[socket.id] = isReady;
 
-      // 상대방에게만 보내는 게 아니라, 방 안 모든 플레이어에게 상대 준비 상태 전송
-      room.players.forEach(playerId => {
-        if (playerId !== socket.id) {
-          io.to(playerId).emit("opponentReady", isReady);
-        }
-      });
-    });
+      // 상대방에게 준비 상태 전달
+      socket.to(roomCode).emit("opponentReady", isReady);
+
+      console.log(
+      `💡 ${socket.id} 준비 상태: ${isReady}, 방: ${roomCode}, 전체 준비: ${Object.values(room.ready)}`
+      );
+    }
+  );
 
     // 게임 시작
     socket.on("startGame", (roomCode: string) => {
@@ -102,17 +103,28 @@ export function setupRoomHandlers(io: Server) {
         return;
       }
 
-      const allReady = room.players.length === 2 && Object.values(room.ready).every(Boolean);
-      if (!allReady) {
-        socket.emit("error", "모든 플레이어가 준비 완료 상태여야 시작할 수 있습니다.");
+      // 방 플레이어가 2명인지 확인
+      if (room.players.length !== 2) {
+        socket.emit("error", "플레이어가 2명 있어야 시작할 수 있습니다.");
         return;
       }
 
+      // 모든 플레이어 준비 상태 확인
+      const allReady = Object.values(room.ready).every((ready) => ready === true);
+      if (!allReady) {
+        socket.emit("error", "모든 플레이어가 준비 완료여야 시작할 수 있습니다.");
+        return;
+      }
+
+      // 게임 상태 초기화
       room.gameState = {
         currentTurn: room.players[0],
         cardsPlayed: {},
       };
 
+      console.log(`▶ 게임 시작: 방 ${roomCode}, 턴: ${room.gameState.currentTurn}`);
+
+      // 모든 클라이언트에게 게임 시작 알림
       io.to(roomCode).emit("gameStart", {
         roomCode,
         currentTurn: room.gameState.currentTurn,

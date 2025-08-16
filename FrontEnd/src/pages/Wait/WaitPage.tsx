@@ -96,6 +96,7 @@ function WaitPage() {
     }
     if (isReady && opponentReady) {
       if (socket && roomCode) {
+        console.log("▶ startGame emit", roomCode);
         socket.emit("startGame", { roomCode });
       }
     } else {

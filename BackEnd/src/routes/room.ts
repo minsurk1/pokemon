@@ -92,6 +92,7 @@ export function setupRoomHandlers(io: Server) {
 
     // 게임 시작
     socket.on("startGame", (roomCode: string) => {
+      console.log("◀ startGame 수신", socket.id, roomCode);  // 추가
       const room = rooms[roomCode];
       if (!room) {
         socket.emit("error", "방이 존재하지 않습니다.");

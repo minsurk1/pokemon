@@ -59,7 +59,9 @@ router.post("/signup", async (req, res) => {
         // ✅ 모든 카드 불러오기
         const allCards = await Card_1.default.find();
         if (allCards.length === 0) {
-            return res.status(500).json({ message: "카드 데이터가 존재하지 않습니다." });
+            return res
+                .status(500)
+                .json({ message: "카드 데이터가 존재하지 않습니다." });
         }
         // ✅ 유저 카드 도감 생성 (user, card 필드 _id 로 정확히 넣기)
         const userCards = allCards.map((card) => ({
@@ -104,7 +106,7 @@ router.post("/login", async (req, res) => {
                 .json({ message: "아이디 또는 비밀번호가 잘못되었습니다." });
         }
         console.log("✅ 로그인 성공, 사용자 ID:", user._id);
-        const token = jsonwebtoken_1.default.sign({ userId: user._id.toString(), username: user.username }, jwtSecret, { expiresIn: "1h" });
+        const token = jsonwebtoken_1.default.sign({ id: user._id.toString(), username: user.username }, jwtSecret, { expiresIn: "1h" });
         res.json({
             message: "로그인 성공!",
             token,

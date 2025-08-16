@@ -12,6 +12,7 @@ const socket_io_1 = require("socket.io");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const userCardRoutes_1 = __importDefault(require("./routes/userCardRoutes"));
+const packRoutes_1 = __importDefault(require("./routes/packRoutes"));
 const room_1 = require("./routes/room");
 dotenv_1.default.config(); // .env 환경변수 로드
 const app = (0, express_1.default)();
@@ -20,19 +21,18 @@ const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:3001",
     "https://pokemon-server-529a.onrender.com",
-    "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app", // 프론트 또는 백엔드가 여기 있다면 포함
+    "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app",
 ];
-app.use((0, cors_1.default)({
-    origin: allowedOrigins,
-    credentials: true,
-}));
-// ✅ Preflight 요청 응답 헤더 추가
-app.options("*", (0, cors_1.default)({
-    origin: allowedOrigins,
-    credentials: true,
-}));
+// ✅ 동적 origin 검사
 const corsOptions = {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     credentials: true,
 };
 app.use((0, cors_1.default)(corsOptions));
@@ -47,8 +47,9 @@ app.use((req, res, next) => {
 // ✅ API 라우트 등록
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/user", userRoutes_1.default);
-app.use("/api/user-cards", userCardRoutes_1.default);
-// ✅ 헬스 체크 (라우트 등록 아래에 둬도 됨)
+app.use("/api", userCardRoutes_1.default);
+app.use("/api/pack", packRoutes_1.default);
+// ✅ 헬스 체크
 app.get("/health", (req, res) => {
     res.status(200).send("OK");
 });
@@ -77,8 +78,14 @@ mongoose_1.default
 const server = http_1.default.createServer(app);
 const io = new socket_io_1.Server(server, {
     cors: {
-        origin: allowedOrigins,
-        methods: ["GET", "POST"],
+        origin: (origin, callback) => {
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            }
+            else {
+                callback(new Error("Not allowed by socket.io CORS"));
+            }
+        },
         credentials: true,
     },
 });

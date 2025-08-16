@@ -78,9 +78,15 @@ export function setupRoomHandlers(io: Server) {
     socket.on("playerReady", ({ roomCode, isReady }: { roomCode: string; isReady: boolean }) => {
       const room = rooms[roomCode];
       if (!room) return;
-
+      
       room.ready[socket.id] = isReady;
-      socket.to(roomCode).emit("opponentReady", isReady);
+
+      // 상대방에게만 보내는 게 아니라, 방 안 모든 플레이어에게 상대 준비 상태 전송
+      room.players.forEach(playerId => {
+        if (playerId !== socket.id) {
+          io.to(playerId).emit("opponentReady", isReady);
+        }
+      });
     });
 
     // 게임 시작

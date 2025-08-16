@@ -25,9 +25,11 @@ function WaitPage() {
     }
     if (!socket) return;
 
+    console.log("▶ socket emit joinRoom", roomCode); // 추가
     socket.emit("joinRoom", roomCode);
 
     const onRoomJoined = (data: { roomCode: string; isHost: boolean }) => {
+      console.log("◀ roomJoined 수신", data);
       setIsHost(data.isHost);
       setMessage(`방에 입장하였습니다. (코드: ${data.roomCode})`);
       setShowMessage(true);
@@ -50,12 +52,7 @@ function WaitPage() {
 
     const onGameStart = (data: { roomCode: string; currentTurn: string }) => {
       console.log("◀ gameStart 수신:", data);
-      if (data.roomCode) {
-        navigate(`/battle/${data.roomCode}`);
-      } else {
-        setMessage("게임 시작 정보가 올바르지 않습니다.");
-        setShowMessage(true);
-      }
+      navigate(`/battle/${data.roomCode}`);
     };
 
     socket.on("roomJoined", onRoomJoined);
@@ -82,6 +79,7 @@ function WaitPage() {
     setIsReady(prev => {
       const newReady = !prev;
       if (socket && roomCode) {
+        console.log("▶ playerReady emit", { roomCode, isReady: newReady }); // 추가
         socket.emit("playerReady", { roomCode, isReady: newReady });
       }
       return newReady;

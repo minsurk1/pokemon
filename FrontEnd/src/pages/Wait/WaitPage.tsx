@@ -1,100 +1,109 @@
-import React from "react";
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import io, { type Socket } from "socket.io-client"; // Socket 타입 추가
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import "./WaitPage.css";
 import waitVideo from "../../assets/videos/waitvideo.mp4";
 import BackgroundVideo from "../../components/common/global";
 import MessageBox from "../../components/common/MessageBox";
-
-// location.state의 타입 정의
-interface LocationState {
-  roomCode?: string;
-}
+import { useSocket } from "../../context/SocketContext";
 
 function WaitPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isReady, setIsReady] = useState<boolean>(false);
-  const [opponentReady, setOpponentReady] = useState<boolean>(false);
-  const [message, setMessage] = useState<string>("");
-  const [showMessage, setShowMessage] = useState<boolean>(false);
-  const [socket, setSocket] = useState<Socket | null>(null); // WebSocket 연결 상태에 타입 추가
+  const { roomCode } = useParams<{ roomCode: string }>();
+  const { socket } = useSocket();
 
-  // location.state 타입 안전하게 접근
-  const state = location.state as LocationState;
-  const roomCode = state?.roomCode || "UNKNOWN"; // 방 코드
+  const [isReady, setIsReady] = useState(false);
+  const [opponentReady, setOpponentReady] = useState(false);
+  const [message, setMessage] = useState("");
+  const [showMessage, setShowMessage] = useState(false);
+  const [isHost, setIsHost] = useState(false);
 
   useEffect(() => {
-    // 서버와 WebSocket 연결
-    const newSocket = io(
-      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
-      { withCredentials: true }
-    );
-    setSocket(newSocket);
-
-    // 방 입장 요청 보내기
-    newSocket.emit("joinRoom", roomCode);
-
-    // 서버에서 참가 성공 메시지 수신
-    newSocket.on("roomJoined", () => {
-      setMessage("방에 입장하였습니다.");
+    if (!roomCode || typeof roomCode !== "string") {
+      setMessage("잘못된 방 코드입니다.");
       setShowMessage(true);
-    });
+      return;
+    }
+    if (!socket || !roomCode) return;
+    socket.emit("joinRoom", roomCode);
 
-    // 상대방이 접속하면 알림 받기
-    newSocket.on("opponentJoined", () => {
+    console.log("▶ socket emit joinRoom", roomCode); // 추가
+
+    const onRoomJoined = (data: { roomCode: string; isHost: boolean }) => {
+      console.log("◀ roomJoined 수신", data);
+      setIsHost(data.isHost);
+      setMessage(`방에 입장하였습니다. (코드: ${data.roomCode})`);
+      setShowMessage(true);
+    };
+
+    const onOpponentJoined = () => {
       setMessage("상대방이 방에 입장했습니다.");
       setShowMessage(true);
-    });
+    };
 
-    // 상대방이 준비 상태 변경 감지
-    newSocket.on("opponentReady", (readyState: boolean) => {
+    const onOpponentReady = (readyState: boolean) => {
       setOpponentReady(readyState);
-    });
+    };
 
-    // 상대방이 나갔을 때 알림
-    newSocket.on("opponentLeft", () => {
+    const onOpponentLeft = () => {
       setMessage("상대방이 방을 나갔습니다.");
       setShowMessage(true);
       setOpponentReady(false);
-    });
-
-    // 게임 시작 이벤트 감지
-    newSocket.on("gameStart", () => {
-      navigate("/battle");
-    });
-
-    // 컴포넌트 언마운트 시 WebSocket 연결 해제
-    return () => {
-      newSocket.close();
     };
-  }, [navigate, roomCode]);
 
-  const closeMessage = (): void => {
+    const onGameStart = (data: { roomCode: string; currentTurn: string }) => {
+      console.log("◀ gameStart 수신:", data);
+      navigate(`/battle/${data.roomCode}`);
+    };
+
+    socket.on("roomJoined", onRoomJoined);
+    socket.on("opponentJoined", onOpponentJoined);
+    socket.on("opponentReady", onOpponentReady);
+    socket.on("opponentLeft", onOpponentLeft);
+    socket.on("gameStart", onGameStart);
+
+    return () => {
+      socket.off("roomJoined", onRoomJoined);
+      socket.off("opponentJoined", onOpponentJoined);
+      socket.off("opponentReady", onOpponentReady);
+      socket.off("opponentLeft", onOpponentLeft);
+      socket.off("gameStart", onGameStart);
+    };
+  }, [socket, roomCode, navigate]);
+
+  const closeMessage = () => {
     setShowMessage(false);
     setMessage("");
   };
 
-  const handleReady = (): void => {
-    setIsReady(!isReady);
-    if (socket) {
-      socket.emit("playerReady", { roomCode, isReady: !isReady });
-    }
+  const handleReady = () => {
+    setIsReady(prev => {
+      const newReady = !prev;
+      if (socket && roomCode) {
+        console.log("▶ playerReady emit", { roomCode, isReady: newReady }); // 추가
+        socket.emit("playerReady", { roomCode, isReady: newReady });
+      }
+      return newReady;
+    });
   };
 
-  const handleStart = (): void => {
+  const handleStart = () => {
+    if (!isHost) {
+      setMessage("방장만 시작할 수 있습니다.");
+      setShowMessage(true);
+      return;
+    }
     if (isReady && opponentReady) {
-      if (socket) {
-        socket.emit("startGame", roomCode);
+      if (socket && roomCode) {
+        console.log("▶ startGame emit", roomCode);
+        socket.emit("startGame", { roomCode });
       }
     } else {
-      setMessage("양쪽 모두 준비가 완료되어야 게임을 시작할 수 있습니다.");
+      setMessage("양쪽 모두 준비 완료해야 합니다.");
       setShowMessage(true);
     }
   };
 
-  const handleReturn = (): void => {
+  const handleReturn = () => {
     navigate("/main");
   };
 
@@ -116,6 +125,7 @@ function WaitPage() {
         <div className="room-info">
           <h2>대기실</h2>
           <p>방 코드: {roomCode}</p>
+          {isHost && <p>✅ 당신은 방장입니다.</p>}
         </div>
         <div className="players">
           <div className="player">
@@ -134,7 +144,12 @@ function WaitPage() {
           >
             {isReady ? "준비 완료" : "준비하기"}
           </button>
-          <button className="start-button" onClick={handleStart}>
+          <button
+            className="start-button"
+            onClick={handleStart}
+            disabled={!isHost}
+            title={!isHost ? "방장만 게임을 시작할 수 있습니다." : ""}
+          >
             시작하기
           </button>
           <button className="return-button" onClick={handleReturn}>

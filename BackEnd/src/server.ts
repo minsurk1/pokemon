@@ -19,26 +19,21 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://pokemon-server-529a.onrender.com",
-  "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app", // 프론트 또는 백엔드가 여기 있다면 포함
+  "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app",
 ];
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
 
-// ✅ Preflight 요청 응답 헤더 추가
-app.options(
-  "*",
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
-
+// ✅ 동적 origin 검사
 const corsOptions = {
-  origin: allowedOrigins,
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
 };
 
@@ -60,11 +55,11 @@ app.use("/api/user", userRoutes);
 app.use("/api/user-cards", userCardRoutes);
 app.use("/api/pack", packRoutes);
 
-
-// ✅ 헬스 체크 (라우트 등록 아래에 둬도 됨)
+// ✅ 헬스 체크
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
+
 app.use((req, res, next) => {
   console.log(`[📥 요청 수신] ${req.method} ${req.url}`);
   next();
@@ -96,8 +91,16 @@ const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
   cors: {
-    origin: allowedOrigins,
-    methods: ["GET", "POST"],
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void
+    ) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by socket.io CORS"));
+      }
+    },
     credentials: true,
   },
 });

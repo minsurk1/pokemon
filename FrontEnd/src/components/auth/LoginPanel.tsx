@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import "./LoginPanel.css";
 
@@ -20,14 +20,14 @@ function LoginPanel() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const openButtonRef = useRef<HTMLButtonElement>(null);
 
   const togglePanel = () => setIsOpen(!isOpen);
-  
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -38,13 +38,17 @@ function LoginPanel() {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const response = await axios.post<LoginResponse>(
-        "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/auth/login",
-        {
-          username,
-          password,
-        }
-      );
+      const response: AxiosResponse<LoginResponse> =
+        await axios.post<LoginResponse>(
+          "/api/auth/login",
+          {
+            username,
+            password,
+          },
+          {
+            withCredentials: true, // 이 부분 추가
+          }
+        );
       if (response.data.token) {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
@@ -106,8 +110,8 @@ function LoginPanel() {
               }
             />
             <span onClick={togglePasswordVisibility}>
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                      </span>
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
             <button className="login-button" type="submit" disabled={isLoading}>
               {isLoading ? "로그인 중..." : "로그인"}
             </button>
@@ -125,8 +129,13 @@ function LoginPanel() {
           className="toggle-button open"
           onClick={togglePanel}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " " || e.key === "Spacebar" || e.key === "Tab") {
-              e.preventDefault(); 
+            if (
+              e.key === "Enter" ||
+              e.key === " " ||
+              e.key === "Spacebar" ||
+              e.key === "Tab"
+            ) {
+              e.preventDefault();
               togglePanel();
             }
           }}

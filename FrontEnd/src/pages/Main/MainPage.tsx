@@ -3,9 +3,10 @@
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "./axiosInstance";
 import { motion } from "framer-motion";
 import "./MainPage.css";
-import io, { type Socket } from "socket.io-client";
+
 import BackgroundVideo from "../../components/common/global";
 import { MenuButton } from "../../components/common/button";
 
@@ -26,6 +27,8 @@ import phantomImage from "../../assets/images/poisontier6.png";
 import ligiaImage from "../../assets/images/flytier7.png";
 import { CardAnimation } from "@lasbe/react-card-animation";
 
+import { useSocket } from "../../context/SocketContext"; // context에서 소켓 가져오기
+
 const videoFiles = [
   phantomVideo,
   gaiogaVideo,
@@ -37,41 +40,13 @@ const videoFiles = [
 ];
 
 const videoThemes = {
-  [phantomVideo]: {
-    name: "팬텀",
-    color: "phantom",
-    image: phantomImage,
-  },
-  [gaiogaVideo]: {
-    name: "가이오가",
-    color: "gaioga",
-    image: gaiogaImage,
-  },
-  [grandonVideo]: {
-    name: "그란돈",
-    color: "grandon",
-    image: grandonImage,
-  },
-  [thunderVideo]: {
-    name: "썬더",
-    color: "thunder",
-    image: thunderImage,
-  },
-  [lekuzaVideo]: {
-    name: "레쿠자",
-    color: "lekuza",
-    image: rekuzaImage,
-  },
-  [lugiaVideo]: {
-    name: "루기아",
-    color: "lugia",
-    image: ligiaImage,
-  },
-  [darkraiVideo]: {
-    name: "다크라이",
-    color: "darkrai",
-    image: darkraiImage,
-  },
+  [phantomVideo]: { name: "팬텀", color: "phantom", image: phantomImage },
+  [gaiogaVideo]: { name: "가이오가", color: "gaioga", image: gaiogaImage },
+  [grandonVideo]: { name: "그란돈", color: "grandon", image: grandonImage },
+  [thunderVideo]: { name: "썬더", color: "thunder", image: thunderImage },
+  [lekuzaVideo]: { name: "레쿠자", color: "lekuza", image: rekuzaImage },
+  [lugiaVideo]: { name: "루기아", color: "lugia", image: ligiaImage },
+  [darkraiVideo]: { name: "다크라이", color: "darkrai", image: darkraiImage },
 };
 
 interface MainPageProps {
@@ -81,13 +56,17 @@ interface MainPageProps {
 
 function MainPage({ currency, selectedDeck }: MainPageProps) {
   const navigate = useNavigate();
-  const [showRoomTab, setShowRoomTab] = useState<boolean>(false);
-  const [showCardTab, setShowCardTab] = useState<boolean>(false);
-  const [roomCode, setRoomCode] = useState<string>("");
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [serverResponse, setServerResponse] = useState<string>("");
-  const [serverError, setServerError] = useState<string>("");
+  const { socket } = useSocket(); // context에서 소켓 받아옴
 
+  const [nickname, setNickname] = useState<string | null>(null);
+  const [money, setMoney] = useState<number | null>(null);
+  const [showRoomTab, setShowRoomTab] = useState(false);
+  const [showCardTab, setShowCardTab] = useState(false);
+  const [roomCode, setRoomCode] = useState("");
+  const [serverError, setServerError] = useState("");
+  const [serverResponse, setServerResponse] = useState("");
+
+  // 랜덤 비디오 및 테마 선택
   const [randomVideo] = useState(() => {
     const randomIndex = Math.floor(Math.random() * videoFiles.length);
     return videoFiles[randomIndex];
@@ -97,25 +76,8 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
   const themeName = videoThemes[randomVideo].name;
   const themeImage = videoThemes[randomVideo].image;
 
-  const list = {
-    hidden: {
-      opacity: 0,
-    },
-    visible: {
-      opacity: 1,
-      transition: {
-        when: "beforeChildren",
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0 },
-  };
-
   useEffect(() => {
+    // CSS 변수 세팅
     document.documentElement.style.setProperty(
       "--theme-color",
       `var(--${themeColorClass}-color)`
@@ -128,65 +90,67 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
       "--theme-accent-color",
       `var(--${themeColorClass}-accent-color)`
     );
+  }, [themeColorClass]);
 
-    const newSocket = io(
-      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
-      { withCredentials: true }
-    );
-    setSocket(newSocket);
+  useEffect(() => {
+    if (!socket) return; // 소켓 없으면 실행 중단
 
-    const onMessage = (data: string) => {
-      setServerResponse(data);
-      setServerError("");
+    // socket 이벤트 핸들러 등록
+    const onMessage = (data: string) => setServerResponse(data);
+    const onRoomCreated = (data: { roomCode: string }) => {
+      console.log("방 생성됨:", data.roomCode);
+      navigate(`/wait/${data.roomCode}`);
     };
-    const onRoomCreated = (newRoomCode: string) => {
-      navigate("/wait", { state: { roomCode: newRoomCode } });
-    };
-    const onRoomJoined = (joinedRoomCode: string) => {
-      navigate("/wait", { state: { roomCode: joinedRoomCode } });
+
+    const onRoomJoined = (data: { roomCode: string }) => {
+      console.log("방 참가 성공:", data.roomCode);
+      navigate(`/wait/${data.roomCode}`);
     };
     const onError = (error: string) => {
       setServerError(error);
     };
 
-    newSocket.on("message", onMessage);
-    newSocket.on("roomCreated", onRoomCreated);
-    newSocket.on("roomJoined", onRoomJoined);
-    newSocket.on("error", onError);
+    socket.on("message", onMessage);
+    socket.on("roomCreated", onRoomCreated);
+    socket.on("roomJoined", onRoomJoined);
+    socket.on("error", onError);
 
+    // 클린업 함수로 이벤트 해제
     return () => {
-      newSocket.off("message", onMessage);
-      newSocket.off("roomCreated", onRoomCreated);
-      newSocket.off("roomJoined", onRoomJoined);
-      newSocket.off("error", onError);
-      newSocket.close();
+      socket.off("message", onMessage);
+      socket.off("roomCreated", onRoomCreated);
+      socket.off("roomJoined", onRoomJoined);
+      socket.off("error", onError);
     };
-  }, [navigate, themeColorClass]);
+  }, [socket, navigate]);
+
+  useEffect(() => {
+    // 사용자 정보 API 호출
+    const fetchUser = async () => {
+      try {
+        const res = await axiosInstance.get("/user/me");
+        setNickname(res.data.nickname);
+        setMoney(res.data.money);
+      } catch (err) {
+        console.error("유저 정보 가져오기 실패:", err);
+        setNickname(null);
+        setMoney(null);
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem("token"); // 토큰 삭제
+    localStorage.removeItem("token");
     navigate("/");
   }, [navigate]);
 
-  const handleStore = useCallback(() => {
-    navigate("/store");
-  }, [navigate]);
-
-  const handleDeck = useCallback(() => {
-    navigate("/deck");
-  }, [navigate]);
-
-  const handledex = useCallback(() => {
-    navigate("/dex");
-  }, [navigate]);
-
-  const handleBattle = useCallback(() => {
-    navigate("/battle");
-  }, [navigate]);
-
-  const handleRule = useCallback(() => {
-    navigate("/rule");
-  }, [navigate]);
+  const handleStore = useCallback(() => navigate("/store"), [navigate]);
+  const handleDeck = useCallback(() => navigate("/deck"), [navigate]);
+  const handledex = useCallback(() => navigate("/dex"), [navigate]);
+  const handleBattle = useCallback(() => navigate("/battle"), [navigate]);
+  const handleRule = useCallback(() => navigate("/rule"), [navigate]);
+  const handleProfile = useCallback(() => navigate("/profile"), [navigate]);
 
   const toggleRoomTab = useCallback(() => {
     setShowRoomTab((prev) => !prev);
@@ -197,30 +161,46 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     setShowCardTab((prev) => !prev);
   }, []);
 
-  const handleProfile = useCallback(() => {
-    navigate("/profile");
-  }, [navigate]);
-
+  // 방 생성 이벤트 핸들러
   const handleCreateRoom = useCallback(() => {
-    if (socket) {
-      socket.emit("createRoom");
-      setServerError("");
+    if (!socket) {
+      setServerError("서버 연결이 되어있지 않습니다.");
+      return;
     }
+    setServerError("");
+    socket.emit("createRoom");
   }, [socket]);
 
+  // 방 입장 이벤트 핸들러
   const handleJoinRoom = useCallback(() => {
-    if (roomCode.length === 6 && socket) {
-      socket.emit("joinRoom", roomCode);
+    if (!socket) {
+      setServerError("서버 연결이 되어있지 않습니다.");
+      return;
+    }
+    if (roomCode.length === 6) {
       setServerError("");
+      socket.emit("joinRoom", roomCode.trim().toUpperCase());
     } else {
       setServerError("올바른 방 코드를 입력해주세요.");
     }
   }, [roomCode, socket]);
 
+  // 입력 엔터키 처리
   const onRoomCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleJoinRoom();
-    }
+    if (e.key === "Enter") handleJoinRoom();
+  };
+
+  const list = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { when: "beforeChildren", staggerChildren: 0.2 },
+    },
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0 },
   };
 
   return (
@@ -231,7 +211,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           variants={list}
           initial="hidden"
           animate="visible"
-          style={{ overflow: "hidden" }}
+          style={{ overflow: "hidden" } as React.CSSProperties }
         >
           <motion.li variants={item}>
             <MenuButton
@@ -281,26 +261,12 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
             <div className="theme-main-card">
               <CardAnimation>
                 <img
-                  src={themeImage || "/placeholder.svg"}
-                  alt={`${themeName} 대표 카드`}
+                  src={themeImage}
+                  alt="대표 카드"
                   className="theme-card-image"
                 />
               </CardAnimation>
               <div className="theme-card-name">{themeName}</div>
-            </div>
-
-            <div className="user-deck-section">
-              {/* <h4>내 덱 카드</h4> */}
-              {/* <div className="user-cards-container">
-                {selectedDeck.slice(0, 30).map((cardUrl, index) => (
-                  <img
-                    key={index}
-                    src={cardUrl || "/placeholder.svg"}
-                    alt={`카드 ${index}`}
-                    className="user-card-image"
-                  />
-                ))}
-              </div> */}
             </div>
           </div>
         </div>
@@ -318,7 +284,14 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
             {themeName}
           </motion.button>
 
-          <span className="money">현재 돈: {currency}원</span>
+          <span className="user-nickname" style={{ marginLeft: "1rem" }}>
+            {nickname ? `환영합니다, ${nickname}님` : "로그인 해주세요"}
+          </span>
+
+          <span className="money" style={{ marginLeft: "1rem" }}>
+            {money !== null ? `현재 돈: ${money.toLocaleString()}원` : ""}
+          </span>
+
           <button className="logout-button" onClick={handleLogout}>
             로그아웃
           </button>
@@ -347,6 +320,14 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
                 style={{ color: "red", marginTop: "8px" }}
               >
                 {serverError}
+              </div>
+            )}
+            {serverResponse && (
+              <div
+                className="server-response"
+                style={{ color: "green", marginTop: "8px" }}
+              >
+                {serverResponse}
               </div>
             )}
           </div>

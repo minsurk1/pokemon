@@ -1,77 +1,88 @@
-import React from "react"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import "./StorePage.css"
+// StorePage.tsx: 유저 정보와 카드 구매를 Context로 관리하는 상점 페이지
+
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./StorePage.css";
 import { MdInventory } from "react-icons/md";
 import { FaHome } from "react-icons/fa";
-import MessageBox from "../../components/common/MessageBox"
-import bCard from "../../assets/images/b_card.png"
-import aCard from "../../assets/images/a_card.png"
-import sCard from "../../assets/images/s_card.png"
-import type { Card, CardPack } from "../Inventory/Inventory"
-import BackgroundVideo from "../../components/common/global"
-import storeVideo from "../../assets/videos/storevideo.mp4"
+import MessageBox from "../../components/common/MessageBox";
+import bCard from "../../assets/images/b_card.png";
+import aCard from "../../assets/images/a_card.png";
+import sCard from "../../assets/images/s_card.png";
+import type { Card, CardPack } from "../Inventory/Inventory";
+import BackgroundVideo from "../../components/common/global";
+import storeVideo from "../../assets/videos/storevideo.mp4";
+import axios from "axios";
+import { useUser } from "../../context/UserContext";
 
-// StorePage 컴포넌트 props 인터페이스
-interface StorePageProps {
-  buyCardPack: (card: Card) => boolean
-  currency: number
-  addCardsToInventory: (cardPack: CardPack) => void
-  setCurrency: React.Dispatch<React.SetStateAction<number>>
-}
+function StorePage() {
+  const navigate = useNavigate();
+  const { userInfo, addCardsToInventory, refreshUser } = useUser(); // Context에서 가져오기
 
-function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: StorePageProps) {
-  const navigate = useNavigate()
-  const [message, setMessage] = useState<string>("") // 메시지 상태 추가
-  const [showMessage, setShowMessage] = useState<boolean>(false) // 메시지 박스 표시 여부
-  const [cards] = useState<Card[]>([
+  const [message, setMessage] = useState("");
+  const [showMessage, setShowMessage] = useState(false);
+
+  const cards: Card[] = [
     { image: bCard, name: "B급 카드팩", price: 100, packImage: bCard },
     { image: sCard, name: "S급 카드팩", price: 500, packImage: sCard },
     { image: aCard, name: "A급 카드팩", price: 300, packImage: aCard },
-  ])
+  ];
 
-  const handleBuyCard = (index: number): void => {
-    const selectedCard = cards[index]
-    if (buyCardPack(selectedCard)) {
-      // 여기서 setCurrency를 직접 호출하지 않고 buyCardPack 함수의 반환값에 의존합니다
+  // 카드 구매 - 서버 요청 및 Context 갱신
+  const handleBuyCard = async (index: number) => {
+    if (!userInfo) return;
+    const selectedCard = cards[index];
 
-      // 카드 이름에서 타입 추출
-      let type: "B" | "A" | "S" = "B" // 기본값
-      if (selectedCard.name.includes("S급")) {
-        type = "S"
-      } else if (selectedCard.name.includes("A급")) {
-        type = "A"
-      }
+    try {
+      // 서버 요청
+      await axios.post(
+        "/api/store/buy",
+        { cardType: selectedCard.name },
+        { withCredentials: true }
+      );
 
-      addCardsToInventory({
+      // 카드팩을 Context에 추가
+      const type: "B" | "A" | "S" = selectedCard.name.includes("S급")
+        ? "S"
+        : selectedCard.name.includes("A급")
+        ? "A"
+        : "B";
+
+      const newCardPack: CardPack = {
         name: selectedCard.name,
         packImage: selectedCard.packImage,
         isOpened: false,
-        type: type, // type 정보 추가
-      })
+        type,
+      };
 
-      setMessage(`${selectedCard.name} 카드팩을 구매했습니다!`)
-      setShowMessage(true)
-    } else {
-      setMessage("재화가 부족합니다.")
-      setShowMessage(true)
+      addCardsToInventory(newCardPack); // Context 반영
+
+      // 최신 유저 정보 갱신 (돈 등)
+      await refreshUser();
+
+      setMessage(`${selectedCard.name} 카드팩을 구매했습니다!`);
+      setShowMessage(true);
+    } catch (err: any) {
+      setMessage("구매 실패! 잔액 부족 또는 서버 오류");
+      setShowMessage(true);
+      console.error(err);
     }
-  }
+  };
 
-  // 메시지 박스 닫기 함수
   const closeMessage = (): void => {
-    setShowMessage(false)
-    setMessage("")
-  }
+    setShowMessage(false);
+    setMessage("");
+  };
 
   return (
     <div className="store-container">
       <BackgroundVideo
-          src={storeVideo}
-          opacity={1}
-          zIndex={-1}
-          objectPosition="center top"
-        />
+        src={storeVideo}
+        opacity={1}
+        zIndex={-1}
+        objectPosition="center top"
+      />
+
       {showMessage && (
         <MessageBox
           bgColor="#e3f2fd"
@@ -85,13 +96,20 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
       )}
 
       <div className="store-header">
-        <div className="store-currency">보유 재화: {currency} G</div>
+        <div className="store-currency">
+          {userInfo
+            ? `${userInfo.nickname} 님 - 보유 재화: ${userInfo.money} G`
+            : "로딩 중..."}
+        </div>
         <div>
-          <button className="inventory-button" onClick={() => navigate("/inventory")}>
-            인벤토리  <MdInventory/>
+          <button
+            className="inventory-button"
+            onClick={() => navigate("/inventory")}
+          >
+            인벤토리 <MdInventory />
           </button>
           <button className="main-button" onClick={() => navigate("/main")}>
-            메인페이지  <FaHome/>
+            메인페이지 <FaHome />
           </button>
         </div>
       </div>
@@ -99,7 +117,11 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
       <div className="store-card-container">
         {cards.map((card, index) => (
           <div key={index} className="store-card">
-            <img src={card.image || "/placeholder.svg"} alt={`Card ${index + 1}`} className="store-card-image" />
+            <img
+              src={card.image || "/placeholder.svg"}
+              alt={`Card ${index + 1}`}
+              className="store-card-image"
+            />
             <p>
               {card.name} - {card.price} G
             </p>
@@ -110,7 +132,7 @@ function StorePage({ buyCardPack, currency, addCardsToInventory, setCurrency }: 
         ))}
       </div>
     </div>
-  )
+  );
 }
 
-export default StorePage
+export default StorePage;

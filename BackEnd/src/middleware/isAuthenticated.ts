@@ -30,7 +30,7 @@ export const isAuthenticated = (
     ) as { id: string; username: string };
 
     req.user = {
-      id: decoded.userId,
+      id: decoded.id, // ✅ userId → id
       username: decoded.username,
     };
 

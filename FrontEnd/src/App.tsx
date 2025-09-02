@@ -1,15 +1,22 @@
 "use client";
-import React, { useState } from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useNavigate,
+} from "react-router-dom";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
+import axios from "axios";
+import { UserProvider } from "./context/UserContext";
 
-// 페이지 컴포넌트 임포트
+// 페이지 컴포넌트
 import LoginPage from "./pages/Login/Login";
 import MainPage from "./pages/Main/MainPage";
 import SignUpPage from "./pages/Signup/SignUpPage";
 import StorePage from "./pages/Store/StorePage";
-import Inventory, { type Card, type CardPack } from "./pages/Inventory/Inventory";
+import Inventory, { type CardPack } from "./pages/Inventory/Inventory";
 import DeckPage from "./pages/Deck/DeckPage";
 import BattlePage from "./pages/Battle/BattlePage";
 import WaitPage from "./pages/Wait/WaitPage";
@@ -17,29 +24,37 @@ import RulePage from "./pages/Rule/RulePage";
 import ProfilePage from "./pages/Profile/ProfilePage";
 import Dex from "./pages/Dex/Dex";
 
-// SocketContext 임포트
+// SocketContext
 import { SocketProvider } from "./context/SocketContext";
 
+interface UserInfo {
+  nickname: string;
+  money: number;
+}
+
 function App() {
-  // 상태 관리
   const [inventory, setInventory] = useState<CardPack[]>([]);
-  const [currency, setCurrency] = useState<number>(10000);
   const [selectedDeck, setSelectedDeck] = useState<string[]>(() => {
     const savedDeck = localStorage.getItem("selectedDeck");
     return savedDeck ? JSON.parse(savedDeck) : [];
   });
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-  const buyCardPack = (card: Card): boolean => {
-    if (currency >= card.price) {
-      setCurrency(prev => prev - card.price);
-      return true;
-    }
-    return false;
-  };
-
-  const addCardsToInventory = (newCardPack: CardPack) => {
-    setInventory(prev => [...prev, newCardPack]);
-  };
+  // 서버에서 유저 정보 가져오기
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const res = await axios.get("/api/user/me", { withCredentials: true });
+        setUserInfo(res.data);
+        setLoadingUser(false);
+      } catch (err: any) {
+        console.error("유저 정보를 불러오지 못했습니다.", err);
+        setLoadingUser(false);
+      }
+    };
+    fetchUserInfo();
+  }, []);
 
   const handleDeckChange = (newDeck: string[]) => {
     setSelectedDeck(newDeck);
@@ -48,65 +63,50 @@ function App() {
 
   return (
     <SocketProvider>
-      <Router>
-        <Routes>
-          {/* 로그인 */}
-          <Route path="/" element={<LoginPage />} />
+      <UserProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<LoginPage />} />
 
-          {/* 메인 */}
-          <Route path="/main" element={<MainPage currency={currency} selectedDeck={selectedDeck} />} />
+            <Route path="/main" element={<MainPage />} />
 
-          {/* 회원가입 */}
-          <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
 
-          {/* 상점 */}
-          <Route
-            path="/store"
-            element={
-              <StorePage
-                buyCardPack={buyCardPack}
-                currency={currency}
-                addCardsToInventory={addCardsToInventory}
-                setCurrency={setCurrency}
-              />
-            }
-          />
+            <Route path="/store" element={<StorePage />} />
 
-          {/* 인벤토리 */}
-          <Route
-            path="/inventory"
-            element={<Inventory inventory={inventory} setInventory={setInventory} />}
-          />
+            <Route
+              path="/inventory"
+              element={
+                <Inventory inventory={inventory} setInventory={setInventory} />
+              }
+            />
 
-          {/* 덱 */}
-          <Route
-            path="/deck"
-            element={<DeckPage onDeckChange={handleDeckChange} selectedDeck={selectedDeck} />}
-          />
+            <Route
+              path="/deck"
+              element={
+                <DeckPage
+                  onDeckChange={handleDeckChange}
+                  selectedDeck={selectedDeck}
+                />
+              }
+            />
 
-          {/* 배틀 - roomCode 포함 */}
-          <Route
-            path="/battle/:roomCode"
-            element={
-              <DndProvider backend={HTML5Backend}>
-                <BattlePage selectedDeck={selectedDeck} />
-              </DndProvider>
-            }
-          />
+            <Route
+              path="/battle/:roomCode"
+              element={
+                <DndProvider backend={HTML5Backend}>
+                  <BattlePage selectedDeck={selectedDeck} />
+                </DndProvider>
+              }
+            />
 
-          {/* 대기실 */}
-          <Route path="/wait/:roomCode" element={<WaitPage />} />
-
-          {/* 룰 */}
-          <Route path="/rule" element={<RulePage />} />
-
-          {/* 프로필 */}
-          <Route path="/profile" element={<ProfilePage />} />
-
-          {/* 도감 */}
-          <Route path="/dex" element={<Dex />} />
-        </Routes>
-      </Router>
+            <Route path="/wait/:roomCode" element={<WaitPage />} />
+            <Route path="/rule" element={<RulePage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/dex" element={<Dex />} />
+          </Routes>
+        </Router>
+      </UserProvider>
     </SocketProvider>
   );
 }

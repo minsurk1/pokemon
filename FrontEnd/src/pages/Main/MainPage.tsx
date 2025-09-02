@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosInstance from "./axiosInstance";
+import axiosInstance from "../../utils/axiosInstance"; // 공통 설정된 axios 인스턴스
 import { motion } from "framer-motion";
 import "./MainPage.css";
 
@@ -28,6 +28,7 @@ import ligiaImage from "../../assets/images/flytier7.png";
 import { CardAnimation } from "@lasbe/react-card-animation";
 
 import { useSocket } from "../../context/SocketContext"; // context에서 소켓 가져오기
+import { useUser } from "../../context/UserContext"; // UserContext에서 유저 정보 가져오기
 
 const videoFiles = [
   phantomVideo,
@@ -54,12 +55,14 @@ interface MainPageProps {
   selectedDeck: string[];
 }
 
-function MainPage({ currency, selectedDeck }: MainPageProps) {
+function MainPage() {
   const navigate = useNavigate();
   const { socket } = useSocket(); // context에서 소켓 받아옴
 
   const [nickname, setNickname] = useState<string | null>(null);
   const [money, setMoney] = useState<number | null>(null);
+  const { userInfo, loading, error, refreshUser } = useUser(); // 🔧 Context에서 유저 정보 가져오기
+
   const [showRoomTab, setShowRoomTab] = useState(false);
   const [showCardTab, setShowCardTab] = useState(false);
   const [roomCode, setRoomCode] = useState("");
@@ -106,6 +109,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
       console.log("방 참가 성공:", data.roomCode);
       navigate(`/wait/${data.roomCode}`);
     };
+
     const onError = (error: string) => {
       setServerError(error);
     };
@@ -124,22 +128,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
     };
   }, [socket, navigate]);
 
-  useEffect(() => {
-    // 사용자 정보 API 호출
-    const fetchUser = async () => {
-      try {
-        const res = await axiosInstance.get("/user/me");
-        setNickname(res.data.nickname);
-        setMoney(res.data.money);
-      } catch (err) {
-        console.error("유저 정보 가져오기 실패:", err);
-        setNickname(null);
-        setMoney(null);
-      }
-    };
-    fetchUser();
-  }, []);
-
+  // 로그아웃 핸들러
   const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
     navigate("/");
@@ -211,7 +200,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           variants={list}
           initial="hidden"
           animate="visible"
-          style={{ overflow: "hidden" } as React.CSSProperties }
+          style={{ overflow: "hidden" } as React.CSSProperties}
         >
           <motion.li variants={item}>
             <MenuButton
@@ -285,11 +274,15 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           </motion.button>
 
           <span className="user-nickname" style={{ marginLeft: "1rem" }}>
-            {nickname ? `환영합니다, ${nickname}님` : "로그인 해주세요"}
+            {loading
+              ? "로딩 중..."
+              : userInfo
+              ? `환영합니다, ${userInfo.nickname}님`
+              : "로그인 해주세요"}
           </span>
 
           <span className="money" style={{ marginLeft: "1rem" }}>
-            {money !== null ? `현재 돈: ${money.toLocaleString()}원` : ""}
+            {userInfo ? `현재 돈: ${userInfo.money.toLocaleString()} G` : ""}
           </span>
 
           <button className="logout-button" onClick={handleLogout}>

@@ -23,6 +23,8 @@ router.post(
     const userId = req.user?.id;
     const { cardType } = req.body;
 
+    console.log("userId:", req.user?.id);
+
     if (!userId || !cardType) {
       return res.status(400).json({ message: "userId 또는 cardType 누락" });
     }

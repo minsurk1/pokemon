@@ -10,7 +10,7 @@ import Card from "../models/Card";
 const router = Router();
 
 // 카드팩 가격 설정
-const cardPrices: Record<string, number> = {
+const cardPrices: { [key: string]: number } = {
   "B급 카드팩": 100,
   "A급 카드팩": 300,
   "S급 카드팩": 500,

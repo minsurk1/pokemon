@@ -12,6 +12,37 @@ const router = Router();
 
 console.log("userRoutes 라우터 로드됨");
 
+// ✅ 유저 돈 추가 (치트용) 개발 끝나면 삭제할 것
+router.post(
+  "/add-money",
+  isAuthenticated,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id;
+    const { amount } = req.body;
+
+    if (!userId)
+      return res.status(401).json({ message: "로그인이 필요합니다." });
+    if (!amount || typeof amount !== "number")
+      return res.status(400).json({ message: "amount 필요" });
+
+    try {
+      const user = await User.findById(userId);
+      if (!user)
+        return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+      user.money += amount;
+      await user.save();
+
+      res
+        .status(200)
+        .json({ message: `돈 ${amount}G 추가 완료`, money: user.money });
+    } catch (err) {
+      console.error("돈 추가 오류:", err);
+      res.status(500).json({ message: "서버 오류", error: err });
+    }
+  }
+);
+
 // GET /api/user/me
 router.get(
   "/me",

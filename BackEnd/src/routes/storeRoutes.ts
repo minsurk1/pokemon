@@ -16,37 +16,39 @@ const cardPrices: { [key: string]: number } = {
   "S급 카드팩": 500,
 };
 
+// ✅ 카드팩 구매 라우트
 router.post(
   "/buy",
   isAuthenticated,
   async (req: AuthenticatedRequest, res: Response) => {
-    const userId = req.user?.id;
+    const userId = req.user?.id; // 미들웨어에서 설정한 사용자 ID
     const { cardType } = req.body;
 
-    console.log("userId:", req.user?.id);
-
+    // 1. 요청 데이터 유효성 검사
     if (!userId || !cardType) {
       return res.status(400).json({ message: "userId 또는 cardType 누락" });
     }
 
     try {
+      // 2. 사용자 조회
       const user = await User.findById(userId);
       if (!user)
         return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 
+      // 3. 카드팩 가격 확인
       const price = cardPrices[cardType];
       if (!price)
         return res.status(400).json({ message: "잘못된 카드팩 타입" });
 
-      if (user.money < price) {
+      // 4. 잔액 확인
+      if (user.money < price)
         return res.status(400).json({ message: "잔액 부족" });
-      }
 
-      // 💰 돈 차감
+      // 5. 돈 차감
       user.money -= price;
       await user.save();
 
-      // 카드팩 랜덤 생성
+      // 6. 카드팩 랜덤 생성 (예: 5장)
       const allCards = await Card.find();
       if (!allCards.length)
         return res.status(500).json({ message: "카드 데이터 없음" });
@@ -57,7 +59,7 @@ router.post(
         drawnCards.push(allCards[randomIndex]);
       }
 
-      // UserCard에 추가
+      // 7. UserCard에 추가
       for (const card of drawnCards) {
         const existing = await UserCard.findOne({
           user: userId,
@@ -78,9 +80,10 @@ router.post(
         }
       }
 
+      // 8. 구매 완료 응답
       res.status(200).json({
         message: `${cardType} 구매 완료`,
-        money: user.money,
+        money: user.money, // 최신 잔액
         drawnCards: drawnCards.map((c) => ({
           id: c._id,
           name: c.cardName,

@@ -1,41 +1,46 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
+dotenv.config();
+const jwtSecret = process.env.JWT_SECRET as string;
+
+// 확장된 Request 타입 정의: user 정보를 추가
 export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    username: string;
-  };
+  user?: { id: string; username: string };
 }
 
+// ✅ JWT 인증 미들웨어
 export const isAuthenticated = (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ) => {
+  // 1. Authorization 헤더 확인
   const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ message: "인증 토큰이 없습니다." });
-  }
-
-  const token = authHeader.split(" ")[1];
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "토큰이 없습니다." });
   }
 
-  try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET || "your_secret_key"
-    ) as { id: string; username: string };
+  // 2. 토큰 추출
+  const token = authHeader.split(" ")[1];
 
+  try {
+    // 3. JWT 검증
+    const decoded = jwt.verify(token, jwtSecret) as {
+      id: string;
+      username: string;
+    };
+
+    // 4. req.user에 사용자 정보 저장
     req.user = {
-      id: decoded.userId,
+      id: decoded.id,
       username: decoded.username,
     };
 
-    next();
+    next(); // 인증 성공 시 다음 미들웨어로 이동
   } catch (err) {
-    return res.status(403).json({ message: "유효하지 않은 토큰입니다." });
+    console.error("JWT 인증 오류:", err);
+    return res.status(401).json({ message: "유효하지 않은 토큰입니다." });
   }
 };

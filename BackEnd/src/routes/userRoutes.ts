@@ -4,7 +4,7 @@ import {
   AuthenticatedRequest,
 } from "../middleware/isAuthenticated";
 
-import User from "../models/User";
+import User, { IUser } from "../models/User";
 import UserCard from "../models/UserCard";
 import Card from "../models/Card";
 
@@ -12,22 +12,52 @@ const router = Router();
 
 console.log("userRoutes 라우터 로드됨");
 
+// ✅ 유저 돈 추가 (치트용) 개발 끝나면 삭제할 것
+router.post(
+  "/add-money",
+  isAuthenticated,
+  async (req: AuthenticatedRequest, res: Response) => {
+    const userId = req.user?.id;
+    const { amount } = req.body;
+
+    if (!userId)
+      return res.status(401).json({ message: "로그인이 필요합니다." });
+    if (!amount || typeof amount !== "number")
+      return res.status(400).json({ message: "amount 필요" });
+
+    try {
+      const user = await User.findById(userId);
+      if (!user)
+        return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+
+      user.money += amount;
+      await user.save();
+
+      res
+        .status(200)
+        .json({ message: `돈 ${amount}G 추가 완료`, money: user.money });
+    } catch (err) {
+      console.error("돈 추가 오류:", err);
+      res.status(500).json({ message: "서버 오류", error: err });
+    }
+  }
+);
+
 // GET /api/user/me
 router.get(
   "/me",
   isAuthenticated,
   async (req: AuthenticatedRequest, res: Response) => {
-    console.log("/api/user/me 요청 처리");
-
     if (!req.user) {
       return res.status(401).json({ message: "인증이 필요합니다." });
     }
 
     try {
-      const user = await User.findById(req.user.id).select("nickname money");
-      if (!user) {
+      const userId = req.user.id; // JWT 미들웨어에서 가져온 userId
+      const user = await User.findById(userId).lean<IUser>();
+      if (!user)
         return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-      }
+
       res.json({
         nickname: user.nickname,
         money: user.money,
@@ -47,11 +77,11 @@ router.get(
 
     try {
       const userCards = await UserCard.find({ user: userId }).populate("card");
-      if (!userCards || userCards.length === 0) {
+      if (!userCards || userCards.length === 0)
         return res
           .status(404)
           .json({ message: "해당 유저의 카드 정보를 찾을 수 없습니다." });
-      }
+
       res.json(userCards);
     } catch (error) {
       console.error("유저 카드 조회 오류:", error);
@@ -69,16 +99,14 @@ router.post(
       const userId = req.user?.id;
       const { packType } = req.body;
 
-      if (!userId || !packType) {
+      if (!userId || !packType)
         return res.status(400).json({ message: "userId 또는 packType 누락" });
-      }
 
       const allCards = await Card.find();
-      if (allCards.length === 0) {
+      if (allCards.length === 0)
         return res
           .status(500)
           .json({ message: "카드 데이터가 존재하지 않습니다." });
-      }
 
       const getProbabilities = (pack: string): { [tier: number]: number } => {
         switch (pack) {
@@ -161,9 +189,9 @@ router.post(
         message: "카드 뽑기 성공",
         drawnCards: drawnCards.map((c) => ({
           id: c._id,
-          name: c.name,
-          image3D: c.imageColor,
-          image3DGray: c.imageGray,
+          name: c.cardName,
+          image3D: c.image3DColor, // 🔧 imageColor → image3DColor
+          image3DGray: c.image3DGray,
           damage: c.attack,
           hp: c.hp,
         })),

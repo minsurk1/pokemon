@@ -1,5 +1,5 @@
 // StorePage.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./StorePage.css";
 import { MdInventory } from "react-icons/md";
@@ -12,25 +12,49 @@ import BackgroundVideo from "../../components/common/global";
 import storeVideo from "../../assets/videos/storevideo.mp4";
 import { useUser, CardPack } from "../../context/UserContext";
 import axiosInstance from "../../utils/axiosInstance";
-import { useEffect } from "react";
 
 function StorePage() {
   const navigate = useNavigate();
-  const { userInfo, setUserInfo, addCardsToInventory } = useUser(); // Context에서 유저 정보 가져오기
+  const { userInfo, setUserInfo, addCardsToInventory } = useUser();
 
   const [message, setMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
 
   // 카드팩 정보
-  const cards = [
-    { image: bCard, name: "B급 카드팩", price: 100, packImage: bCard },
-    { image: aCard, name: "A급 카드팩", price: 300, packImage: aCard },
-    { image: sCard, name: "S급 카드팩", price: 500, packImage: sCard },
+  const cards: {
+    image: string;
+    name: string;
+    price: number;
+    packImage: string;
+    type: "B" | "A" | "S";
+  }[] = [
+    {
+      image: bCard,
+      name: "B급 카드팩",
+      price: 100,
+      packImage: bCard,
+      type: "B",
+    },
+    {
+      image: aCard,
+      name: "A급 카드팩",
+      price: 300,
+      packImage: aCard,
+      type: "A",
+    },
+    {
+      image: sCard,
+      name: "S급 카드팩",
+      price: 500,
+      packImage: sCard,
+      type: "S",
+    },
   ];
 
   // 카드팩 구매 처리
   const handleBuyCard = async (index: number) => {
-    if (!userInfo) return; // 로그인 안 되어 있으면 종료
+    if (!userInfo) return;
+
     const selectedCard = cards[index];
 
     // 💰 UI에서 즉시 돈 차감 (실패 시 롤백)
@@ -45,22 +69,22 @@ function StorePage() {
       });
 
       // 서버에서 뽑힌 카드 가져오기
-      const drawnCards = res.data.drawnCards;
+      const drawnCards: { userPackId: string }[] = res.data.drawnCards;
 
       // 카드팩 Context에 추가
-      const type: "B" | "A" | "S" = selectedCard.name.includes("S급")
-        ? "S"
-        : selectedCard.name.includes("A급")
-        ? "A"
-        : "B";
+      drawnCards.forEach((card) => {
+        // 서버에서 카드팩 종류를 기반으로 type 지정
+        const type: "B" | "A" | "S" = selectedCard.type;
 
-      const newCardPack: CardPack = {
-        name: selectedCard.name,
-        packImage: selectedCard.packImage,
-        isOpened: false,
-        type,
-      };
-      addCardsToInventory(newCardPack); // Context 인벤토리에 추가
+        const newCardPack: CardPack = {
+          id: card.userPackId,
+          name: selectedCard.name,
+          packImage: selectedCard.packImage,
+          isOpened: false,
+          type,
+        };
+        addCardsToInventory(newCardPack);
+      });
 
       // 서버 반영된 최신 돈으로 업데이트
       setUserInfo((prev) => (prev ? { ...prev, money: res.data.money } : prev));
@@ -88,20 +112,15 @@ function StorePage() {
     setMessage("");
   };
 
-  // ✅ 치트키: c 누르면 돈 10000 증가 (개발용) 개발 끝나면 삭제할 것
+  // ✅ 치트키: c 누르면 돈 10000 증가 (개발용)
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
       if (e.key === "c") {
-        // c 키로 돈 10000 증가
         if (!userInfo) return;
-
         try {
-          // 1️⃣ 서버에 돈 추가 요청
           const res = await axiosInstance.post("/user/add-money", {
             amount: 10000,
           });
-
-          // 2️⃣ UI에 최신 돈 반영
           setUserInfo((prev) =>
             prev ? { ...prev, money: res.data.money } : prev
           );
@@ -117,7 +136,6 @@ function StorePage() {
 
   return (
     <div className="store-container">
-      {/* 배경 영상 */}
       <BackgroundVideo
         src={storeVideo}
         opacity={1}
@@ -125,7 +143,6 @@ function StorePage() {
         objectPosition="center top"
       />
 
-      {/* 메시지 박스 */}
       {showMessage && (
         <MessageBox
           bgColor="#e3f2fd"
@@ -138,7 +155,6 @@ function StorePage() {
         </MessageBox>
       )}
 
-      {/* 상단 헤더 */}
       <div className="store-header">
         <div className="store-currency">
           {userInfo
@@ -158,7 +174,6 @@ function StorePage() {
         </div>
       </div>
 
-      {/* 카드팩 리스트 */}
       <div className="store-card-container">
         {cards.map((card, index) => (
           <div key={index} className="store-card">

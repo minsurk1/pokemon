@@ -4,8 +4,8 @@ import {
   AuthenticatedRequest,
 } from "../middleware/isAuthenticated";
 import User from "../models/User";
-import UserCard from "../models/UserCard";
-import Card from "../models/Card";
+import UserPack from "../models/UserPack"; // 추가
+// import UserCard, Card 삭제 (이제 store에서 카드 뽑기 X)
 
 const router = Router();
 
@@ -21,7 +21,7 @@ router.post(
   "/buy",
   isAuthenticated,
   async (req: AuthenticatedRequest, res: Response) => {
-    const userId = req.user?.id; // 미들웨어에서 설정한 사용자 ID
+    const userId = req.user?.id;
     const { cardType } = req.body;
 
     // 1. 요청 데이터 유효성 검사
@@ -48,50 +48,18 @@ router.post(
       user.money -= price;
       await user.save();
 
-      // 6. 카드팩 랜덤 생성 (예: 5장)
-      const allCards = await Card.find();
-      if (!allCards.length)
-        return res.status(500).json({ message: "카드 데이터 없음" });
+      // 6. UserPack 생성 (구매한 카드팩 DB 저장)
+      const newPack = await UserPack.create({
+        user: userId,
+        packType: cardType,
+        opened: false, // 아직 열지 않음
+      });
 
-      const drawnCards = [];
-      for (let i = 0; i < 5; i++) {
-        const randomIndex = Math.floor(Math.random() * allCards.length);
-        drawnCards.push(allCards[randomIndex]);
-      }
-
-      // 7. UserCard에 추가
-      for (const card of drawnCards) {
-        const existing = await UserCard.findOne({
-          user: userId,
-          card: card._id,
-        });
-        if (existing) {
-          existing.count += 1;
-          existing.owned = true;
-          await existing.save();
-        } else {
-          const newUserCard = new UserCard({
-            user: userId,
-            card: card._id,
-            count: 1,
-            owned: true,
-          });
-          await newUserCard.save();
-        }
-      }
-
-      // 8. 구매 완료 응답
+      // 7. 구매 완료 응답
       res.status(200).json({
         message: `${cardType} 구매 완료`,
         money: user.money, // 최신 잔액
-        drawnCards: drawnCards.map((c) => ({
-          id: c._id,
-          name: c.cardName,
-          image3D: c.image3DColor,
-          image3DGray: c.image3DGray,
-          attack: c.attack,
-          hp: c.hp,
-        })),
+        packId: newPack._id, // 클라이언트에서 인벤토리 팩 관리용
       });
     } catch (err) {
       console.error("카드팩 구매 오류:", err);

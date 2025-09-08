@@ -8,8 +8,9 @@ import React, {
 } from "react";
 import axios from "axios";
 
-// ✅ 카드팩 타입 정의
+// ✅ 카드팩 타입 정의 (id 추가)
 export interface CardPack {
+  id: string; // 서버에서 받은 UserPack ID
   name: string;
   packImage: string;
   isOpened: boolean;
@@ -72,7 +73,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     await fetchUser();
   };
 
-  // ✅ 인벤토리에 카드 추가
+  // ✅ 인벤토리에 카드팩 추가
   const addCardsToInventory = (cardPack: CardPack) => {
     if (!userInfo) return;
     setUserInfo({
@@ -101,11 +102,20 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
       // 🃏 뽑은 카드 인벤토리에 추가
       res.data.drawnCards.forEach((card: any) => {
+        // 서버에서 받아온 카드 타입을 "B" | "A" | "S"로 변환
+        const type: "B" | "A" | "S" =
+          card.cardType === "S급 카드팩"
+            ? "S"
+            : card.cardType === "A급 카드팩"
+            ? "A"
+            : "B";
+
         const cardPack: CardPack = {
+          id: card.userPackId, // 서버에서 생성된 UserPack ID
           name: card.name,
           packImage: card.image3D,
           isOpened: false,
-          type: "B", // 예시, 필요 시 cardType 기반으로 변경 가능
+          type: type,
         };
         addCardsToInventory(cardPack);
       });

@@ -23,7 +23,7 @@
   display: flex;
   top: 0;
   width: 100%;
-  height: 100px;
+  height: 10vh;
   background-color: #000000;
   z-index: 100;
   align-items: center;
@@ -59,12 +59,12 @@
 /* 카드 캐러셀 - 모든 카드를 포함하는 컨테이너 */
 .cards-carousel {
   display: flex;
-  gap: 200px; 
+  gap: 15vw; 
   will-change: transform;
   cursor: grab;
   padding: 20px 0;
-  margin-left: 140px;
-  height: 700px;
+  margin-left: 4vw;
+  height: 50vh;
 }
 
 .cards-carousel:active {
@@ -73,8 +73,8 @@
 
 .dex-card {
   font-family: "Do hyeon", serif;
-  min-width: 220px; 
-  height: 350px; 
+  min-width: 15vw; 
+  height: 20vh;
   background: transparent; 
   color: white;
   font-size: 1.2rem;
@@ -108,12 +108,12 @@
 .card-nav-button {
   height: 70px;
   width: 50px;
-  margin-bottom: 250px;
+  margin-bottom: 5vh;
   margin-right: 30px;
   margin-left: 30px;
   background-color: rgb(14, 147, 219);
   color: white;
-  border: black,1rem;
+  border: none;
   border-radius: 8px;
   font-size: 1.5rem;
   cursor: pointer;
@@ -134,7 +134,7 @@
 
 .dex-header-button {
   margin-left: auto;
-  margin-right: 20px; 
+  margin-right: 2vw; 
   background:transparent;
   color: white;
   border: none;

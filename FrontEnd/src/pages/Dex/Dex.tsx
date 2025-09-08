@@ -273,7 +273,7 @@ function Dex() {
                     <div className="glb-card-wrapper">
                       <Canvas
                         className="canvas"
-                        style={{ width: "250px", height: "450px" }}
+                        style={{ width: "23vw", height: "450px" }}
                       >
                         <ambientLight intensity={0.5} />
                         <directionalLight position={[2, 2, 2]} intensity={1} />

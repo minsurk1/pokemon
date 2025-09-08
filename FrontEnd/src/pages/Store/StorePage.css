@@ -37,7 +37,7 @@
   left: 0;
   z-index: 500;
   box-sizing: border-box;
-  height: 60px;
+  height: 5vh;
   /* backdrop-filter: blur(20px);  */
 }
 
@@ -49,6 +49,7 @@
 
 .inventory-button,
 .main-button {
+  margin-top: 2vh;
   height: 35px;
   font-family: "Do hyeon", serif;
   text-decoration: none;
@@ -61,7 +62,7 @@
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s;
-  margin-right: 20px;
+  margin-right: 1vw;
   backdrop-filter: blur(9px); 
 }
 
@@ -83,7 +84,7 @@ h2 {
   justify-content: space-around;
   flex-wrap: wrap;
   width: 80%;
-  margin-top: 70px; 
+  margin-top: 13vh; 
   margin-bottom: 20px;
 }
 

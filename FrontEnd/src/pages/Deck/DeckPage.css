@@ -10,8 +10,8 @@
 
 .navigation-section {
   background-image: url("../../assets/images/mainbg.png");
-  padding-right :40px;
-  padding-left: 40px;
+  padding-right :2vw;
+  padding-left: 2vw;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -27,8 +27,8 @@
   justify-content: space-between;
   align-items: center;
   z-index: 10;
-  width: 907px;
-  height:100px;
+  width: 70vw;
+  height:12.5vh;
 }
 .nav-button {
   font-family: "Do Hyeon" ,serif;
@@ -36,7 +36,7 @@
   color: #ffd803;
   border: none;
   border-radius: 14px;
-  padding: 16px 28px;
+  padding: 1rem 2rem;
   font-size: 1.18rem;
   font-weight: bold;
   box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
@@ -52,17 +52,16 @@
 .selected-cards-container {
   position: sticky;
   font-family: "Do Hyeon", serif;
-  top: 100px  ;
+  top: 12vh;
   z-index: 100;
   background-color: rgb(0, 0, 0);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-
   border-top: 4px solid #1f3a4c;
   overflow-x: auto;
   white-space: nowrap;
 }
 .selected-cards-container::-webkit-scrollbar {  
-    height: 12px;
+    height: 1vh;
   }
   
   .selected-cards-container::-webkit-scrollbar-track {
@@ -76,8 +75,8 @@
   
 .selected-cards {
   display: inline-flex;
-  gap: 20px;
-  padding: 10px;
+  gap: 1.5vw;
+  padding: 1vh 1vw;
 }
 
 .selected-card {
@@ -85,8 +84,8 @@
   background-size: cover;
   opacity: 1;
   flex: 0 0 auto;
-  width: 140px;
-  height: 190px;
+  width: 9.5vw;
+  height: 23vh;
   background-color: #145179;
   color: #fff;
   display: flex;
@@ -121,7 +120,7 @@
 }
 
 .card {
-  width: 160px;
+  width: 11vw;
   height: auto;
   background-color: #2980b9;
   color: #fff;
@@ -133,7 +132,7 @@
   transition: transform 0.2s, box-shadow 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  margin-left:15px
+  margin-left:1vw;
 }
 
 .card:hover {

@@ -15,24 +15,32 @@
 .signup-page h1 {
   font-size: 3.2rem;
   color: #496a85;
-  margin-bottom: 1rem;
+  margin-bottom: 5vh;
 }
+.signup-logo{
+  background-image: url("../../assets/images/deckheader.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  /* width: 20vw; */
+  height: 12vh;
+  /* margin-left: 4vw; */
+}
+
 
 .signup-main button {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: auto;
-  height: auto;
+  top: 1vh;
+  right: 1vw;
   font-family: "Do Hyeon", serif;
+  font-weight: bold;
   margin-top: 1rem;
-  padding: 12px;
+  padding: 1vw 2vh;
   font-size: 1.0rem;
-  background-color: #eaff00;
-  border: 3px solid #00fffb;  
-  opacity: 1;
+  background: linear-gradient(to right,#00ffff,#18d8d8,#11cfcc);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: none;
   color: #000000;
-  border-radius: 8px;
+  border-radius: 50px;
   cursor: pointer;
   transition: background-color 0.3s ease, transform 0.2s;
   font-weight: 500;
@@ -93,19 +101,26 @@
 }
 
 .signup-page form button:last-of-type {
-  background-color: #eaff00;
-  border: 3px solid #00fffb;
-  color: #333;
-  width: auto;
-  padding: 10px 20px;
-  font-size: 1.3rem;
-  margin-top: 1.5rem;
-  font-weight: 400;
+  font-family: "Do Hyeon", serif;
+  font-weight: bold;
+  margin-top: 1rem;
+  padding: 1vw 2vh;
+  font-size: 1.0rem;
+  background: linear-gradient(to right,#1aff00,#18d868,#11cf8d);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: none;
+  color: #000000;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+  font-weight: 500;
+  z-index: 10;
+  opacity: 1 ;
 }
 
 .signup-page form button:last-of-type:hover {
   background-color: #f1f1f1;
-  color: #61dafb;
+  color: #000000;
   border-color: #61dafb;
 }
 

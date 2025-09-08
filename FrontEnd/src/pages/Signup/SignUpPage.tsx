@@ -7,6 +7,7 @@ import "./SignUpPage.css";
 import MessageBox from "../../components/common/MessageBox";
 import BackgroundVideo from "../../components/common/global";
 import signupVideo from "../../assets/videos/signupvideo.mp4";
+import { FaHome } from "react-icons/fa";
 
 function SignUpPage() {
   const navigate = useNavigate();
@@ -79,11 +80,14 @@ function SignUpPage() {
   return (
     <div className="signup-page">
       <BackgroundVideo src={signupVideo} opacity={1} zIndex={-1} />
-      <h1>회원가입</h1>
       <div className="signup-main">
-        <button onClick={() => navigate("/")}>로그인 페이지</button>
+        <button onClick={() => navigate("/")}>로그인 페이지  <span className="icon-circle">
+      <FaHome />
+      </span>
+      </button>
       </div>
       <form onSubmit={handleSignUp}>
+        <div className="signup-logo"/>
         <input
           type="text"
           placeholder="아이디"

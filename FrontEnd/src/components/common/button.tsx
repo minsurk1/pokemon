@@ -1,7 +1,9 @@
-import type React from "react"
-import styled from "styled-components"
-import { AiFillHome } from "react-icons/ai"
+import React, { CSSProperties } from "react";
+import styled from "styled-components";
+import { AiFillHome } from "react-icons/ai";
 import { motion } from "framer-motion";
+
+
 
 interface ButtonProps {
   color?: string
@@ -25,6 +27,8 @@ interface ButtonProps {
   onClick?: () => void
   children?: React.ReactNode
   fontSize?: string
+  cursor?: string
+  style?: CSSProperties; 
 }
 
 const StyleHomeButton = styled.button<ButtonProps>`
@@ -60,11 +64,11 @@ const StyleMenuButton = styled.button<ButtonProps>`
     padding:${(props) => props.padding || "1rem"};
     font-size: ${(props) => props.fontSize || "1.3rem"};
     color:${(props) => props.color || "#fff"};
-    background: ${(props) => props.background || "var(--theme-color)"};
+    background: ${(props) => props.background || "transparent"};
     border: ${(props) => props.border || "none"};
     border-radius:${(props) => props.borderRadius || "15px"};
     transition: background 0.3s ease,transform 0.3s ease;
-    cursor: pointer;
+    cursor: ${(props) => props.cursor || "pointer"};
     box-shadow: inset 0 0 6px var(--theme-accent-color);
     width: 100%;
     overflow: hidden;
@@ -132,6 +136,7 @@ export function MenuButton({
   fontSize,
   boxShadow,
   width,
+  cursor,
   onClick,
 }: ButtonProps) {
   return (
@@ -143,6 +148,7 @@ export function MenuButton({
       boxShadow={boxShadow}
       color={color}
       padding={padding}
+      cursor={cursor}
       border={border}
       borderRadius={borderRadius}
       hoverOpacity={hoverOpacity}

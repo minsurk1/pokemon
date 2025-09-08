@@ -7,6 +7,14 @@ import axiosInstance from "./axiosInstance";
 import { motion } from "framer-motion";
 import "./MainPage.css";
 
+import { FaBook } from "react-icons/fa6";
+import { GiBattleGear } from "react-icons/gi";
+import { MdCatchingPokemon } from "react-icons/md"
+import { FaStore } from "react-icons/fa";
+import { MdMeetingRoom } from "react-icons/md";
+import { IoIosInformationCircleOutline } from "react-icons/io";
+import { SiPokemon } from "react-icons/si";
+
 import BackgroundVideo from "../../components/common/global";
 import { MenuButton } from "../../components/common/button";
 
@@ -27,7 +35,7 @@ import phantomImage from "../../assets/images/poisontier6.png";
 import ligiaImage from "../../assets/images/flytier7.png";
 import { CardAnimation } from "@lasbe/react-card-animation";
 
-import { useSocket } from "../../context/SocketContext"; // context에서 소켓 가져오기
+import { useSocket } from "../../context/SocketContext"; 
 
 const videoFiles = [
   phantomVideo,
@@ -216,40 +224,47 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           <motion.li variants={item}>
             <MenuButton
               onClick={handleStore}
-              marginBottom="2.7rem"
-              marginTop="0.4rem"
+              marginBottom="3.3rem"
+              marginTop="0.8rem"
             >
               상점
+              <FaStore style={{marginLeft: "3px"}}/>
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleDeck} marginBottom="2.7rem">
+            <MenuButton onClick={handleDeck} marginBottom="3.3rem">
               카드
+              <SiPokemon style={{marginLeft:"3px"}}/>
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handledex} marginBottom="2.7rem">
+            <MenuButton onClick={handledex} marginBottom="3.3rem">
               도감
+              <MdCatchingPokemon style={{marginLeft: "3px"}} />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleBattle} marginBottom="2.7rem">
+            <MenuButton onClick={handleBattle} marginBottom="3.3rem">
               배틀
+              <GiBattleGear style={{marginLeft: "3px"}} />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleRule} marginBottom="2.7rem">
+            <MenuButton onClick={handleRule} marginBottom="3.3rem" cursor="help">
               Rule
+              <FaBook style={{marginLeft:"3px"}}/>
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={toggleRoomTab} marginBottom="2.7rem">
+            <MenuButton onClick={toggleRoomTab} marginBottom="3.3rem">
               {showRoomTab ? "탭 닫기" : "방 만들기/입장"}
+              <MdMeetingRoom style={{marginLeft:"3px"}}/>
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleProfile} marginBottom="2.7rem">
+            <MenuButton onClick={handleProfile} marginBottom="3.3rem">
               마이페이지
+              <IoIosInformationCircleOutline style={{marginLeft: "3px"}}/>
             </MenuButton>
           </motion.li>
         </motion.ul>
@@ -283,7 +298,7 @@ function MainPage({ currency, selectedDeck }: MainPageProps) {
           >
             {themeName}
           </motion.button>
-
+          
           <span className="user-nickname" style={{ marginLeft: "1rem" }}>
             {nickname ? `환영합니다, ${nickname}님` : "로그인 해주세요"}
           </span>

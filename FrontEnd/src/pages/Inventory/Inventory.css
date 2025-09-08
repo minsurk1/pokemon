@@ -14,7 +14,7 @@
     font-family: "Do Hyeon", serif;
     color: #dfe439; /* 글자 색상 */
     font-size: 4rem;
-    margin-bottom: 10px;
+    margin-bottom: 3vh;
     text-shadow:
       -1.5px -1.5px 0 black,
       1.5px -1.5px 0 black,
@@ -23,9 +23,10 @@
   }
 
   .pack-zone{
-    height : 460px;
-    width: 1300px;
+    height : 55vh;
+    width: 90vw;
     overflow-y: auto;
+    margin-top: 18vh;
   }
   /* 스크롤바 스타일링 */
   .pack-zone::-webkit-scrollbar {
@@ -84,7 +85,7 @@
   .card-pack:hover .card-pack-image {
     transform: scale(1.05);
   }
-  /*카드팩 이름 텍스트 부분*/
+
   .card-pack p {
     color: white;
     font-size: 1.2rem;
@@ -111,7 +112,7 @@
     background: linear-gradient(45deg, #000000, #2979ff);
     transform: translateY(-2px);
   }
-  /*카드 개봉시 배경색 + 투명도*/
+
   .modal-overlay {
     position: fixed;
     top: 0;

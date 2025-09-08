@@ -26,7 +26,7 @@
 .rule-mainbutton {
     font-family: 'Do Hyeon', Arial, sans-serif;
     position: absolute;
-    right: 25px;
+    right: 2vw;
     margin-bottom: 1.5rem;
     padding: 1rem;
     font-size: 1.2rem;
@@ -83,10 +83,10 @@
     background: #352350;
     border-radius: 15px;
     width: 80%;
-    max-width: 800px;
+    max-width: 65vw;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     overflow-y: auto;
-    margin-bottom: 40px;
+    margin-bottom: 2vh;
     background-color: rgba(155, 211, 194, 0.5);
 }
 

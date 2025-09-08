@@ -880,7 +880,7 @@ function Inventory({ inventory, setInventory }: InventoryProps) {
         zIndex={-1}
         objectPosition="center top"
       />
-      <h2>내 인벤토리</h2>
+      {/* <h2>인벤토리</h2> */}
 
       {/* 카드팩 리스트 */}
       {inventory && inventory.length === 0 ? (

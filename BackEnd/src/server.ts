@@ -7,7 +7,6 @@ import { Server as SocketIOServer } from "socket.io";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import userCardRoutes from "./routes/userCardRoutes";
-import packRoutes from "./routes/packRoutes";
 import storeRoutes from "./routes/storeRoutes";
 import { setupRoomHandlers } from "./routes/room";
 
@@ -54,7 +53,6 @@ app.use((req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/user-cards", userCardRoutes);
-app.use("/api/pack", packRoutes);
 app.use("/api/store", storeRoutes);
 
 // ✅ 헬스 체크

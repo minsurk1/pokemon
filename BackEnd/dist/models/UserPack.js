@@ -1,4 +1,6 @@
 "use strict";
+// UserPack.ts
+// 유저가 가진 카드팩 정보를 저장하는 Mongoose 모델
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -34,19 +36,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const UserCardSchema = new mongoose_1.Schema({
+const UserPackSchema = new mongoose_1.Schema({
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
-    card: { type: mongoose_1.Schema.Types.ObjectId, ref: "Card", required: true },
-    count: { type: Number, default: 0, min: 0 },
-}, {
-    timestamps: true, // ✅ createdAt, updatedAt 자동 생성
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
-});
-// ✅ user + card 조합이 중복 저장되지 않도록 유니크 인덱스 추가
-UserCardSchema.index({ user: 1, card: 1 }, { unique: true });
-// ✅ owned는 count > 0 여부로 자동 계산
-UserCardSchema.virtual("owned").get(function () {
-    return (this.count ?? 0) > 0;
-});
-exports.default = mongoose_1.default.model("UserCard", UserCardSchema);
+    packType: { type: String, required: true },
+    purchasedAt: { type: Date, default: Date.now },
+    opened: { type: Boolean, default: false },
+}, { timestamps: true });
+exports.default = mongoose_1.default.model("UserPack", UserPackSchema);

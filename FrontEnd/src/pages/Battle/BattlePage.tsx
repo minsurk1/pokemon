@@ -10,7 +10,12 @@ import "./BattlePage.css";
 
 import MessageBox from "../../components/common/MessageBox";
 import CardMenu from "../../components/cards/CardMenu";
-import { cardsData } from "../Inventory/Inventory";
+import {
+  cardsData,
+  CardName,
+  getCardImageByNameAndTier,
+} from "../../data/cardsData";
+import { BattleCardsData } from "../../data/cardsData";
 import costImage from "../../assets/images/cost.png";
 import healImage from "../../assets/images/heal.png";
 import bombImage from "../../assets/images/bomb.png";
@@ -70,6 +75,13 @@ interface DragItem {
   card: Card;
 }
 
+// 플레이어 카드 인터페이스
+interface PlayerCard {
+  name: CardName;
+  tier: number;
+  owned: boolean;
+}
+
 function BattlePage({ selectedDeck }: BattlePageProps) {
   const [message, setMessage] = useState<string>("");
   const [showMessage, setShowMessage] = useState<boolean>(false);
@@ -92,7 +104,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
 
   const [enemyremainingCards, enemysetRemainingCards] = useState<Card[]>(
     selectedDeck.map((cardImage, index) => {
-      const enemycardData = (cardsData as any[]).find(
+      const enemycardData = (BattleCardsData as any[]).find(
         (card) => card.image === cardImage
       );
       return {
@@ -146,7 +158,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   // 초기 덱과 손패 설정 함수
   const initializeDeckAndHand = useCallback(() => {
     const allCards = selectedDeck.map((cardImage, index) => {
-      const cardData = (cardsData as any[]).find(
+      const cardData = (BattleCardsData as any[]).find(
         (card) => card.image === cardImage
       );
       return {

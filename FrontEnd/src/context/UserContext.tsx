@@ -1,4 +1,4 @@
-// UserContext.tsx
+// FrontEnd/src/context/UserContext.tsx
 import React, {
   createContext,
   useContext,
@@ -6,18 +6,19 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 
-// ✅ 카드팩 타입 정의 (id 추가)
+// 카드팩 타입
 export interface CardPack {
-  id: string; // 서버에서 받은 UserPack ID
-  name: string;
-  packImage: string;
+  id: string; // DB UserPack _id
+  name: string; // "B급 카드팩" 등
+  packImage?: string;
   isOpened: boolean;
   type: "B" | "A" | "S";
+  quantity: number;
 }
 
-// ✅ 유저 정보 타입
+// 유저 정보 타입
 interface User {
   id: string;
   nickname: string;
@@ -25,17 +26,17 @@ interface User {
   inventory: CardPack[];
 }
 
-// ✅ Context 타입
+// Context 타입
 interface UserContextType {
   userInfo: User | null;
   setUserInfo: React.Dispatch<React.SetStateAction<User | null>>;
   loading: boolean;
   error: string;
   refreshUser: () => Promise<void>;
-  addCardsToInventory: (cardPack: CardPack) => void;
   buyCardPack: (
     cardType: "B급 카드팩" | "A급 카드팩" | "S급 카드팩"
   ) => Promise<void>;
+  addCardsToInventory: (newCards: CardPack[]) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -45,19 +46,36 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ 유저 정보 불러오기
+  // 유저 정보 불러오기
   const fetchUser = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("로그인 필요");
 
-      const res = await axios.get("/api/user/me", {
+      const res = await axiosInstance.get("/user/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUserInfo(res.data);
+
+      const inventory: CardPack[] =
+        res.data.userPacks?.map((pack: any) => ({
+          id: pack._id,
+          name: pack.packType,
+          packImage: pack.packImage,
+          isOpened: pack.opened,
+          type: pack.packType[0] as "B" | "A" | "S",
+          quantity: pack.quantity,
+        })) || [];
+
+      setUserInfo({
+        id: res.data._id,
+        nickname: res.data.nickname,
+        money: res.data.money,
+        inventory,
+      });
       setError("");
     } catch (err: any) {
+      console.error(err);
       setError("유저 정보 불러오기 실패");
       setUserInfo(null);
     } finally {
@@ -73,52 +91,29 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     await fetchUser();
   };
 
-  // ✅ 인벤토리에 카드팩 추가
-  const addCardsToInventory = (cardPack: CardPack) => {
-    if (!userInfo) return;
-    setUserInfo({
-      ...userInfo,
-      inventory: [...(userInfo.inventory || []), cardPack],
-    });
-  };
-
-  // ✅ 카드팩 구매 함수
+  // 카드팩 구매
   const buyCardPack = async (
     cardType: "B급 카드팩" | "A급 카드팩" | "S급 카드팩"
   ) => {
     if (!userInfo) throw new Error("로그인 필요");
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("로그인 필요");
 
     try {
-      const res = await axios.post(
-        "/api/store/buy",
-        { cardType },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axiosInstance.post("/store/buy", { cardType });
+      const purchasedPack = res.data;
 
-      // 💰 잔액 업데이트
-      setUserInfo((prev) => (prev ? { ...prev, money: res.data.money } : prev));
-
-      // 🃏 뽑은 카드 인벤토리에 추가
-      res.data.drawnCards.forEach((card: any) => {
-        // 서버에서 받아온 카드 타입을 "B" | "A" | "S"로 변환
-        const type: "B" | "A" | "S" =
-          card.cardType === "S급 카드팩"
-            ? "S"
-            : card.cardType === "A급 카드팩"
-            ? "A"
-            : "B";
-
-        const cardPack: CardPack = {
-          id: card.userPackId, // 서버에서 생성된 UserPack ID
-          name: card.name,
-          packImage: card.image3D,
+      addCardsToInventory([
+        {
+          id: purchasedPack.userPackId,
+          name: cardType,
+          packImage: purchasedPack.packImage,
+          type: cardType[0] as "B" | "A" | "S",
           isOpened: false,
-          type: type,
-        };
-        addCardsToInventory(cardPack);
-      });
+          quantity: 1,
+        },
+      ]);
+
+      // 서버 반영된 최신 돈으로 업데이트
+      setUserInfo((prev) => (prev ? { ...prev, money: res.data.money } : prev));
     } catch (err: any) {
       console.error(
         "카드팩 구매 실패:",
@@ -126,6 +121,25 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       );
       throw new Error(err.response?.data?.message || "서버 오류");
     }
+  };
+
+  // 인벤토리에 카드팩 추가
+  const addCardsToInventory = (newCards: CardPack[]) => {
+    setUserInfo((prev) => {
+      if (!prev) return prev;
+      const updatedInventory = [...prev.inventory];
+
+      newCards.forEach((newCard) => {
+        const existing = updatedInventory.find((p) => p.id === newCard.id);
+        if (existing) {
+          existing.quantity += newCard.quantity;
+        } else {
+          updatedInventory.push(newCard);
+        }
+      });
+
+      return { ...prev, inventory: updatedInventory };
+    });
   };
 
   return (
@@ -136,8 +150,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         loading,
         error,
         refreshUser,
-        addCardsToInventory,
         buyCardPack,
+        addCardsToInventory,
       }}
     >
       {children}
@@ -145,9 +159,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// ✅ 커스텀 훅
+// 커스텀 훅
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (!context) throw new Error("useUser는 UserProvider 안에서만 사용 가능");
+  if (!context)
+    throw new Error("useUser는 UserProvider 안에서만 사용 가능합니다.");
   return context;
 };

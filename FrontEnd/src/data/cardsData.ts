@@ -4,7 +4,7 @@
 import bCardImg from "../../assets/images/b_card.png";
 import aCardImg from "../../assets/images/a_card.png";
 import sCardImg from "../../assets/images/s_card.png";
-import placeholderImg from "../../assets/images/placeholder.svg";
+import placeholderImg from "../assets/images/placeholder.png"; // ✅ 경로 수정 (src/src 제거)
 
 // Fire
 import fireTier1 from "../assets/images/firetier1.png";
@@ -105,7 +105,7 @@ import esperTier5 from "../assets/images/espertier5.png";
 import esperTier6 from "../assets/images/espertier6.png";
 import esperTier7 from "../assets/images/espertier7.png";
 
-// Legend (8티어까지 확장)
+// Legend
 import legendTier1 from "../assets/images/legendtier1.png";
 import legendTier2 from "../assets/images/legendtier2.png";
 import legendTier3 from "../assets/images/legendtier3.png";
@@ -213,17 +213,13 @@ export type CardName = keyof typeof cardsData;
 
 /**
  * 카드 이미지 가져오기
- * @param name 카드 이름
- * @param tier 티어 (1~7)
- * @param owned 소유 여부 (false면 placeholder 반환)
  */
 export function getCardImageByNameAndTier(
   name: CardName,
   tier: number,
   owned: boolean = false
 ): string {
-  if (!owned) return placeholderImg; // 소유하지 않은 카드면 placeholder
-
+  if (!owned) return placeholderImg;
   const cardArray = cardsData[name];
   if (!cardArray) {
     console.warn(`${name} 카드가 없습니다.`);
@@ -235,3 +231,15 @@ export function getCardImageByNameAndTier(
   }
   return cardArray[tier - 1];
 }
+
+// ✅ BattlePage 전용 데이터 추가 (cardsData를 배열로 변환)
+export const BattleCardsData = Object.values(cardsData)
+  .flat()
+  .map((image, index) => ({
+    id: `battle-card-${index}`,
+    image,
+    name: `Card-${index + 1}`, // 필요한 경우 실제 이름으로 매핑 가능
+    attack: 0,
+    hp: 0,
+    cost: 0,
+  }));

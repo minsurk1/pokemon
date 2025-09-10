@@ -46,10 +46,7 @@ function App() {
 
             <Route path="/store" element={<StorePage />} />
 
-            <Route
-              path="/inventory"
-              element={<Inventory inventory={[]} setInventory={() => {}} />}
-            />
+            <Route path="/inventory" element={<Inventory />} />
 
             <Route
               path="/deck"

@@ -59,7 +59,11 @@ router.post(
       res.status(200).json({
         message: `${cardType} 구매 완료`,
         money: user.money, // 최신 잔액
-        packId: newPack._id, // 클라이언트에서 인벤토리 팩 관리용
+        drawnCards: [
+          {
+            userPackId: newPack._id, // 👈 프론트에서 기대하는 userPackId 형태
+          },
+        ],
       });
     } catch (err) {
       console.error("카드팩 구매 오류:", err);

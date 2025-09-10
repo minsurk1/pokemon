@@ -89,15 +89,25 @@ router.post(
         }
       });
 
+      // 🔹 개봉 후 최신 UserPack 목록 반환
+      const updatedInventory = await UserPack.find({ user: userId }).session(
+        session
+      );
+
       res.status(200).json({
         message: "카드팩 개봉 성공",
         drawnCards: drawnCards.map((c) => ({
           id: c._id,
           name: c.cardName,
-          image3D: c.image3DColor,
-          image3DGray: c.image3DGray,
           damage: c.attack,
           hp: c.hp,
+        })),
+        userPacks: updatedInventory.map((p) => ({
+          id: p._id,
+          name: p.packType,
+          type: p.packType[0] as "B" | "A" | "S",
+          quantity: p.quantity,
+          isOpened: p.opened,
         })),
       });
     } catch (error: any) {

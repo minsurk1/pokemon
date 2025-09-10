@@ -4,8 +4,7 @@ import {
   AuthenticatedRequest,
 } from "../middleware/isAuthenticated";
 import User from "../models/User";
-import UserPack from "../models/UserPack"; // 추가
-// import UserCard, Card 삭제 (이제 store에서 카드 뽑기 X)
+import UserPack from "../models/UserPack";
 
 const router = Router();
 
@@ -48,12 +47,13 @@ router.post(
       user.money -= price;
       await user.save();
 
-      // 6. UserPack 생성 (구매한 카드팩 DB 저장)
-      const newPack = await UserPack.create({
-        user: userId,
-        packType: cardType,
-        opened: false, // 아직 열지 않음
-      });
+      // 6. UserPack DB 저장
+      //    이미 존재하면 quantity +1, 없으면 새로 생성
+      const userPack = await UserPack.findOneAndUpdate(
+        { user: userId, packType: cardType },
+        { $inc: { quantity: 1 }, $setOnInsert: { opened: false } },
+        { new: true, upsert: true } // upsert: 없으면 새로 생성
+      );
 
       // 7. 구매 완료 응답
       res.status(200).json({
@@ -61,7 +61,8 @@ router.post(
         money: user.money, // 최신 잔액
         drawnCards: [
           {
-            userPackId: newPack._id, // 👈 프론트에서 기대하는 userPackId 형태
+            userPackId: userPack._id, // 프론트에서 기대하는 형태
+            packType: cardType,
           },
         ],
       });

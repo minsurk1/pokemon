@@ -1,5 +1,10 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
+export interface IUserInventory {
+  pack: Types.ObjectId;
+  opened: boolean;
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   username: string;
@@ -7,10 +12,7 @@ export interface IUser extends Document {
   email: string;
   nickname: string;
   money: number;
-  inventory: {
-    pack: Types.ObjectId;   // CardPack 참조
-    opened: boolean;
-  }[];
+  inventory: IUserInventory[];
 }
 
 const userSchema = new Schema<IUser>({
@@ -27,4 +29,5 @@ const userSchema = new Schema<IUser>({
   ],
 });
 
-export default mongoose.model<IUser>("User", userSchema);
+const User = mongoose.model<IUser>("User", userSchema);
+export default User;

@@ -9,37 +9,25 @@ import aCard from "../../assets/images/a_card.png";
 import sCard from "../../assets/images/s_card.png";
 import BackgroundVideo from "../../components/common/global";
 import storeVideo from "../../assets/videos/storevideo.mp4";
-import { useUser, CardPack } from "../../context/UserContext";
+import { useUser, CardPackType } from "../../context/UserContext";
 
 function StorePage() {
   const navigate = useNavigate();
-  const { userInfo, setUserInfo, addCardsToInventory, buyCardPack } = useUser();
+  const { userInfo, setUserInfo, buyCardPack } = useUser();
 
   const [message, setMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
 
-  const cards = [
-    {
-      image: bCard,
-      name: "B급 카드팩",
-      price: 100,
-      packImage: bCard,
-      type: "B",
-    },
-    {
-      image: aCard,
-      name: "A급 카드팩",
-      price: 300,
-      packImage: aCard,
-      type: "A",
-    },
-    {
-      image: sCard,
-      name: "S급 카드팩",
-      price: 500,
-      packImage: sCard,
-      type: "S",
-    },
+  // 카드팩 목록
+  const cards: {
+    image: string;
+    name: string;
+    price: number;
+    type: CardPackType;
+  }[] = [
+    { image: bCard, name: "B급 카드팩", price: 100, type: "B" },
+    { image: aCard, name: "A급 카드팩", price: 300, type: "A" },
+    { image: sCard, name: "S급 카드팩", price: 500, type: "S" },
   ];
 
   const handleBuyCard = async (index: number) => {
@@ -47,7 +35,9 @@ function StorePage() {
     const selectedCard = cards[index];
 
     try {
-      await buyCardPack(selectedCard.name as any);
+      // packType 전달, 서버에서 최신 유저 정보 반환
+      const updatedUser = await buyCardPack(selectedCard.type);
+      setUserInfo(updatedUser); // 최신 유저 정보 반영
       setMessage(`${selectedCard.name} 구매 완료!`);
       setShowMessage(true);
     } catch (err: any) {
@@ -103,14 +93,8 @@ function StorePage() {
       <div className="store-card-container">
         {cards.map((card, index) => (
           <div key={index} className="store-card">
-            <img
-              src={card.image}
-              alt={card.name}
-              className="store-card-image"
-            />
-            <p>
-              {card.name} - {card.price} G
-            </p>
+            <img src={card.image} alt={card.name} className="store-card-image" />
+            <p>{card.name} - {card.price} G</p>
             <button className="buy-button" onClick={() => handleBuyCard(index)}>
               구매하기
             </button>

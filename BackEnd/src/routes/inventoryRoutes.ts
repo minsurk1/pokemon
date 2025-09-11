@@ -1,6 +1,6 @@
 // routes/inventoryRoutes.ts
 import express, { Response } from "express";
-import UserPack from "../models/UserPack";
+import User from "../models/User";
 import UserCard from "../models/UserCard";
 import Card from "../models/Card";
 import {
@@ -10,7 +10,7 @@ import {
 
 const router = express.Router();
 
-// packType에 따른 등급별 확률
+// packType별 확률 설정
 function getProbabilities(packType: string): { [key: number]: number } {
   switch (packType) {
     case "B":
@@ -44,32 +44,39 @@ function getRandomTier(probabilities: { [key: number]: number }) {
   return Math.max(...Object.keys(probabilities).map(Number));
 }
 
-// ✅ 카드팩 개봉 API (트랜잭션 제거, JWT 기반)
+// ✅ 카드팩 개봉 API
+// ✅ 카드팩 개봉 API
 router.post(
   "/open-pack",
   isAuthenticated,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user?.id;
-      const { packType } = req.body; // "B" | "A" | "S"
+      const { type } = req.body; // packType 대신 type 사용
       if (!userId) return res.status(401).json({ message: "인증 실패" });
 
-      // 1) 유저 팩 수량 차감
-      const pack = await UserPack.findOneAndUpdate(
-        { user: userId, packType, quantity: { $gt: 0 } },
-        { $inc: { quantity: -1 } },
-        { new: true }
-      );
+      // 1) 유저 불러오기
+      const user = await User.findById(userId).populate("inventory.pack");
+      if (!user) return res.status(404).json({ message: "유저를 찾을 수 없음" });
 
-      if (!pack) {
+      // 2) inventory에서 해당 type 찾기
+      const inventoryIndex = user.inventory.findIndex((p) => p.type === type);
+      if (inventoryIndex === -1 || user.inventory[inventoryIndex].quantity <= 0) {
         return res.status(400).json({ message: "보유한 카드팩이 없습니다." });
       }
 
-      // 2) 카드 전체 불러오기 + 확률 적용
-      const allCards = await Card.find({});
-      const probabilities = getProbabilities(packType);
+      // 3) 수량 차감 및 0이면 제거
+      user.inventory[inventoryIndex].quantity -= 1;
+      if (user.inventory[inventoryIndex].quantity <= 0) {
+        user.inventory.splice(inventoryIndex, 1);
+      }
+      await user.save();
 
-      // 3) 5장 뽑기
+      // 4) 카드 전체 불러오기 + 확률 적용
+      const allCards = await Card.find({});
+      const probabilities = getProbabilities(type);
+
+      // 5) 5장 뽑기
       const drawnCards: any[] = [];
       for (let i = 0; i < 5; i++) {
         const tier = getRandomTier(probabilities);
@@ -79,16 +86,13 @@ router.post(
           tierCards[Math.floor(Math.random() * tierCards.length)];
         drawnCards.push(randomCard);
 
-        // 4) UserCard 컬렉션에 저장
+        // UserCard 컬렉션에 저장
         await UserCard.findOneAndUpdate(
           { user: userId, card: randomCard._id },
           { $inc: { count: 1 }, $set: { owned: true } },
           { upsert: true }
         );
       }
-
-      // 5) 최신 UserPack 목록 반환
-      const updatedInventory = await UserPack.find({ user: userId });
 
       res.status(200).json({
         message: "카드팩 개봉 성공",
@@ -98,19 +102,18 @@ router.post(
           damage: c.attack,
           hp: c.hp,
         })),
-        userPacks: updatedInventory.map((p) => ({
-          id: p._id,
-          name: p.packType,
-          type: p.packType[0] as "B" | "A" | "S",
+        userPacks: user.inventory.map((p) => ({
+          packId: p.pack._id,   // pack ObjectId
+          type: p.type,          // "B" | "A" | "S"
           quantity: p.quantity,
-          isOpened: p.opened ?? false,
         })),
       });
     } catch (error: any) {
-      console.error(error);
+      console.error("카드팩 개봉 오류:", error);
       res.status(400).json({ message: error.message || "카드팩 개봉 실패" });
     }
   }
 );
+
 
 export default router;

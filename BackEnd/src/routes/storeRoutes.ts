@@ -23,7 +23,10 @@ router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Resp
     if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 
     // 2. 카드팩 타입으로 조회
+    console.log("요청 packType:", packType);
     const cardPack = await CardPack.findOne({ type: packType });
+    console.log("찾은 카드팩:", cardPack);
+
     if (!cardPack) return res.status(404).json({ message: "카드팩을 찾을 수 없습니다." });
 
     // 3. 잔액 확인

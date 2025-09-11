@@ -112,15 +112,4 @@ router.post("/login", async (req: Request, res: Response) => {
   }
 });
 
-// ✅ 유저 카드 조회
-router.get("/user-cards/:userId", async (req, res) => {
-  const { userId } = req.params;
-  try {
-    const userCards = await UserCard.find({ user: userId }).populate("card");
-    res.json(userCards);
-  } catch (err) {
-    res.status(500).json({ message: "유저 카드 정보 불러오기 실패" });
-  }
-});
-
 export default router;

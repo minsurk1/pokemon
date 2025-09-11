@@ -8,12 +8,8 @@ export interface IUser extends Document {
   nickname: string;
   money: number;
   inventory: {
-    id: string;
-    name: string;
-    packImage?: string;
-    type: "B" | "A" | "S";
-    quantity: number;
-    isOpened: boolean;
+    pack: Types.ObjectId;   // CardPack 참조
+    opened: boolean;
   }[];
 }
 
@@ -25,15 +21,10 @@ const userSchema = new Schema<IUser>({
   money: { type: Number, default: 1200 },
   inventory: [
     {
-      id: { type: String, required: true },
-      name: { type: String, required: true },
-      packImage: { type: String },
-      type: { type: String, enum: ["A", "B", "S"], required: true },
-      quantity: { type: Number, default: 1 },
-      isOpened: { type: Boolean, default: false },
+      pack: { type: Schema.Types.ObjectId, ref: "CardPack" },
+      opened: { type: Boolean, default: false },
     },
   ],
 });
 
-const User = mongoose.model<IUser>("User", userSchema);
-export default User;
+export default mongoose.model<IUser>("User", userSchema);

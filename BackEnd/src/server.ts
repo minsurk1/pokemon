@@ -9,6 +9,7 @@ import userRoutes from "./routes/userRoutes";
 import userCardRoutes from "./routes/userCardRoutes";
 import storeRoutes from "./routes/storeRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
+import seedCardPacks from "./seed/seedCardPacks";
 import { setupRoomHandlers } from "./routes/room";
 
 dotenv.config(); // .env 환경변수 로드
@@ -82,7 +83,10 @@ if (!dbURI) {
 
 mongoose
   .connect(dbURI)
-  .then(() => console.log("✅ MongoDB 연결 성공"))
+  .then(async () => {
+    console.log("✅ MongoDB 연결 성공");
+    await seedCardPacks(); // 데이터 없으면 삽입, 있으면 패스
+  })
   .catch((err) => {
     console.error("❌ MongoDB 연결 실패", err);
     process.exit(1);

@@ -96,15 +96,4 @@ router.post("/login", async (req, res) => {
         res.status(500).json({ message: "로그인 실패", error: error.message });
     }
 });
-// ✅ 유저 카드 조회
-router.get("/user-cards/:userId", async (req, res) => {
-    const { userId } = req.params;
-    try {
-        const userCards = await UserCard_1.default.find({ user: userId }).populate("card");
-        res.json(userCards);
-    }
-    catch (err) {
-        res.status(500).json({ message: "유저 카드 정보 불러오기 실패" });
-    }
-});
 exports.default = router;

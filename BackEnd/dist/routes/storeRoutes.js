@@ -6,49 +6,46 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const isAuthenticated_1 = require("../middleware/isAuthenticated");
 const User_1 = __importDefault(require("../models/User"));
-const UserPack_1 = __importDefault(require("../models/UserPack")); // 추가
-// import UserCard, Card 삭제 (이제 store에서 카드 뽑기 X)
+const CardPack_1 = __importDefault(require("../models/CardPack"));
 const router = (0, express_1.Router)();
-// 카드팩 가격 설정
-const cardPrices = {
-    "B급 카드팩": 100,
-    "A급 카드팩": 300,
-    "S급 카드팩": 500,
-};
 // ✅ 카드팩 구매 라우트
 router.post("/buy", isAuthenticated_1.isAuthenticated, async (req, res) => {
     const userId = req.user?.id;
-    const { cardType } = req.body;
-    // 1. 요청 데이터 유효성 검사
-    if (!userId || !cardType) {
-        return res.status(400).json({ message: "userId 또는 cardType 누락" });
+    const { packType } = req.body; // "B" | "A" | "S"
+    if (!userId || !packType) {
+        return res.status(400).json({ message: "userId 또는 packType 누락" });
     }
     try {
-        // 2. 사용자 조회
-        const user = await User_1.default.findById(userId);
+        // 1. 사용자 조회
+        const user = await User_1.default.findById(userId).populate("inventory.pack");
         if (!user)
             return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-        // 3. 카드팩 가격 확인
-        const price = cardPrices[cardType];
-        if (!price)
-            return res.status(400).json({ message: "잘못된 카드팩 타입" });
-        // 4. 잔액 확인
-        if (user.money < price)
+        // 2. 카드팩 타입으로 조회
+        console.log("요청 packType:", packType);
+        const cardPack = await CardPack_1.default.findOne({ type: packType });
+        console.log("찾은 카드팩:", cardPack);
+        if (!cardPack)
+            return res.status(404).json({ message: "카드팩을 찾을 수 없습니다." });
+        // 3. 잔액 확인
+        if (user.money < cardPack.price) {
             return res.status(400).json({ message: "잔액 부족" });
-        // 5. 돈 차감
-        user.money -= price;
-        await user.save();
-        // 6. UserPack 생성 (구매한 카드팩 DB 저장)
-        const newPack = await UserPack_1.default.create({
-            user: userId,
-            packType: cardType,
-            opened: false, // 아직 열지 않음
+        }
+        // 4. 돈 차감
+        user.money -= cardPack.price;
+        // 5. 인벤토리에 추가
+        user.inventory.push({
+            pack: cardPack._id,
+            type: cardPack.type,
+            quantity: 1,
+            opened: false,
         });
-        // 7. 구매 완료 응답
+        // 6. 저장
+        await user.save();
+        // 7. 최신 유저 정보 조회 및 반환
+        const updatedUser = await User_1.default.findById(userId).populate("inventory.pack");
         res.status(200).json({
-            message: `${cardType} 구매 완료`,
-            money: user.money, // 최신 잔액
-            packId: newPack._id, // 클라이언트에서 인벤토리 팩 관리용
+            message: `${cardPack.name} 구매 완료`,
+            user: updatedUser, // ✅ 프론트에서 setUserInfo(updatedUser) 가능
         });
     }
     catch (err) {

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import "./Inventory.css";
 import BackgroundVideo from "../../components/common/global";
 import inventoryVideo from "../../assets/videos/arceus.mp4";
-import { useUser, CardPack } from "../../context/UserContext";
+import { useUser } from "../../context/UserContext";
 
 function Inventory() {
   const { userInfo, setUserInfo } = useUser();
@@ -29,6 +29,9 @@ function Inventory() {
     setShowModal(true);
   };
 
+  // ✅ 백엔드 주소
+  const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
+
   return (
     <div className="inventory-page">
       <BackgroundVideo
@@ -43,35 +46,42 @@ function Inventory() {
       ) : (
         <div className="pack-zone">
           <div className="inventory-list">
-            {inventory.map((pack) => (
-              <div key={pack.id} className="inventory-item">
-                <div className="card-pack">
-                  {pack.packImage ? (
-                    <img
-                      src={pack.packImage}
-                      alt={pack.name}
-                      className="card-pack-image"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.onerror = null;
-                        target.src = "/placeholder.svg";
-                      }}
-                    />
-                  ) : (
-                    <div className="placeholder-image">No Image</div>
-                  )}
-                  <p>
-                    {pack.name} x{pack.quantity}
-                  </p>
-                  <button
-                    className="open-button"
-                    onClick={() => openCardPack(pack.id)}
-                  >
-                    카드팩 개봉
-                  </button>
+            {inventory.map((pack) => {
+              // ✅ 백엔드에서 이미지 불러오도록 수정
+              const imageSrc = pack.packImage
+                ? `${API_URL}/images/${pack.packImage}`
+                : null;
+
+              return (
+                <div key={pack.id} className="inventory-item">
+                  <div className="card-pack">
+                    {imageSrc ? (
+                      <img
+                        src={imageSrc}
+                        alt={pack.name}
+                        className="card-pack-image"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.src = "/placeholder.svg";
+                        }}
+                      />
+                    ) : (
+                      <div className="placeholder-image">No Image</div>
+                    )}
+                    <p>
+                      {pack.name} x{pack.quantity}
+                    </p>
+                    <button
+                      className="open-button"
+                      onClick={() => openCardPack(pack.id)}
+                    >
+                      카드팩 개봉
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

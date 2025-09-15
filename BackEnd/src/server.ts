@@ -9,6 +9,7 @@ import userRoutes from "./routes/userRoutes";
 import userCardRoutes from "./routes/userCardRoutes";
 import storeRoutes from "./routes/storeRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
+import path from "path";
 import { setupRoomHandlers } from "./routes/room";
 
 dotenv.config(); // .env 환경변수 로드
@@ -56,6 +57,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/user-cards", userCardRoutes);
 app.use("/api/store", storeRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/images", express.static(path.join(__dirname, "../public/images")));
 
 // ✅ 헬스 체크
 app.get("/health", (req, res) => {

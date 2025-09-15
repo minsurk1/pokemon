@@ -82,7 +82,7 @@
 }
 
 .enemy-field {
-  width: 100%;
+  width: 86vw;
   height: 49.9vh;
   background-image: url("../../assets/images/BattleTopBlue.png");
   background-size:contain;
@@ -95,15 +95,18 @@
 }
 
 .player-field {
-  width: 100%;
+  width: 86vw;
   height: 49.9vh;
   background-image: url("../../assets/images/BattleBottomBlue.png");
-  background-size: cover;
+  background-size: contain;
+  background-position: bottom;
   clip-path: polygon(0 100%, 100% 100%, 100% 20%, 95% 56%, 10% 56%, 0 45%);
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
+  background-repeat: no-repeat;
+  z-index: 10;
 }
 
 .enemy-card-zone {
@@ -120,45 +123,46 @@
 
 .player-card-zone {
   position: absolute;
-  bottom: 165px;
+  bottom: 20vh;
   left: 50%;
   transform: translateX(-50%);
   width: 1020px;
+  width: 70vw;
   background-color: transparent;
-  height: 160px;
+  height: 19vh;
   display: flex;
   gap: 50px;
   justify-content: center;
   align-items: center;
-  padding-bottom: 90px;
+  padding-bottom: 10.8vh;
   border-radius: 15px;
   z-index: 250;
 }
 .player-card-bg {
   position: absolute;
-  bottom: 0px;
+  bottom: 0vh;
   left: 50%;
   transform: translateX(-50%);
-  width: 1321px;
-  height: 413.8px;
+  width: 90vw;
+  height: 49.9vh;
   display: flex;
-  gap: 50px;
   justify-content: center;
   align-items: center;
   z-index: 200;
   clip-path: polygon(0 0%, 100% 0%, 100% 20%, 95% 61%, 10% 61%, 0 45%);
-  /* background-color: #000000; */
   background-image: url("../../assets/images/BottomGrass.png");
   background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .enemy-card-bg {
   position: absolute;
+  top: 0vh;
   left: 50%;
   transform: translateX(-50%);
-  width: 1321px;
-  height: 413.8px;
+  width: 90vw;
+  height: 49.9vh;
   display: flex;
-  gap: 50px;
   justify-content: center;
   align-items: center;
   z-index: 200;
@@ -167,7 +171,6 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-background-color: transparent;
 }
 
 .enemy-card-slot,
@@ -186,7 +189,7 @@ background-color: transparent;
 
 .time-zone {
   position: absolute;
-  height: 208.5px;
+  height: 27vh;
   clip-path: polygon(0 0, 100% 22.6%, 100% 100%, 0 100%);
   background-color: transparent;
   z-index: 100;
@@ -246,8 +249,8 @@ background-color: transparent;
 }
 
 .deck-card {
-  width: 105px;
-  height: 140px;
+  width: 7vw;
+  height: 17vh;
   background-image: url("../../assets/images/default.png");
   background-size: cover;
   border-radius: 8px;
@@ -292,19 +295,19 @@ background-color: transparent;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  max-width: 1300px;
-  max-height: 300px;
+  max-width: 60vw;
+  max-height: 30vh;
   overflow-y: auto;
 }
 
 .player-cost-zone {
   position: absolute;
-  height: 310px;
+  height: 37.3vh;
   clip-path: polygon(0 45%, 100% 0%, 100% 100%, 0% 100%);
   /* background-color: transparent; */
   background-color: #2d2d2d;
   z-index: 100;
-  width: 65px;
+  width: 4.4vw;
   right: 0;
   top: 501px;
   display: flex;
@@ -315,12 +318,12 @@ background-color: transparent;
 
 .enemy-cost-zone {
   position: absolute;
-  height: 310px;
+  height: 37.3vh;
   clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 55%);
   /* background-color: transparent; */
   background-color: #2d2d2d;
   z-index: 100;
-  width: 66.5px;
+  width: 4.4vw;
   right: 0;
   top: 0;
   display: flex;
@@ -340,7 +343,7 @@ background-color: transparent;
 
 .right-container {
   height: 100vh;
-  width: 10%;
+  width: 10vw;
   background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
   display: flex;
   flex-direction: column;

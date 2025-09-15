@@ -40,6 +40,12 @@ const userSchema = new mongoose_1.Schema({
     email: { type: String, required: true, unique: true },
     nickname: { type: String, required: true },
     money: { type: Number, default: 1200 },
+    inventory: [
+        {
+            pack: { type: mongoose_1.Schema.Types.ObjectId, ref: "CardPack" },
+            opened: { type: Boolean, default: false },
+        },
+    ],
 });
 const User = mongoose_1.default.model("User", userSchema);
 exports.default = User;

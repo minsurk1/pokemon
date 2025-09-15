@@ -1,22 +1,17 @@
-// UserContext.tsx
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-import axios from "axios";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import axiosInstance from "../utils/axiosInstance";
 
-// ✅ 카드팩 타입 정의
+export type CardPackType = "B" | "A" | "S";
+
 export interface CardPack {
-  name: string;
-  packImage: string;
+  id: string; // CardPack _id
+  name: string; // "B급 카드팩" 등
+  packImage?: string;
   isOpened: boolean;
-  type: "B" | "A" | "S";
+  type: CardPackType;
+  quantity: number;
 }
 
-// ✅ 유저 정보 타입
 interface User {
   id: string;
   nickname: string;
@@ -24,41 +19,59 @@ interface User {
   inventory: CardPack[];
 }
 
-// ✅ Context 타입
 interface UserContextType {
   userInfo: User | null;
   setUserInfo: React.Dispatch<React.SetStateAction<User | null>>;
   loading: boolean;
   error: string;
-  refreshUser: () => Promise<void>;
-  addCardsToInventory: (cardPack: CardPack) => void;
-  buyCardPack: (
-    cardType: "B급 카드팩" | "A급 카드팩" | "S급 카드팩"
-  ) => Promise<void>;
+  refreshUser: () => Promise<User | null>;
+  buyCardPack: (packType: CardPackType) => Promise<User>;
+  addCardsToInventory: (newCards: CardPack[]) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
+
+// ✅ inventory 변환 헬퍼 함수
+const transformInventory = (inventoryData: any[]): CardPack[] =>
+  inventoryData?.map((item: any) => ({
+    id: item.pack._id,
+    name: item.pack.name,
+    packImage: item.pack.image,
+    type: item.pack.type,
+    isOpened: item.opened,
+    quantity: item.quantity ?? 1,
+  })) || [];
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [userInfo, setUserInfo] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // ✅ 유저 정보 불러오기
-  const fetchUser = async () => {
+  const fetchUser = async (): Promise<User | null> => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("로그인 필요");
 
-      const res = await axios.get("/api/user/me", {
+      const res = await axiosInstance.get("/user/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUserInfo(res.data);
+
+      const updatedUser: User = {
+        id: res.data._id,
+        nickname: res.data.nickname,
+        money: res.data.money,
+        inventory: transformInventory(res.data.inventory || []),
+      };
+
+      setUserInfo(updatedUser);
       setError("");
+      return updatedUser;
     } catch (err: any) {
+      console.error("[UserContext] 유저 정보 불러오기 실패:", err.message);
       setError("유저 정보 불러오기 실패");
       setUserInfo(null);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -68,54 +81,49 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     fetchUser();
   }, []);
 
-  const refreshUser = async () => {
-    await fetchUser();
+  const refreshUser = async (): Promise<User | null> => {
+    return await fetchUser();
   };
 
-  // ✅ 인벤토리에 카드 추가
-  const addCardsToInventory = (cardPack: CardPack) => {
-    if (!userInfo) return;
-    setUserInfo({
-      ...userInfo,
-      inventory: [...(userInfo.inventory || []), cardPack],
-    });
-  };
-
-  // ✅ 카드팩 구매 함수
-  const buyCardPack = async (
-    cardType: "B급 카드팩" | "A급 카드팩" | "S급 카드팩"
-  ) => {
-    if (!userInfo) throw new Error("로그인 필요");
-    const token = localStorage.getItem("token");
-    if (!token) throw new Error("로그인 필요");
-
+  const buyCardPack = async (packType: CardPackType): Promise<User> => {
     try {
-      const res = await axios.post(
-        "/api/store/buy",
-        { cardType },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axiosInstance.post("/store/buy", { packType });
 
-      // 💰 잔액 업데이트
-      setUserInfo((prev) => (prev ? { ...prev, money: res.data.money } : prev));
+      if (!res.data || !res.data.user) {
+        throw new Error("서버에서 유저 정보를 반환하지 않았습니다.");
+      }
 
-      // 🃏 뽑은 카드 인벤토리에 추가
-      res.data.drawnCards.forEach((card: any) => {
-        const cardPack: CardPack = {
-          name: card.name,
-          packImage: card.image3D,
-          isOpened: false,
-          type: "B", // 예시, 필요 시 cardType 기반으로 변경 가능
-        };
-        addCardsToInventory(cardPack);
-      });
+      const updatedUser: User = {
+        id: res.data.user._id,
+        nickname: res.data.user.nickname,
+        money: res.data.user.money,
+        inventory: transformInventory(res.data.user.inventory || []),
+      };
+
+      setUserInfo(updatedUser);
+      return updatedUser;
     } catch (err: any) {
-      console.error(
-        "카드팩 구매 실패:",
-        err.response?.data?.message || err.message
-      );
+      console.error("[UserContext] 카드팩 구매 실패:", err.response?.data?.message || err.message);
       throw new Error(err.response?.data?.message || "서버 오류");
     }
+  };
+
+  const addCardsToInventory = (newCards: CardPack[]) => {
+    setUserInfo((prev) => {
+      if (!prev) return prev;
+      const updatedInventory = [...prev.inventory];
+
+      newCards.forEach((newCard) => {
+        const existing = updatedInventory.find((p) => p.id === newCard.id);
+        if (existing) {
+          existing.quantity += newCard.quantity;
+        } else {
+          updatedInventory.push(newCard);
+        }
+      });
+
+      return { ...prev, inventory: updatedInventory };
+    });
   };
 
   return (
@@ -126,8 +134,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         loading,
         error,
         refreshUser,
-        addCardsToInventory,
         buyCardPack,
+        addCardsToInventory,
       }}
     >
       {children}
@@ -135,9 +143,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// ✅ 커스텀 훅
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (!context) throw new Error("useUser는 UserProvider 안에서만 사용 가능");
+  if (!context) throw new Error("useUser는 UserProvider 안에서만 사용 가능합니다.");
   return context;
 };

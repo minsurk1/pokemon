@@ -11,7 +11,6 @@ const cors_1 = __importDefault(require("cors"));
 const socket_io_1 = require("socket.io");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
-const userCardRoutes_1 = __importDefault(require("./routes/userCardRoutes"));
 const storeRoutes_1 = __importDefault(require("./routes/storeRoutes"));
 const inventoryRoutes_1 = __importDefault(require("./routes/inventoryRoutes"));
 const path_1 = __importDefault(require("path"));
@@ -49,7 +48,6 @@ app.use((req, res, next) => {
 // ✅ API 라우트 등록
 app.use("/api/auth", authRoutes_1.default);
 app.use("/api/user", userRoutes_1.default);
-app.use("/api/user-cards", userCardRoutes_1.default);
 app.use("/api/store", storeRoutes_1.default);
 app.use("/api/inventory", inventoryRoutes_1.default);
 app.use("/images", express_1.default.static(path_1.default.join(__dirname, "../public/images")));

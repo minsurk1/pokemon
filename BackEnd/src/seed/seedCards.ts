@@ -1,9 +1,8 @@
-// BackEnd/src/seedCards.ts
+// src/seed/seedCards.ts
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-import Card from "../models/Card"; // Card 모델 경로에 맞게 수정
+import Card, { ICard } from "../models/Card";
 
-dotenv.config();
+const MONGO_URI = "mongodb://127.0.0.1:27017/pokemonDB"; // DB 연결 URI
 
 const cards = [
   // fire
@@ -115,23 +114,20 @@ const cards = [
 
 async function seedCards() {
   try {
-    await mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/pokemonDB", {
-      dbName: "pokemonDB",
-    });
-
+    await mongoose.connect(MONGO_URI);
     console.log("MongoDB 연결됨.");
 
-    // 기존 데이터 삭제
+    // 기존 카드 삭제
     await Card.deleteMany({});
     console.log("기존 카드 데이터 삭제 완료.");
 
-    // 새 데이터 삽입
+    // 새 카드 추가
     await Card.insertMany(cards);
-    console.log("새 카드 시드 완료!");
+    console.log("새 카드 데이터 삽입 완료.");
 
     process.exit(0);
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("카드 시드 실패:", error);
     process.exit(1);
   }
 }

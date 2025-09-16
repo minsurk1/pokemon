@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import Card, { ICard } from "../models/Card";
 
+dotenv.config();
+
 const MONGO_URI = process.env.MONGO_URI as string; // DB 연결 URI
 
 const cards = [

@@ -5,7 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 // src/seed/seedCards.ts
 const mongoose_1 = __importDefault(require("mongoose"));
+const dotenv_1 = __importDefault(require("dotenv"));
 const Card_1 = __importDefault(require("../models/Card"));
+dotenv_1.default.config();
 const MONGO_URI = process.env.MONGO_URI; // DB 연결 URI
 const cards = [
     // fire

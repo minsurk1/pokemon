@@ -3,13 +3,14 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import User from "../models/User";
-import Card from "../models/Card";
-import UserCard from "../models/UserCard";
 
 dotenv.config();
 
 const router = Router();
-const jwtSecret = process.env.JWT_SECRET as string;
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  throw new Error("❌ JWT_SECRET 환경 변수가 설정되지 않았습니다.");
+}
 
 // ✅ 회원가입
 router.post("/signup", async (req: Request, res: Response) => {
@@ -17,19 +18,30 @@ router.post("/signup", async (req: Request, res: Response) => {
   const { username, password, email, nickname } = req.body;
 
   try {
+    // 필드 검증
     if (!username || !password || !email || !nickname) {
-      return res.status(400).json({ message: "모든 필드를 입력해주세요" });
+      return res.status(400).json({ success: false, message: "모든 필드를 입력해주세요." });
     }
 
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
-    if (existingUser) {
-      return res
-        .status(400)
-        .json({ message: "이미 사용 중인 아이디 또는 이메일입니다." });
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, message: "비밀번호는 최소 8자 이상이어야 합니다." });
     }
 
+    // 중복 검사
+    if (await User.findOne({ username })) {
+      return res.status(400).json({ success: false, message: "이미 사용 중인 아이디입니다." });
+    }
+    if (await User.findOne({ email })) {
+      return res.status(400).json({ success: false, message: "이미 사용 중인 이메일입니다." });
+    }
+    if (await User.findOne({ nickname })) {
+      return res.status(400).json({ success: false, message: "이미 사용 중인 닉네임입니다." });
+    }
+
+    // 비밀번호 해싱
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 유저 생성
     const newUser = new User({
       username,
       password: hashedPassword,
@@ -40,27 +52,20 @@ router.post("/signup", async (req: Request, res: Response) => {
 
     const savedUser = await newUser.save();
 
-    // 모든 카드 가져와서 UserCard 생성
-    const allCards = await Card.find();
-    if (!allCards.length) {
-      return res
-        .status(500)
-        .json({ message: "카드 데이터가 존재하지 않습니다." });
-    }
-
-    const userCards = allCards.map((card) => ({
-      user: savedUser._id,
-      card: card._id,
-      count: card.cardName === "파이리" ? 1 : 0, // 파이리만 count 1
-      owned: true,
-    }));
-
-    await UserCard.insertMany(userCards);
-
-    res.status(201).json({ message: "회원가입 성공!" });
+    return res.status(201).json({
+      success: true,
+      message: "회원가입 성공!",
+      user: {
+        id: savedUser._id,
+        username: savedUser.username,
+        email: savedUser.email,
+        nickname: savedUser.nickname,
+        money: savedUser.money,
+      },
+    });
   } catch (err: any) {
     console.error("❌ 회원가입 오류:", err.message);
-    res.status(500).json({ message: "회원가입 실패", error: err.message });
+    return res.status(500).json({ success: false, message: "회원가입 실패", error: err.message });
   }
 });
 
@@ -70,32 +75,23 @@ router.post("/login", async (req: Request, res: Response) => {
 
   try {
     if (!username || !password) {
-      return res
-        .status(400)
-        .json({ message: "아이디와 비밀번호를 입력해주세요." });
+      return res.status(400).json({ success: false, message: "아이디와 비밀번호를 입력해주세요." });
     }
 
     const user = await User.findOne({ username });
     if (!user) {
-      return res
-        .status(400)
-        .json({ message: "아이디 또는 비밀번호가 잘못되었습니다." });
+      return res.status(400).json({ success: false, message: "아이디 또는 비밀번호가 잘못되었습니다." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res
-        .status(400)
-        .json({ message: "아이디 또는 비밀번호가 잘못되었습니다." });
+      return res.status(400).json({ success: false, message: "아이디 또는 비밀번호가 잘못되었습니다." });
     }
 
-    const token = jwt.sign(
-      { id: user._id.toString(), username: user.username },
-      jwtSecret,
-      { expiresIn: "1h" }
-    );
+    const token = jwt.sign({ id: user._id.toString(), username: user.username }, jwtSecret, { expiresIn: "1h" });
 
-    res.json({
+    return res.json({
+      success: true,
       message: "로그인 성공!",
       token,
       user: {
@@ -107,8 +103,8 @@ router.post("/login", async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error("❌ 로그인 중 오류:", error.message);
-    res.status(500).json({ message: "로그인 실패", error: error.message });
+    console.error("❌ 로그인 오류:", error.message);
+    return res.status(500).json({ success: false, message: "로그인 실패", error: error.message });
   }
 });
 

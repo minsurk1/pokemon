@@ -13,9 +13,9 @@ const seedCardPacks = async () => {
         await mongoose_1.default.connect(process.env.MONGO_URI);
         console.log("✅ MongoDB 연결 성공 (seed)");
         const packs = [
-            { name: "B급 카드팩", type: "B", price: 100, image: "b_card.png" },
-            { name: "A급 카드팩", type: "A", price: 300, image: "a_card.png" },
-            { name: "S급 카드팩", type: "S", price: 500, image: "s_card.png" },
+            { name: "B급 카드팩", type: "B", price: 100, image: "/image/b_card.png" },
+            { name: "A급 카드팩", type: "A", price: 300, image: "/image/a_card.png" },
+            { name: "S급 카드팩", type: "S", price: 500, image: "/image/s_card.png" },
         ];
         for (const pack of packs) {
             const exists = await CardPack_1.default.findOne({ type: pack.type });

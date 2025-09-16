@@ -14,6 +14,7 @@ const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const userCardRoutes_1 = __importDefault(require("./routes/userCardRoutes"));
 const storeRoutes_1 = __importDefault(require("./routes/storeRoutes"));
 const inventoryRoutes_1 = __importDefault(require("./routes/inventoryRoutes"));
+const path_1 = __importDefault(require("path"));
 const room_1 = require("./routes/room");
 dotenv_1.default.config(); // .env 환경변수 로드
 const app = (0, express_1.default)();
@@ -51,6 +52,7 @@ app.use("/api/user", userRoutes_1.default);
 app.use("/api/user-cards", userCardRoutes_1.default);
 app.use("/api/store", storeRoutes_1.default);
 app.use("/api/inventory", inventoryRoutes_1.default);
+app.use("/images", express_1.default.static(path_1.default.join(__dirname, "../public/images")));
 // ✅ 헬스 체크
 app.get("/health", (req, res) => {
     res.status(200).send("OK");

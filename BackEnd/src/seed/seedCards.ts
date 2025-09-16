@@ -1,8 +1,9 @@
 // src/seed/seedCards.ts
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 import Card, { ICard } from "../models/Card";
 
-const MONGO_URI = "mongodb://127.0.0.1:27017/pokemonDB"; // DB 연결 URI
+const MONGO_URI = process.env.MONGO_URI as string; // DB 연결 URI
 
 const cards = [
   // fire

@@ -3,11 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// BackEnd/src/seedCards.ts
+// src/seed/seedCards.ts
 const mongoose_1 = __importDefault(require("mongoose"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const Card_1 = __importDefault(require("../models/Card")); // Card 모델 경로에 맞게 수정
-dotenv_1.default.config();
+const Card_1 = __importDefault(require("../models/Card"));
+const MONGO_URI = "mongodb://127.0.0.1:27017/pokemonDB"; // DB 연결 URI
 const cards = [
     // fire
     { cardName: "파이리", cardType: "fire", tier: 1, attack: 10, hp: 25, cost: 1, image2D: "/images/fireTier1.png" },
@@ -106,20 +105,18 @@ const cards = [
 ];
 async function seedCards() {
     try {
-        await mongoose_1.default.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/pokemon", {
-            dbName: "pokemon",
-        });
+        await mongoose_1.default.connect(MONGO_URI);
         console.log("MongoDB 연결됨.");
-        // 기존 데이터 삭제
+        // 기존 카드 삭제
         await Card_1.default.deleteMany({});
         console.log("기존 카드 데이터 삭제 완료.");
-        // 새 데이터 삽입
+        // 새 카드 추가
         await Card_1.default.insertMany(cards);
-        console.log("새 카드 시드 완료!");
+        console.log("새 카드 데이터 삽입 완료.");
         process.exit(0);
     }
-    catch (err) {
-        console.error(err);
+    catch (error) {
+        console.error("카드 시드 실패:", error);
         process.exit(1);
     }
 }

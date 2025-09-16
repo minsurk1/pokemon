@@ -41,7 +41,5 @@ const CardSchema = new mongoose_1.Schema({
     hp: { type: Number, required: true },
     cost: { type: Number, required: true },
     image2D: { type: String, required: true },
-    image3DColor: { type: String, required: true },
-    image3DGray: { type: String, required: true },
 });
 exports.default = mongoose_1.default.model("Card", CardSchema);

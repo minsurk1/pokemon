@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // src/seed/seedCards.ts
 const mongoose_1 = __importDefault(require("mongoose"));
 const Card_1 = __importDefault(require("../models/Card"));
-const MONGO_URI = "mongodb://127.0.0.1:27017/pokemonDB"; // DB 연결 URI
+const MONGO_URI = process.env.MONGO_URI; // DB 연결 URI
 const cards = [
     // fire
     { cardName: "파이리", cardType: "fire", tier: 1, attack: 10, hp: 25, cost: 1, image2D: "/images/fireTier1.png" },

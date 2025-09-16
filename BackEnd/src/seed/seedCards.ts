@@ -115,7 +115,7 @@ const cards = [
 
 async function seedCards() {
   try {
-    await mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/pokemon", {
+    await mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/pokemonDB", {
       dbName: "pokemon",
     });
 

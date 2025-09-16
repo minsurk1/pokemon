@@ -6,7 +6,6 @@ import cors from "cors";
 import { Server as SocketIOServer } from "socket.io";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
-import userCardRoutes from "./routes/userCardRoutes";
 import storeRoutes from "./routes/storeRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
 import path from "path";
@@ -26,10 +25,7 @@ const allowedOrigins = [
 
 // ✅ 동적 origin 검사
 const corsOptions = {
-  origin: (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -54,7 +50,6 @@ app.use((req, res, next) => {
 // ✅ API 라우트 등록
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/user-cards", userCardRoutes);
 app.use("/api/store", storeRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/images", express.static(path.join(__dirname, "../public/images")));
@@ -95,10 +90,7 @@ const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
   cors: {
-    origin: (
-      origin: string | undefined,
-      callback: (err: Error | null, allow?: boolean) => void
-    ) => {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {

@@ -17,8 +17,6 @@ const CardSchema: Schema = new Schema({
   hp: { type: Number, required: true },
   cost: { type: Number, required: true },
   image2D: { type: String, required: true },
-  image3DColor: { type: String, required: true },
-  image3DGray: { type: String, required: true },
 });
 
 export default mongoose.model<ICard>("Card", CardSchema);

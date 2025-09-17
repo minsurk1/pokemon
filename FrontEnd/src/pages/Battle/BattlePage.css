@@ -112,7 +112,7 @@
 .enemy-card-zone {
   position: absolute;
   display: flex;
-  top: 10px;
+  top: 0vh;
   gap: 13px;
   justify-content: center;
   align-items: center;
@@ -194,8 +194,8 @@
   background-color: transparent;
   z-index: 100;
   width: 130px;
-  left: 0;
-  bottom: 0;
+  left: 0vw;
+  bottom: 0vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -309,7 +309,7 @@
   z-index: 100;
   width: 4.4vw;
   right: 0;
-  top: 501px;
+  top: 60.3vh;
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
@@ -325,7 +325,7 @@
   z-index: 100;
   width: 4.4vw;
   right: 0;
-  top: 0;
+  top: 0vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -498,7 +498,7 @@
 }
 
 .my-card.righthover {
-  transform: scale(2.5) !important;
+  transform: scale(2.5);
   transition: transform 0.5s;
   z-index: 100;
 }

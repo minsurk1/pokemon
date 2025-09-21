@@ -8,6 +8,17 @@ import CardPack from "../models/CardPack";
 
 const router = Router();
 
+// 카드팩 불러오기 라우트
+router.get("/card-packs", async (req, res) => {
+  try {
+    const packs = await CardPack.find({});
+    res.status(200).json(packs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "카드팩 불러오기 실패" });
+  }
+});
+
 // ✅ 카드팩 구매 라우트
 router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user?.id;

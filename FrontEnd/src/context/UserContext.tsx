@@ -5,7 +5,7 @@ export type CardPackType = "B" | "A" | "S";
 
 export interface CardPack {
   id: string; // CardPack _id
-  name: string; // "B급 카드팩" 등
+  name: string;
   packImage?: string;
   isOpened: boolean;
   type: CardPackType;
@@ -16,7 +16,7 @@ interface User {
   id: string;
   nickname: string;
   money: number;
-  inventory: CardPack[];
+  inventory: CardPack[]; // ✅ UserPack과 동일 구조
 }
 
 interface UserContextType {
@@ -31,10 +31,10 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// ✅ inventory 변환 헬퍼 함수
+// ✅ 서버 inventory -> CardPack[] 변환
 const transformInventory = (inventoryData: any[]): CardPack[] =>
   inventoryData?.map((item: any) => ({
-    id: item.pack._id,
+    id: item.pack._id,          // 서버 _id
     name: item.pack.name,
     packImage: item.pack.image,
     type: item.pack.type,
@@ -103,7 +103,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       setUserInfo(updatedUser);
       return updatedUser;
     } catch (err: any) {
-      console.error("[UserContext] 카드팩 구매 실패:", err.response?.data?.message || err.message);
+      console.error(
+        "[UserContext] 카드팩 구매 실패:",
+        err.response?.data?.message || err.message
+      );
       throw new Error(err.response?.data?.message || "서버 오류");
     }
   };
@@ -117,6 +120,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         const existing = updatedInventory.find((p) => p.id === newCard.id);
         if (existing) {
           existing.quantity += newCard.quantity;
+          if (newCard.isOpened) existing.isOpened = true;
         } else {
           updatedInventory.push(newCard);
         }
@@ -145,6 +149,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
 export const useUser = () => {
   const context = useContext(UserContext);
-  if (!context) throw new Error("useUser는 UserProvider 안에서만 사용 가능합니다.");
+  if (!context)
+    throw new Error("useUser는 UserProvider 안에서만 사용 가능합니다.");
   return context;
 };

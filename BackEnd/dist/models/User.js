@@ -42,7 +42,9 @@ const userSchema = new mongoose_1.Schema({
     money: { type: Number, default: 1200 },
     inventory: [
         {
-            pack: { type: mongoose_1.Schema.Types.ObjectId, ref: "CardPack" },
+            pack: { type: mongoose_1.Schema.Types.ObjectId, ref: "CardPack", required: true },
+            type: { type: String, enum: ["B", "A", "S"], required: true }, // ✅ 팩 타입 저장
+            quantity: { type: Number, default: 0 }, // ✅ 개수 저장
             opened: { type: Boolean, default: false },
         },
     ],

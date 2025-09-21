@@ -37,6 +37,7 @@ const mongoose_1 = __importStar(require("mongoose"));
 const CardSchema = new mongoose_1.Schema({
     cardName: { type: String, required: true, unique: true },
     cardType: { type: String, required: true },
+    tier: { type: Number, required: true },
     attack: { type: Number, required: true },
     hp: { type: Number, required: true },
     cost: { type: Number, required: true },

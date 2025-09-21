@@ -40,5 +40,5 @@ const cardPackSchema = new mongoose_1.Schema({
     price: { type: Number, required: true },
     image: { type: String, required: true },
 });
-const CardPack = mongoose_1.default.model("CardPack", cardPackSchema);
+const CardPack = mongoose_1.default.models.CardPack || mongoose_1.default.model("CardPack", cardPackSchema);
 exports.default = CardPack;

@@ -25,7 +25,7 @@ const userSchema = new Schema<IUser>({
   money: { type: Number, default: 1200 },
   inventory: [
     {
-      pack: { type: Schema.Types.ObjectId, ref: "CardPack" },
+      pack: { type: Schema.Types.ObjectId, ref: "CardPack", required: true },
       type: { type: String, enum: ["B", "A", "S"], required: true }, // ✅ 팩 타입 저장
       quantity: { type: Number, default: 0 },                        // ✅ 개수 저장
       opened: { type: Boolean, default: false },

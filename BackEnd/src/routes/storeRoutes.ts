@@ -23,10 +23,7 @@ router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Resp
     if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
 
     // 2. 카드팩 타입으로 조회
-    console.log("요청 packType:", packType);
     const cardPack = await CardPack.findOne({ type: packType });
-    console.log("찾은 카드팩:", cardPack);
-
     if (!cardPack) return res.status(404).json({ message: "카드팩을 찾을 수 없습니다." });
 
     // 3. 잔액 확인
@@ -37,13 +34,19 @@ router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Resp
     // 4. 돈 차감
     user.money -= cardPack.price;
 
-    // 5. 인벤토리에 추가
-    user.inventory.push({
-      pack: cardPack._id,
-      type: cardPack.type,
-      quantity: 1,
-      opened: false,
-    });
+    // 5. 인벤토리에 추가 (중복 구매 처리)
+    const existingPack = user.inventory.find(i => i.pack.equals(cardPack._id));
+
+    if (existingPack) {
+      existingPack.quantity += 1; // 이미 존재하면 quantity 증가
+    } else {
+      user.inventory.push({
+        pack: cardPack._id,
+        type: cardPack.type,
+        quantity: 1,
+        opened: false,
+      });
+    }
 
     // 6. 저장
     await user.save();

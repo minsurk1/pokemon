@@ -3,34 +3,63 @@ import { Link } from "react-router-dom";
 import "./Inventory.css";
 import BackgroundVideo from "../../components/common/global";
 import inventoryVideo from "../../assets/videos/arceus.mp4";
-import { useUser } from "../../context/UserContext";
+import { useUser, CardPack } from "../../context/UserContext";
+import axios from "axios";
 
 function Inventory() {
   const { userInfo, setUserInfo } = useUser();
   const [showModal, setShowModal] = useState(false);
+  const [openedCards, setOpenedCards] = useState<CardPack[]>([]);
 
   if (!userInfo) return <div>로딩 중...</div>;
-  const inventory = userInfo.inventory;
 
-  const openCardPack = (packId: string) => {
-    setUserInfo((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        inventory: prev.inventory
-          .map((p) =>
-            p.id === packId
-              ? { ...p, quantity: Math.max(0, p.quantity - 1) }
-              : p
-          )
-          .filter((p) => p.quantity > 0),
-      };
-    });
-    setShowModal(true);
-  };
-
-  // ✅ 백엔드 주소
   const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
+
+  // 카드팩 개봉 핸들러
+  const openCardPack = async (packId: string, packType: string) => {
+    try {
+      const res = await axios.post(`${API_URL}/inventory/open-pack`, { type: packType }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      const drawnCards = res.data.drawnCards || [];
+      const userPacks = res.data.userPacks || [];
+
+      // 1) 개봉된 카드 저장
+      setOpenedCards(drawnCards.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        type: packType as CardPack["type"],
+        quantity: 1,
+        isOpened: true,
+        packImage: "", // 카드 이미지가 있다면 추가
+      })));
+
+      // 2) 유저 인벤토리 업데이트
+      setUserInfo((prev) => {
+        if (!prev) return prev;
+
+        // 기존 인벤토리와 서버에서 받은 userPacks 반영
+        const updatedInventory: CardPack[] = userPacks.map((p: any) => ({
+          id: p.packId,
+          name: p.name || "",
+          packImage: p.packImage || "",
+          type: p.type,
+          isOpened: false,
+          quantity: p.quantity,
+        }));
+
+        return { ...prev, inventory: updatedInventory };
+      });
+
+      setShowModal(true);
+    } catch (err: any) {
+      console.error("카드팩 개봉 실패:", err);
+      alert(err.response?.data?.message || "카드팩 개봉 실패");
+    }
+  };
 
   return (
     <div className="inventory-page">
@@ -41,13 +70,12 @@ function Inventory() {
         objectPosition="center top"
       />
 
-      {inventory.length === 0 ? (
+      {userInfo.inventory.length === 0 ? (
         <div className="inventory-empty">구매한 카드팩이 없습니다.</div>
       ) : (
         <div className="pack-zone">
           <div className="inventory-list">
-            {inventory.map((pack) => {
-              // ✅ 백엔드에서 이미지 불러오도록 수정
+            {userInfo.inventory.map((pack) => {
               const imageSrc = pack.packImage
                 ? `${API_URL}/images/${pack.packImage}`
                 : null;
@@ -74,7 +102,8 @@ function Inventory() {
                     </p>
                     <button
                       className="open-button"
-                      onClick={() => openCardPack(pack.id)}
+                      onClick={() => openCardPack(pack.id, pack.type)}
+                      disabled={pack.quantity <= 0}
                     >
                       카드팩 개봉
                     </button>
@@ -89,8 +118,32 @@ function Inventory() {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <div className="modal-card-message">카드팩을 개봉했습니다!</div>
-            <button className="close-modal" onClick={() => setShowModal(false)}>
+            <h3>카드팩을 개봉했습니다!</h3>
+            <div className="opened-cards">
+              {openedCards.map((card) => (
+                <div key={card.id} className="opened-card">
+                  <p>{card.name}</p>
+                  {card.packImage ? (
+                    <img
+                      src={`${API_URL}/images/${card.packImage}`}
+                      alt={card.name}
+                      className="opened-card-image"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = "/placeholder.svg";
+                      }}
+                    />
+                  ) : (
+                    <div className="placeholder-image">No Image</div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              className="close-modal"
+              onClick={() => setShowModal(false)}
+            >
               X
             </button>
           </div>

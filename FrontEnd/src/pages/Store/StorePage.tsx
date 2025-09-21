@@ -1,15 +1,21 @@
-import React, { useState } from "react";
+// src/pages/store/StorePage.tsx
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./StorePage.css";
 import { MdInventory } from "react-icons/md";
 import { FaHome } from "react-icons/fa";
 import MessageBox from "../../components/common/MessageBox";
-import bCard from "../../assets/images/b_card.png";
-import aCard from "../../assets/images/a_card.png";
-import sCard from "../../assets/images/s_card.png";
 import BackgroundVideo from "../../components/common/global";
 import storeVideo from "../../assets/videos/storevideo.mp4";
 import { useUser, CardPackType } from "../../context/UserContext";
+
+interface CardPackData {
+  _id: string;
+  name: string;
+  price: number;
+  type: CardPackType;
+  image: string;
+}
 
 function StorePage() {
   const navigate = useNavigate();
@@ -17,28 +23,34 @@ function StorePage() {
 
   const [message, setMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
+  const [cardPacks, setCardPacks] = useState<CardPackData[]>([]);
 
-  // 카드팩 목록
-  const cards: {
-    image: string;
-    name: string;
-    price: number;
-    type: CardPackType;
-  }[] = [
-    { image: bCard, name: "B급 카드팩", price: 100, type: "B" },
-    { image: aCard, name: "A급 카드팩", price: 300, type: "A" },
-    { image: sCard, name: "S급 카드팩", price: 500, type: "S" },
-  ];
+  const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/"; // CRA 환경에서 사용
 
-  const handleBuyCard = async (index: number) => {
+  // 서버에서 카드팩 목록 fetch
+  const fetchCardPacks = async () => {
+    try {
+      const res = await fetch(`${API_URL}/card-packs`);
+      if (!res.ok) throw new Error("카드팩 목록 로드 실패");
+      const data = await res.json();
+      if (data?.packs) setCardPacks(data.packs);
+    } catch (err) {
+      console.error("카드팩 목록 fetch 실패:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCardPacks();
+  }, []);
+
+  const handleBuyCard = async (packType: CardPackType) => {
     if (!userInfo) return;
-    const selectedCard = cards[index];
 
     try {
-      // packType 전달, 서버에서 최신 유저 정보 반환
-      const updatedUser = await buyCardPack(selectedCard.type);
+      const updatedUser = await buyCardPack(packType); // 서버에서 최신 유저 정보 반환
       setUserInfo(updatedUser); // 최신 유저 정보 반영
-      setMessage(`${selectedCard.name} 구매 완료!`);
+      const packName = cardPacks.find((p) => p.type === packType)?.name || "";
+      setMessage(`${packName} 구매 완료!`);
       setShowMessage(true);
     } catch (err: any) {
       setMessage(err.message || "구매 실패");
@@ -91,15 +103,26 @@ function StorePage() {
       </div>
 
       <div className="store-card-container">
-        {cards.map((card, index) => (
-          <div key={index} className="store-card">
-            <img src={card.image} alt={card.name} className="store-card-image" />
-            <p>{card.name} - {card.price} G</p>
-            <button className="buy-button" onClick={() => handleBuyCard(index)}>
-              구매하기
-            </button>
-          </div>
-        ))}
+        {cardPacks.length > 0 ? (
+          cardPacks.map((card) => (
+            <div key={card._id} className="store-card">
+              <img
+                src={card.image}
+                alt={card.name}
+                className="store-card-image"
+              />
+              <p>{card.name} - {card.price} G</p>
+              <button
+                className="buy-button"
+                onClick={() => handleBuyCard(card.type)}
+              >
+                구매하기
+              </button>
+            </div>
+          ))
+        ) : (
+          <p>카드팩 정보를 불러오는 중...</p>
+        )}
       </div>
     </div>
   );

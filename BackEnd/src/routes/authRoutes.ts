@@ -52,11 +52,15 @@ router.post("/signup", async (req: Request, res: Response) => {
 
     const savedUser = await newUser.save();
 
+    // JWT 발급 (_id 기준)
+    const token = jwt.sign({ _id: savedUser._id.toString(), username: savedUser.username }, jwtSecret, { expiresIn: "1h" });
+
     return res.status(201).json({
       success: true,
       message: "회원가입 성공!",
+      token,
       user: {
-        id: savedUser._id,
+        _id: savedUser._id,
         username: savedUser.username,
         email: savedUser.email,
         nickname: savedUser.nickname,
@@ -88,14 +92,15 @@ router.post("/login", async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "아이디 또는 비밀번호가 잘못되었습니다." });
     }
 
-    const token = jwt.sign({ id: user._id.toString(), username: user.username }, jwtSecret, { expiresIn: "1h" });
+    // JWT 발급 (_id 기준)
+    const token = jwt.sign({ _id: user._id.toString(), username: user.username }, jwtSecret, { expiresIn: "1h" });
 
     return res.json({
       success: true,
       message: "로그인 성공!",
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         username: user.username,
         email: user.email,
         nickname: user.nickname,

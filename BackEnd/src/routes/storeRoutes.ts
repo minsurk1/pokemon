@@ -25,7 +25,7 @@ router.get("/card-packs", async (req: Request, res: Response) => {
 
 // ✅ 카드팩 구매
 router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user?.id;
+  const userId = req.user?._id;
   const { packType } = req.body;
 
   if (!userId || !packType) {

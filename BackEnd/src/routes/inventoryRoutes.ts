@@ -11,10 +11,14 @@ const router = express.Router();
 // packType별 확률
 function getProbabilities(packType: string): { [key: number]: number } {
   switch (packType) {
-    case "B": return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
-    case "A": return { 1: 0.23, 2: 0.2, 3: 0.18, 4: 0.15, 5: 0.12, 6: 0.08, 7: 0.04 };
-    case "S": return { 1: 0.18, 2: 0.16, 3: 0.15, 4: 0.14, 5: 0.12, 6: 0.1, 7: 0.08, 8: 0.07 };
-    default: return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
+    case "B":
+      return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
+    case "A":
+      return { 1: 0.23, 2: 0.2, 3: 0.18, 4: 0.15, 5: 0.12, 6: 0.08, 7: 0.04 };
+    case "S":
+      return { 1: 0.18, 2: 0.16, 3: 0.15, 4: 0.14, 5: 0.12, 6: 0.1, 7: 0.08, 8: 0.07 };
+    default:
+      return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
   }
 }
 
@@ -32,7 +36,7 @@ function getRandomTier(probabilities: { [key: number]: number }) {
 // ✅ 카드팩 개봉 API
 router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const userId = req.user?._id;
     const { type } = req.body; // packType
     if (!userId) return res.status(401).json({ message: "인증 실패" });
 
@@ -49,7 +53,7 @@ router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res
     if (user.inventory[inventoryIndex].quantity <= 0) user.inventory.splice(inventoryIndex, 1);
     await user.save();
 
-    const allCards: ICard[] = await Card.find({}) as ICard[];
+    const allCards: ICard[] = (await Card.find({})) as ICard[];
     const probabilities = getProbabilities(type);
     const drawnCards: any[] = [];
 

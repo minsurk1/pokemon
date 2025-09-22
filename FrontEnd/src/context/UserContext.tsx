@@ -42,18 +42,20 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 // inventory 변환 (pack null 방지 + id string 변환)
 const transformInventory = (inventoryData: any[]): CardPack[] =>
-  inventoryData?.map((item: any) => {
-    const packId = item.packId || item.pack?._id;
-    if (!packId) return null;
-    return {
-      id: packId.toString(),
-      name: item.name || item.pack?.name || "Unknown Pack",
-      packImage: item.image || item.pack?.image,
-      type: item.type,
-      isOpened: item.isOpened ?? false,
-      quantity: item.quantity ?? 1,
-    };
-  }).filter(Boolean) as CardPack[];
+  inventoryData
+    ?.map((item: any) => {
+      const packId = item.packId || item.pack?._id;
+      if (!packId) return null;
+      return {
+        id: packId.toString(),
+        name: item.name || item.pack?.name || "Unknown Pack",
+        packImage: item.image || item.pack?.image,
+        type: item.type,
+        isOpened: item.isOpened ?? false,
+        quantity: item.quantity ?? 1,
+      };
+    })
+    .filter(Boolean) as CardPack[];
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [userInfo, setUserInfo] = useState<User | null>(null);
@@ -85,13 +87,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  useEffect(() => { fetchUser(); }, []);
+  useEffect(() => {
+    fetchUser();
+  }, []);
 
   const refreshUser = async () => fetchUser();
 
   const buyCardPack = async (packType: CardPackType) => {
     try {
       const res = await axiosInstance.post("/store/buy", { packType });
+      console.log("📦 buy response:", res.data); // ✅ 응답 구조 확인
       const data = res.data;
 
       const updatedUser: User = {

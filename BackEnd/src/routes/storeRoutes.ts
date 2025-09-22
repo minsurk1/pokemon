@@ -28,20 +28,30 @@ router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Resp
   const userId = req.user?.id;
   const { packType } = req.body;
 
-  if (!userId || !packType) return res.status(400).json({ message: "userId 또는 packType 누락" });
+  if (!userId || !packType) {
+    return res.status(400).json({ message: "userId 또는 packType 누락" });
+  }
 
   try {
     const user = await User.findById(userId).populate("inventory.pack");
-    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    if (!user) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
 
     const cardPack = await CardPack.findOne({ type: packType });
-    if (!cardPack) return res.status(404).json({ message: "카드팩을 찾을 수 없습니다." });
+    if (!cardPack) {
+      return res.status(404).json({ message: "카드팩을 찾을 수 없습니다." });
+    }
 
-    if (user.money < cardPack.price) return res.status(400).json({ message: "잔액 부족" });
+    if (user.money < cardPack.price) {
+      return res.status(400).json({ message: "잔액 부족" });
+    }
 
     user.money -= cardPack.price;
 
-    const existingPack = user.inventory.find((i) => i.pack.equals(cardPack._id));
+    // ✅ pack이 null인 경우 방어
+    const existingPack = user.inventory.find((i) => i.pack && i.pack.equals(cardPack._id));
+
     if (existingPack) {
       existingPack.quantity += 1;
     } else {
@@ -56,7 +66,10 @@ router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Resp
     await user.save();
     const updatedUser = await User.findById(userId).populate("inventory.pack");
 
-    res.json({ message: `${cardPack.name} 구매 완료`, user: updatedUser });
+    res.json({
+      message: `${cardPack.name} 구매 완료`,
+      user: updatedUser,
+    });
   } catch (err) {
     console.error("카드팩 구매 실패:", err);
     res.status(500).json({ message: "서버 오류" });

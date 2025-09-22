@@ -47,13 +47,19 @@ router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Resp
       return res.status(400).json({ message: "잔액 부족" });
     }
 
+    // 🛠 디버깅 로그
+    console.log("🛠 user.inventory:", user.inventory);
+    console.log("🛠 cardPack:", cardPack);
+    console.log("🛠 cardPack._id:", cardPack._id);
+
     user.money -= cardPack.price;
 
-    // ✅ pack이 null인 경우 방어
-    const existingPack = user.inventory.find((i) => i.pack && i.pack.equals(cardPack._id));
+    // ✅ 안전하게 null 방어
+    const existingPack = user.inventory?.find((i) => i.pack && i.pack._id && i.pack._id.equals(cardPack._id));
 
     if (existingPack) {
       existingPack.quantity += 1;
+      console.log(`🛠 기존 팩 ${existingPack.type} 수량 증가`);
     } else {
       user.inventory.push({
         pack: cardPack._id,
@@ -61,11 +67,12 @@ router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Resp
         quantity: 1,
         opened: false,
       });
+      console.log(`🛠 새 팩 ${cardPack.type} 추가`);
     }
 
     await user.save();
-    const updatedUser = await User.findById(userId).populate("inventory.pack");
 
+    const updatedUser = await User.findById(userId).populate("inventory.pack");
     res.json({
       message: `${cardPack.name} 구매 완료`,
       user: updatedUser,

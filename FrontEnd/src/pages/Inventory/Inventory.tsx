@@ -18,24 +18,28 @@ function Inventory() {
   // 카드팩 개봉 핸들러
   const openCardPack = async (packId: string, packType: string) => {
     try {
-      const res = await axios.post(`${API_URL}/inventory/open-pack`, { type: packType }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const res = await axios.post(
+        `${API_URL}/inventory/open-pack`,
+        { type: packType },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
 
       const drawnCards = res.data.drawnCards || [];
       const userPacks = res.data.userPacks || [];
 
       // 1) 개봉된 카드 저장
-      setOpenedCards(drawnCards.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        type: packType as CardPack["type"],
-        quantity: 1,
-        isOpened: true,
-        packImage: "", // 카드 이미지가 있다면 추가
-      })));
+      setOpenedCards(
+        drawnCards.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          type: packType as CardPack["type"],
+          quantity: 1,
+          isOpened: true,
+          packImage: "", // 카드 이미지가 있다면 추가
+        }))
+      );
 
       // 2) 유저 인벤토리 업데이트
       setUserInfo((prev) => {
@@ -63,12 +67,7 @@ function Inventory() {
 
   return (
     <div className="inventory-page">
-      <BackgroundVideo
-        src={inventoryVideo}
-        opacity={1}
-        zIndex={-1}
-        objectPosition="center top"
-      />
+      <BackgroundVideo src={inventoryVideo} opacity={1} zIndex={-1} objectPosition="center top" />
 
       {userInfo.inventory.length === 0 ? (
         <div className="inventory-empty">구매한 카드팩이 없습니다.</div>
@@ -76,9 +75,7 @@ function Inventory() {
         <div className="pack-zone">
           <div className="inventory-list">
             {userInfo.inventory.map((pack) => {
-              const imageSrc = pack.packImage
-                ? `${API_URL}/images/${pack.packImage}`
-                : null;
+              const imageSrc = pack.packImage ? `${API_URL}/images/${pack.packImage}` : null;
 
               return (
                 <div key={pack.id} className="inventory-item">
@@ -140,10 +137,7 @@ function Inventory() {
                 </div>
               ))}
             </div>
-            <button
-              className="close-modal"
-              onClick={() => setShowModal(false)}
-            >
+            <button className="close-modal" onClick={() => setShowModal(false)}>
               X
             </button>
           </div>

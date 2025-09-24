@@ -13,7 +13,8 @@ function Inventory() {
 
   if (!userInfo) return <div>로딩 중...</div>;
 
-  const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
+  const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api";
+  const IMAGE_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
   // 카드팩 개봉 핸들러
   const openCardPack = async (packId: string, packType: string) => {
@@ -22,14 +23,16 @@ function Inventory() {
         `${API_URL}/inventory/open-pack`,
         { type: packType },
         {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
       );
 
       const drawnCards = res.data.drawnCards || [];
       const userPacks = res.data.userPacks || [];
 
-      // 1) 개봉된 카드 저장
+      // 1) 개봉된 카드 저장 (CSS 구조에 맞게)
       setOpenedCards(
         drawnCards.map((c: any) => ({
           id: c.id,
@@ -37,7 +40,7 @@ function Inventory() {
           type: packType as CardPack["type"],
           quantity: 1,
           isOpened: true,
-          packImage: "", // 카드 이미지가 있다면 추가
+          packImage: c.image, // 카드 이미지
         }))
       );
 
@@ -45,11 +48,10 @@ function Inventory() {
       setUserInfo((prev) => {
         if (!prev) return prev;
 
-        // 기존 인벤토리와 서버에서 받은 userPacks 반영
         const updatedInventory: CardPack[] = userPacks.map((p: any) => ({
           id: p.packId,
           name: p.name || "",
-          packImage: p.packImage || "",
+          packImage: p.image || "",
           type: p.type,
           isOpened: false,
           quantity: p.quantity,
@@ -75,8 +77,7 @@ function Inventory() {
         <div className="pack-zone">
           <div className="inventory-list">
             {userInfo.inventory.map((pack) => {
-              const imageSrc = pack.packImage ? `${API_URL}/images/${pack.packImage}` : null;
-
+              const imageSrc = pack.packImage ? `${IMAGE_URL}/images/${pack.packImage}` : null;
               return (
                 <div key={pack.id} className="inventory-item">
                   <div className="card-pack">
@@ -115,16 +116,15 @@ function Inventory() {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <h3>카드팩을 개봉했습니다!</h3>
-            <div className="opened-cards">
+            <div className="modal-card-message">카드팩을 개봉했습니다!</div>
+            <div className="modal-cards">
               {openedCards.map((card) => (
-                <div key={card.id} className="opened-card">
-                  <p>{card.name}</p>
+                <div key={card.id} className="modal-card">
                   {card.packImage ? (
                     <img
-                      src={`${API_URL}/images/${card.packImage}`}
+                      src={`${IMAGE_URL}/images/${card.packImage}`}
                       alt={card.name}
-                      className="opened-card-image"
+                      className="modal-card-image"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.onerror = null;
@@ -134,6 +134,7 @@ function Inventory() {
                   ) : (
                     <div className="placeholder-image">No Image</div>
                   )}
+                  <p>{card.name}</p>
                 </div>
               ))}
             </div>

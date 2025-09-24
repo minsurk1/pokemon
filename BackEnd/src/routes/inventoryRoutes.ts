@@ -1,4 +1,3 @@
-// routes/inventoryRoutes.ts
 import express, { Response } from "express";
 import mongoose, { Types } from "mongoose";
 import User from "../models/User";
@@ -37,7 +36,7 @@ function getRandomTier(probabilities: { [key: number]: number }) {
 router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?._id;
-    const { type } = req.body; // packType
+    const { type } = req.body;
     if (!userId) return res.status(401).json({ message: "인증 실패" });
 
     const user = await User.findById(userId).populate("inventory.pack");
@@ -53,7 +52,7 @@ router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res
     if (user.inventory[inventoryIndex].quantity <= 0) user.inventory.splice(inventoryIndex, 1);
     await user.save();
 
-    const allCards: ICard[] = (await Card.find({})) as ICard[];
+    const allCards: ICard[] = await Card.find();
     const probabilities = getProbabilities(type);
     const drawnCards: any[] = [];
 
@@ -63,8 +62,6 @@ router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res
       if (tierCards.length === 0) continue;
 
       const randomCard = tierCards[Math.floor(Math.random() * tierCards.length)];
-
-      // _id 타입 단언 후 string으로 변환
       const cardId = (randomCard._id as Types.ObjectId).toString();
 
       drawnCards.push({
@@ -82,16 +79,22 @@ router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res
       );
     }
 
+    // 안전하게 null 체크 후 반환
+    const userPacks = user.inventory.map((p) => {
+      const pack = p.pack as any;
+      return {
+        packId: pack?._id?.toString() || "",
+        type: p.type,
+        quantity: p.quantity,
+        image: pack?.image || "",
+        name: pack?.name || "",
+      };
+    });
+
     res.status(200).json({
       message: "카드팩 개봉 성공",
       drawnCards,
-      userPacks: user.inventory.map((p) => ({
-        packId: (p.pack as any)._id.toString(),
-        type: p.type,
-        quantity: p.quantity,
-        image: (p.pack as any).image,
-        name: (p.pack as any).name,
-      })),
+      userPacks,
     });
   } catch (error: any) {
     console.error("카드팩 개봉 오류:", error);

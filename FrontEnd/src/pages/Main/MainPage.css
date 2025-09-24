@@ -10,6 +10,8 @@
   overflow: hidden;
 }
 
+
+/*
 .sidebar {
   height: 100vh;
   display: flex;
@@ -20,6 +22,64 @@
   backdrop-filter: blur(5px);
   z-index: 2;
   gap: 1.5rem;
+}
+*/
+
+.sidebar-panel {
+  position: fixed;
+  top: 0;
+  left: -350px; 
+  width: 200px;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  padding: 2.5rem 1rem;
+  gap: 1.5rem;
+}
+
+.sidebar-panel.open {
+  left: 0;
+}
+
+.sidebar-toggle-button {
+  font-family: "Do hyeon", serif;
+  background-color: var(--theme-color);
+  color: #fff;
+  border: 1px solid var(--theme-accent-color);
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+  box-shadow: inset 0 0 6px var(--theme-accent-color);
+  z-index: 1000; 
+}
+
+.sidebar-toggle-button:hover {
+  background-color: var(--theme-hover-color);
+}
+
+.sidebar-toggle-button.open {
+  position: fixed;
+  top: 50%;
+  left: 0vw;
+  transform: translateY(-50%);
+  border-radius: 0 5px 5px 0;
+  height: 100vh;
+  background: linear-gradient(to right,#000000,transparent);
+}
+
+.sidebar-toggle-button.close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
 }
 
 ul {
@@ -307,11 +367,10 @@ ul {
 
 /* 반응형 디자인 */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 150px;
-    padding: 1.5rem 0.5rem;
+  .sidebar-panel {
+    width: 280px;
   }
-
+  
   .menu-button {
     font-size: 1rem;
     padding: 0.8rem;
@@ -336,4 +395,4 @@ ul {
     width: 120px;
     height: 160px;
   }
-}
+} 

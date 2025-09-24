@@ -9,7 +9,7 @@ import "./MainPage.css";
 
 import { FaBook } from "react-icons/fa6";
 import { GiBattleGear } from "react-icons/gi";
-import { MdCatchingPokemon } from "react-icons/md"
+import { MdCatchingPokemon } from "react-icons/md";
 import { FaStore } from "react-icons/fa";
 import { MdMeetingRoom } from "react-icons/md";
 import { IoIosInformationCircleOutline } from "react-icons/io";
@@ -65,11 +65,11 @@ interface MainPageProps {
 
 function MainPage() {
   const navigate = useNavigate();
-  const { socket } = useSocket(); // context에서 소켓 받아옴
+  const { socket } = useSocket();
 
   const [nickname, setNickname] = useState<string | null>(null);
   const [money, setMoney] = useState<number | null>(null);
-  const { userInfo, loading, error, refreshUser } = useUser(); // 🔧 Context에서 유저 정보 가져오기
+  const { userInfo, loading, error, refreshUser } = useUser();
 
   const [showRoomTab, setShowRoomTab] = useState(false);
   const [showCardTab, setShowCardTab] = useState(false);
@@ -77,7 +77,10 @@ function MainPage() {
   const [serverError, setServerError] = useState("");
   const [serverResponse, setServerResponse] = useState("");
 
-  // 랜덤 비디오 및 테마 선택
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
   const [randomVideo] = useState(() => {
     const randomIndex = Math.floor(Math.random() * videoFiles.length);
     return videoFiles[randomIndex];
@@ -88,7 +91,6 @@ function MainPage() {
   const themeImage = videoThemes[randomVideo].image;
 
   useEffect(() => {
-    // CSS 변수 세팅
     document.documentElement.style.setProperty(
       "--theme-color",
       `var(--${themeColorClass}-color)`
@@ -104,9 +106,8 @@ function MainPage() {
   }, [themeColorClass]);
 
   useEffect(() => {
-    if (!socket) return; // 소켓 없으면 실행 중단
+    if (!socket) return;
 
-    // socket 이벤트 핸들러 등록
     const onMessage = (data: string) => setServerResponse(data);
     const onRoomCreated = (data: { roomCode: string }) => {
       console.log("방 생성됨:", data.roomCode);
@@ -127,7 +128,6 @@ function MainPage() {
     socket.on("roomJoined", onRoomJoined);
     socket.on("error", onError);
 
-    // 클린업 함수로 이벤트 해제
     return () => {
       socket.off("message", onMessage);
       socket.off("roomCreated", onRoomCreated);
@@ -136,7 +136,6 @@ function MainPage() {
     };
   }, [socket, navigate]);
 
-  // 로그아웃 핸들러
   const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
     navigate("/");
@@ -158,7 +157,6 @@ function MainPage() {
     setShowCardTab((prev) => !prev);
   }, []);
 
-  // 방 생성 이벤트 핸들러
   const handleCreateRoom = useCallback(() => {
     if (!socket) {
       setServerError("서버 연결이 되어있지 않습니다.");
@@ -168,7 +166,6 @@ function MainPage() {
     socket.emit("createRoom");
   }, [socket]);
 
-  // 방 입장 이벤트 핸들러
   const handleJoinRoom = useCallback(() => {
     if (!socket) {
       setServerError("서버 연결이 되어있지 않습니다.");
@@ -182,7 +179,6 @@ function MainPage() {
     }
   }, [roomCode, socket]);
 
-  // 입력 엔터키 처리
   const onRoomCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleJoinRoom();
   };
@@ -203,7 +199,18 @@ function MainPage() {
   return (
     <div className="main-container">
       <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
-      <div className="sidebar">
+
+      {!isSidebarOpen && (
+        <button className="sidebar-toggle-button open" onClick={toggleSidebar}>
+          메뉴 열기
+        </button>
+      )}
+
+      <div className={`sidebar-panel ${isSidebarOpen ? "open" : ""}`}>
+        <button className="sidebar-toggle-button close" onClick={toggleSidebar}>
+          닫기
+        </button>
+
         <motion.ul
           variants={list}
           initial="hidden"
@@ -217,43 +224,43 @@ function MainPage() {
               marginTop="0.8rem"
             >
               상점
-              <FaStore style={{marginLeft: "3px"}}/>
+              <FaStore style={{ marginLeft: "3px" }} />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleDeck} marginBottom="3.3rem">
               카드
-              <SiPokemon style={{marginLeft:"3px"}}/>
+              <SiPokemon style={{ marginLeft: "3px" }} />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handledex} marginBottom="3.3rem">
               도감
-              <MdCatchingPokemon style={{marginLeft: "3px"}} />
+              <MdCatchingPokemon style={{ marginLeft: "3px" }} />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleBattle} marginBottom="3.3rem">
               배틀
-              <GiBattleGear style={{marginLeft: "3px"}} />
+              <GiBattleGear style={{ marginLeft: "3px" }} />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleRule} marginBottom="3.3rem" cursor="help">
               Rule
-              <FaBook style={{marginLeft:"3px"}}/>
+              <FaBook style={{ marginLeft: "3px" }} />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={toggleRoomTab} marginBottom="3.3rem">
               {showRoomTab ? "탭 닫기" : "방 만들기/입장"}
-              <MdMeetingRoom style={{marginLeft:"3px"}}/>
+              <MdMeetingRoom style={{ marginLeft: "3px" }} />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleProfile} marginBottom="3.3rem">
               마이페이지
-              <IoIosInformationCircleOutline style={{marginLeft: "3px"}}/>
+              <IoIosInformationCircleOutline style={{ marginLeft: "3px" }} />
             </MenuButton>
           </motion.li>
         </motion.ul>

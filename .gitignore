@@ -1,30 +1,30 @@
-# ÀÇÁ¸¼º
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 node_modules/
 package-lock.json
 
-# ºôµå °á°ú¹° (·çÆ® Æú´õ ±âÁØ)
- /dist/
- /build/
+# ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+ dist/
+ build/
 
-# È¯°æº¯¼ö
+# È¯ï¿½æº¯ï¿½ï¿½
 .env
-.env.*  # ¿¹: .env.local, .env.production µî
+.env.*  # ï¿½ï¿½: .env.local, .env.production ï¿½ï¿½
 
-# ·Î±×
+# ï¿½Î±ï¿½
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# ¿î¿µÃ¼Á¦º° ºÒÇÊ¿ä ÆÄÀÏ
+# ï¿½î¿µÃ¼ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ê¿ï¿½ ï¿½ï¿½ï¿½ï¿½
 .DS_Store
 Thumbs.db
 
-# ¿¡µðÅÍ/IDE ¼³Á¤
+# ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½/IDE ï¿½ï¿½ï¿½ï¿½
 .vscode/
 .idea/
 *.swp
 
-# Å×½ºÆ® Ä¿¹ö¸®Áö
+# ï¿½×½ï¿½Æ® Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 coverage/

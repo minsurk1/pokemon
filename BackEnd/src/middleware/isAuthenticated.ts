@@ -5,36 +5,30 @@ import dotenv from "dotenv";
 dotenv.config();
 const jwtSecret = process.env.JWT_SECRET as string;
 
+if (!jwtSecret) {
+  throw new Error("❌ JWT_SECRET 환경 변수가 설정되지 않았습니다.");
+}
+
 // 확장된 Request 타입 정의: user 정보를 추가
 export interface AuthenticatedRequest extends Request {
-  user?: { id: string; username: string };
+  user?: { _id: string; username: string };
 }
 
 // ✅ JWT 인증 미들웨어
-export const isAuthenticated = (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction
-) => {
-  // 1. Authorization 헤더 확인
+export const isAuthenticated = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "토큰이 없습니다." });
   }
 
-  // 2. 토큰 추출
   const token = authHeader.split(" ")[1];
 
   try {
-    // 3. JWT 검증
-    const decoded = jwt.verify(token, jwtSecret) as {
-      id: string;
-      username: string;
-    };
+    // JWT 검증 (_id 기준)
+    const decoded = jwt.verify(token, jwtSecret) as { _id: string; username: string };
 
-    // 4. req.user에 사용자 정보 저장
     req.user = {
-      id: decoded.id,
+      _id: decoded._id,
       username: decoded.username,
     };
 

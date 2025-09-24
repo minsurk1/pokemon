@@ -15,5 +15,5 @@ const cardPackSchema = new Schema<ICardPack>({
   image: { type: String, required: true },
 });
 
-const CardPack = mongoose.model<ICardPack>("CardPack", cardPackSchema);
+const CardPack = mongoose.models.CardPack || mongoose.model<ICardPack>("CardPack", cardPackSchema);
 export default CardPack;

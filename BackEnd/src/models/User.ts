@@ -1,5 +1,12 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
+export interface IUserInventory {
+  pack: Types.ObjectId;     // CardPack _id
+  type: "B" | "A" | "S";    // 팩 타입
+  quantity: number;         // 보유 개수
+  opened: boolean;          // 개봉 여부
+}
+
 export interface IUser extends Document {
   _id: Types.ObjectId;
   username: string;
@@ -10,14 +17,6 @@ export interface IUser extends Document {
   inventory: IUserInventory[];
 }
 
-// ✅ 유저 인벤토리 타입 정의
-export interface IUserInventory {
-  pack: Types.ObjectId;   // CardPack _id
-  type: "B" | "A" | "S";  // CardPack type
-  quantity: number;
-  opened: boolean;
-}
-
 const userSchema = new Schema<IUser>({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -26,7 +25,9 @@ const userSchema = new Schema<IUser>({
   money: { type: Number, default: 1200 },
   inventory: [
     {
-      pack: { type: Schema.Types.ObjectId, ref: "CardPack" },
+      pack: { type: Schema.Types.ObjectId, ref: "CardPack", required: true },
+      type: { type: String, enum: ["B", "A", "S"], required: true }, // ✅ 팩 타입 저장
+      quantity: { type: Number, default: 0 },                        // ✅ 개수 저장
       opened: { type: Boolean, default: false },
     },
   ],

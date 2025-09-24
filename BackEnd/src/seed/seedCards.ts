@@ -1,13 +1,13 @@
 // src/seed/seedCards.ts
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import Card, { ICard } from "../models/Card";
+import Card from "../models/Card";
 
 dotenv.config();
 
 const MONGO_URI = process.env.MONGO_URI as string; // DB 연결 URI
 
-const cards = [
+const cardsSeed = [
   // fire
   { cardName: "파이리", cardType: "fire", tier: 1, attack: 10, hp: 25, cost: 1, image2D: "fireTier1.png" },
   { cardName: "포니타", cardType: "fire", tier: 2, attack: 40, hp: 100, cost: 2, image2D: "fireTier2.png" },
@@ -117,21 +117,31 @@ const cards = [
 
 async function seedCards() {
   try {
+    // Atlas 연결
     await mongoose.connect(MONGO_URI);
-    console.log("MongoDB 연결됨.");
+    console.log("MongoDB Atlas 연결됨.");
 
-    // 기존 카드 삭제
-    await Card.deleteMany({});
-    console.log("기존 카드 데이터 삭제 완료.");
+    // 모델 캐시 제거
+    if (mongoose.models.Card) delete mongoose.models.Card;
 
-    // 새 카드 추가
-    await Card.insertMany(cards);
-    console.log("새 카드 데이터 삽입 완료.");
+    // 컬렉션 삭제 (있으면)
+    const db = mongoose.connection.db!;
+    const collections = await db.listCollections({ name: "cards" }).toArray();
+    if (collections.length > 0) {
+      await db.dropCollection("cards");
+      console.log("기존 cards 컬렉션 삭제 완료.");
+    } else {
+      console.log("cards 컬렉션 없음, 삭제 건너뜀.");
+    }
 
-    process.exit(0);
-  } catch (error) {
-    console.error("카드 시드 실패:", error);
-    process.exit(1);
+    // 데이터 삽입
+    await Card.insertMany(cardsSeed);
+    console.log("카드 시드 완료.");
+
+    await mongoose.disconnect();
+    console.log("MongoDB 연결 종료.");
+  } catch (err) {
+    console.error("카드 시드 실패:", err);
   }
 }
 

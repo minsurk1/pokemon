@@ -75,12 +75,12 @@ router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res
 
       // 클라이언트용 DTO
       drawnCards.push({
-        id: (randomCard._id as mongoose.Types.ObjectId).toString(),
-        cardName: randomCard.cardName,
-        attack: randomCard.attack,
+        id: randomCard._id.toString(),
+        name: randomCard.cardName,  // 🔹 서버에서 name으로 통일
+        damage: randomCard.attack,
         hp: randomCard.hp,
         tier: randomCard.tier,
-        image2D: randomCard.image2D,
+        image: randomCard.image2D || "default.png", // 🔹 image 필드와 기본 이미지
       });
     }
 

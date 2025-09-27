@@ -119,6 +119,7 @@
   background-image: url('../../assets/images/mainbg.png');
 }
 
+/* 카드 정보 hover 스타일 추가 */
 .card {
   width: 11vw;
   height: auto;
@@ -133,6 +134,9 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   margin-left:1vw;
+
+  position: relative; /* 추가 */
+  display: inline-block; /* 추가 */
 }
 
 .card:hover {
@@ -144,6 +148,51 @@
   width: 100%;
   height: auto;
   object-fit: contain;
+}
+
+/* 추가 */
+.card-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 5px;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+/* 카드 정보 글자 스타일 추가 */
+.card-info p {
+  margin: 3px 0;
+  font-family: "Jua", sans-serif; /* 예쁜 한글 글꼴 적용 */
+  font-size: 0.9rem;               /* 적절한 크기 */
+  font-weight: bold;
+  color: #ffd803;                  /* 눈에 띄는 노란색 */
+  text-shadow: 0 0 4px #000;       /* 글자 윤곽 강조 */
+}
+
+/* 이름만 강조 추가 */
+.card-info .card-name {
+  font-size: 1.2rem;       /* 이름 글자 크게 */
+  font-weight: bold;        /* 굵게 */
+  color: #fffa65;           /* 좀 더 밝게 */
+  text-shadow: 0 0 5px #000; /* 그림자 강조 */
+  margin-bottom: 5px;
+}
+
+/* 추가 */
+.card:hover .card-info {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .card-list .grayscale {

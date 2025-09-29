@@ -9,6 +9,7 @@ import userRoutes from "./routes/userRoutes";
 import storeRoutes from "./routes/storeRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
 import userCardRoutes from "./routes/userCardRoutes"; // ✅ 카드 조회 라우트
+import userDeckRoutes from "./routes/userDeckRoutes"; // ✅ 유저 덱 관련 라우트
 import path from "path";
 import { setupRoomHandlers } from "./routes/room";
 
@@ -54,6 +55,9 @@ app.use("/api/user", userRoutes);
 app.use("/api/store", storeRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/usercard", userCardRoutes); // 유저 카드 조회
+app.use("/api/userdeck", userDeckRoutes); // 유저 덱 관련
+
+// ✅ 이미지 파일 서빙
 app.use("/images", express.static(path.join(__dirname, "../public/images")));
 
 // ✅ 헬스 체크

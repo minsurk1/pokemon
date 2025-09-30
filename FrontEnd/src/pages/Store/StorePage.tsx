@@ -6,12 +6,19 @@ import storeVideo from "../../assets/videos/storevideo.mp4";
 import bCard from "../../assets/images/b_card.png";
 import aCard from "../../assets/images/a_card.png";
 import sCard from "../../assets/images/s_card.png";
+import MessageBox from "../../components/common/MessageBox"
+
 import { useUser, CardPackType } from "../../context/UserContext";
 
 function StorePage() {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
   const { userInfo, buyCardPack } = useUser();
   const [message, setMessage] = useState("");
+  const [showMessage, setShowMessage] = useState(false);
+  const closeMessage = () => {
+    setShowMessage(false);
+    setMessage("");
+  };
 
   const cards: { image: string; name: string; price: number; type: CardPackType }[] = [
     { image: bCard, name: "B급 카드팩", price: 100, type: "B" },
@@ -23,14 +30,21 @@ function StorePage() {
     try {
       await buyCardPack(type);
       setMessage(`${name} 구매 완료!`);
+      setShowMessage(true);
     } catch (err: any) {
       setMessage(err.message || "구매 실패");
+      setShowMessage(true);
     }
-    setTimeout(() => setMessage(""), 2000);
+    setTimeout(() => {
+      setMessage("");
+      setShowMessage(false);
+  }, 2000);
   };
 
   return (
+    
     <div className="store-container">
+      
       <BackgroundVideo src={storeVideo} opacity={1} zIndex={-1} objectPosition="center top" />
 
       <div className="store-header">
@@ -46,8 +60,8 @@ function StorePage() {
           </button>
         </div>
       </div>
-
-      {message && <div className="store-message">{message}</div>}
+ 
+{/*      {message && <div className="store-message">{message}</div>} */}
 
       <div className="store-card-container">
         {cards.map((card, i) => (
@@ -60,6 +74,17 @@ function StorePage() {
           </div>
         ))}
       </div>
+      {showMessage && (
+              <MessageBox
+                bgColor="#e3f2fd"
+                borderColor="#2196f3"
+                textColor="#0d47a1"
+                onClose={closeMessage}
+                closeborderColor="black"
+              >
+                {message}
+              </MessageBox>
+            )}
     </div>
   );
 }

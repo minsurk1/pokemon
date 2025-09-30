@@ -1,6 +1,6 @@
 import { Router, Response } from "express";
 import { isAuthenticated, AuthenticatedRequest } from "../middleware/isAuthenticated";
-import UserDeck, { IDeck } from "../models/UserDeck";
+import UserDeck from "../models/UserDeck";
 import mongoose from "mongoose";
 
 const router = Router();
@@ -12,7 +12,20 @@ router.get("/", isAuthenticated, async (req: AuthenticatedRequest, res: Response
     if (!userId) return res.status(401).json({ message: "인증되지 않았습니다." });
 
     const userDeck = await UserDeck.findOne({ user: userId }).populate("decks.cards");
-    res.json({ decks: userDeck?.decks || [] });
+
+    if (!userDeck) {
+      return res.json({ decks: [] });
+    }
+
+    // 🔥 ObjectId → string 변환해서 내려주기
+    const decks = userDeck.decks.map((deck) => ({
+      _id: deck._id?.toString(),
+      name: deck.name,
+      cards: deck.cards.map((card: any) => card.toString()), // ✅ 핵심
+      createdAt: deck.createdAt,
+    }));
+
+    res.json({ decks });
   } catch (err) {
     console.error("덱 조회 실패:", err);
     res.status(500).json({ message: "덱 조회 실패" });
@@ -44,7 +57,17 @@ router.post("/save", isAuthenticated, async (req: AuthenticatedRequest, res: Res
     }
 
     await userDeck.save();
-    res.json({ message: "덱 저장 완료", deck: userDeck.decks[userDeck.decks.length - 1] });
+
+    // 🔥 응답할 때도 ObjectId → string 변환
+    const savedDeck = userDeck.decks[userDeck.decks.length - 1];
+    res.json({
+      message: "덱 저장 완료",
+      deck: {
+        _id: savedDeck._id?.toString(),
+        name: savedDeck.name,
+        cards: savedDeck.cards.map((c: any) => c.toString()),
+      },
+    });
   } catch (err) {
     console.error("덱 저장 실패:", err);
     res.status(500).json({ message: "덱 저장 중 오류 발생" });

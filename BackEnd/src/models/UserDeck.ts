@@ -1,29 +1,20 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
-// 서브도큐먼트 타입 (한 유저의 덱)
-export interface IDeck {
-  _id?: Types.ObjectId; // Mongoose 자동 생성
+export interface IUserDeck extends Document {
+  user: Types.ObjectId;
   name: string;
   cards: Types.ObjectId[];
   createdAt?: Date;
+  updatedAt?: Date;
 }
 
-export interface IUserDeck extends Document {
-  user: Types.ObjectId;
-  decks: IDeck[];
-}
-
-const DeckSubSchema = new Schema<IDeck>(
+const UserDeckSchema = new Schema<IUserDeck>(
   {
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
     name: { type: String, required: true },
     cards: [{ type: Schema.Types.ObjectId, ref: "Card", required: true }],
   },
-  { timestamps: { createdAt: true, updatedAt: false } } // createdAt만 자동 생성
+  { timestamps: true }
 );
-
-const UserDeckSchema = new Schema<IUserDeck>({
-  user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
-  decks: [DeckSubSchema],
-});
 
 export default mongoose.model<IUserDeck>("UserDeck", UserDeckSchema);

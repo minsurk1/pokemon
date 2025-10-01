@@ -36,13 +36,14 @@ function Inventory() {
       setOpenedCards(
         drawnCards.map((c: any) => ({
           id: c.id,
-          name: c.name,
+          name: c.name,          // 서버 필드명 그대로
           type: packType as CardPack["type"],
           quantity: 1,
           isOpened: true,
-          packImage: c.image, // 카드 이미지
+          packImage: c.image,    // 서버 필드명 그대로
         }))
       );
+
 
       // 2) 유저 인벤토리 업데이트
       setUserInfo((prev) => {

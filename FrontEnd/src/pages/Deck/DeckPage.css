@@ -10,7 +10,7 @@
 
 .navigation-section {
   background-image: url("../../assets/images/mainbg.png");
-  padding-right :2vw;
+  padding-right: 2vw;
   padding-left: 2vw;
   display: flex;
   justify-content: space-between;
@@ -19,7 +19,8 @@
   position: sticky;
   top: 0;
 }
-.deck-header-image{
+
+.deck-header-image {
   background-image: url("../../assets/images/deckheader.png");
   background-size: contain;
   background-repeat: no-repeat;
@@ -28,10 +29,11 @@
   align-items: center;
   z-index: 10;
   width: 70vw;
-  height:12.5vh;
+  height: 12.5vh;
 }
+
 .nav-button {
-  font-family: "Do Hyeon" ,serif;
+  font-family: "Do Hyeon", serif;
   background: #000000;
   color: #ffd803;
   border: none;
@@ -60,19 +62,17 @@
   overflow-x: auto;
   white-space: nowrap;
 }
-.selected-cards-container::-webkit-scrollbar {  
-    height: 1vh;
-  }
-  
-  .selected-cards-container::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .selected-cards-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 225, 0, 0.3);
-    border-radius: 4px;
-  }
-  
+.selected-cards-container::-webkit-scrollbar {
+  height: 1vh;
+}
+.selected-cards-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.selected-cards-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 225, 0, 0.3);
+  border-radius: 4px;
+}
+
 .selected-cards {
   display: inline-flex;
   gap: 1.5vw;
@@ -80,35 +80,23 @@
 }
 
 .selected-card {
-  background-image:url("../../assets/images/default.png");
-  background-size: cover;
-  opacity: 1;
   flex: 0 0 auto;
   width: 9.5vw;
   height: 23vh;
-  background-color: #145179;
-  color: #fff;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   border-radius: 5px;
-  font-size: 1.2em;
-  font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.3s ease;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.3s ease;
 }
-
 .selected-card:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
-
 .selected-card img {
   width: 100%;
-  height: auto;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
 }
 
 .card-list {
@@ -116,9 +104,10 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 15px;
-  background-image: url('../../assets/images/mainbg.png');
+  background-image: url("../../assets/images/mainbg.png");
 }
 
+/* 카드 기본 스타일 */
 .card {
   width: 11vw;
   height: auto;
@@ -129,28 +118,73 @@
   align-items: center;
   border-radius: 15px;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  margin-left:1vw;
+  position: relative;
 }
 
+/* hover 효과 (살짝 위로 + 확대 + 그림자 강화 + glow) */
 .card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 15px #ffd803;
 }
 
+/* 카드 이미지 */
 .card img {
   width: 100%;
   height: auto;
   object-fit: contain;
 }
 
+/* 카드 정보 오버레이 */
+.card-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 5px;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* 카드 정보 hover 시 표시 */
+.card:hover .card-info {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 카드 정보 글자 스타일 */
+.card-info p {
+  margin: 3px 0;
+  font-family: "Jua", sans-serif;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #ffd803;
+  text-shadow: 0 0 4px #000;
+}
+.card-info .card-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fffa65;
+  text-shadow: 0 0 5px #000;
+  margin-bottom: 5px;
+}
+
+/* 소유하지 않은 카드 스타일 */
 .card-list .grayscale {
   filter: grayscale(100%);
   opacity: 0.4;
 }
-
 .card.unowned {
   pointer-events: none;
 }

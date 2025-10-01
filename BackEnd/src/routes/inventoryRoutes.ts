@@ -1,5 +1,5 @@
 import express, { Response } from "express";
-import mongoose, { Types } from "mongoose";
+import mongoose from "mongoose";
 import User from "../models/User";
 import UserCard from "../models/UserCard";
 import Card, { ICard } from "../models/Card";
@@ -29,7 +29,9 @@ function getRandomTier(probabilities: { [key: number]: number }) {
     cumulative += probabilities[+tier];
     if (rand <= cumulative) return +tier;
   }
-  return Math.max(...Object.keys(probabilities).map(Number));
+  // fallback: 마지막 tier 반환
+  const tiers = Object.keys(probabilities).map(Number);
+  return tiers[tiers.length - 1];
 }
 
 // ✅ 카드팩 개봉 API
@@ -47,7 +49,7 @@ router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res
       return res.status(400).json({ message: "보유한 카드팩이 없습니다." });
     }
 
-    // 수량 차감
+    // 카드팩 수량 차감
     user.inventory[inventoryIndex].quantity -= 1;
     if (user.inventory[inventoryIndex].quantity <= 0) user.inventory.splice(inventoryIndex, 1);
     await user.save();
@@ -56,30 +58,33 @@ router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res
     const probabilities = getProbabilities(type);
     const drawnCards: any[] = [];
 
+    // 카드 5장 랜덤 추출
     for (let i = 0; i < 5; i++) {
       const tier = getRandomTier(probabilities);
       const tierCards = allCards.filter((card) => card.tier === tier);
       if (tierCards.length === 0) continue;
 
       const randomCard = tierCards[Math.floor(Math.random() * tierCards.length)];
-      const cardId = (randomCard._id as Types.ObjectId).toString();
 
-      drawnCards.push({
-        id: cardId,
-        name: randomCard.cardName,
-        damage: randomCard.attack,
-        hp: randomCard.hp,
-        image: randomCard.image2D,
-      });
-
+      // UserCard upsert: count 1 증가
       await UserCard.findOneAndUpdate(
         { user: userId, card: randomCard._id },
-        { $inc: { count: 1 }, $set: { owned: true } },
+        { $inc: { count: 1 } },
         { upsert: true }
       );
+
+      // 클라이언트용 DTO
+      drawnCards.push({
+        id: randomCard._id.toString(),
+        name: randomCard.cardName,  // 🔹 서버에서 name으로 통일
+        damage: randomCard.attack,
+        hp: randomCard.hp,
+        tier: randomCard.tier,
+        image: randomCard.image2D || "default.png", // 🔹 image 필드와 기본 이미지
+      });
     }
 
-    // 안전하게 null 체크 후 반환
+    // 남은 팩 정보
     const userPacks = user.inventory.map((p) => {
       const pack = p.pack as any;
       return {

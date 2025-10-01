@@ -2,7 +2,6 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface IUserDeck extends Document {
   user: Types.ObjectId; // 유저 ID (1명당 덱 1개만 허용)
-  name: string; // 덱 이름
   cards: Types.ObjectId[]; // 카드 배열 (최대 30장)
   createdAt?: Date;
   updatedAt?: Date;
@@ -11,7 +10,6 @@ export interface IUserDeck extends Document {
 const UserDeckSchema = new Schema<IUserDeck>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
-    name: { type: String, required: true },
     cards: [
       {
         type: Schema.Types.ObjectId,

@@ -10,13 +10,7 @@ export interface IUserDeck extends Document {
 const UserDeckSchema = new Schema<IUserDeck>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true },
-    cards: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Card",
-        required: true,
-      },
-    ],
+    cards: [{ type: Schema.Types.ObjectId, ref: "Card" }],
   },
   { timestamps: true }
 );

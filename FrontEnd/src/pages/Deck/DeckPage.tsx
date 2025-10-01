@@ -18,12 +18,13 @@ interface UserCardDTO {
   count: number;
 }
 
-const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
-  const [selectedCards, setSelectedCards] = useState<string[]>(selectedDeck || []);
+const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
+  const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [userCards, setUserCards] = useState<UserCardDTO[]>([]);
+  const [allUserCards, setAllUserCards] = useState<UserCardDTO[]>([]);
   const navigate = useNavigate();
-  const maxSelectedCards = 30;
 
+  const maxSelectedCards = 30;
   const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api";
   const IMAGE_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
@@ -31,46 +32,69 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
   const token = localStorage.getItem("token");
   const user = userStr ? JSON.parse(userStr) : null;
 
-  // 유저 카드 & 기존 덱 가져오기
+  // 유저 카드 + 덱 불러오기
   useEffect(() => {
-    const fetchUserCards = async () => {
-      if (!user?._id || !token) return;
+    if (!user?._id || !token) return;
+
+    const fetchUserCards = async (): Promise<UserCardDTO[]> => {
       try {
         const res = await axios.get(`${API_URL}/usercard/${user._id}/cards`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserCards(res.data.userCards);
+        setAllUserCards(res.data.userCards);
+        return res.data.userCards; // ✅ 카드 리스트 반환
       } catch (err) {
         console.error("유저 카드 정보 불러오기 실패:", err);
+        return [];
       }
     };
 
-    const fetchUserDeck = async () => {
-      if (!token) return;
+    // fetchUserDeck 부분만 수정
+    const fetchUserDeck = async (cardsFromUser: UserCardDTO[]) => {
       try {
-        const res = await axios.get(`${API_URL}/userdeck`, {
+        const res = await axios.get(`${API_URL}/userdeck/single`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         if (res.data.deck) {
-          setSelectedCards(res.data.deck);
-          onDeckChange(res.data.deck);
+          // ✅ 이제 deck.cards가 UserCardDTO 형태로 넘어옴
+          const deckCards: UserCardDTO[] = res.data.deck.cards;
+
+          // 선택된 카드 ID 배열만 저장
+          const deckCardIds = deckCards.map((c) => c.cardId);
+
+          setSelectedCards(deckCardIds);
+          onDeckChange(deckCardIds);
+
+          // 보유 카드 수량 차감
+          const updatedUserCards = cardsFromUser.map((c) => {
+            const selectedCount = deckCardIds.filter((id) => id === c.cardId).length;
+            return { ...c, count: c.count - selectedCount };
+          });
+          setUserCards(updatedUserCards);
         }
       } catch (err) {
         console.error("덱 불러오기 실패:", err);
       }
     };
 
-    fetchUserCards();
-    fetchUserDeck();
+    // ✅ 순서 보장: 카드 불러온 후 덱 불러오기
+    fetchUserCards().then((cardsFromUser) => {
+      if (cardsFromUser.length > 0) {
+        fetchUserDeck(cardsFromUser);
+      }
+    });
   }, []);
 
   // 카드 선택
   const selectCard = (cardId: string) => {
-    if (selectedCards.length >= maxSelectedCards) return;
     const card = userCards.find((c) => c.cardId === cardId);
     if (!card || card.count <= 0) return;
 
-    const newDeck = [...selectedCards, cardId];
+    if (selectedCards.length >= maxSelectedCards) return; // 덱 가득 찼을 때 막기
+
+    const newDeck = [...selectedCards, cardId]; // ✅ 뒤에 이어붙임
     setSelectedCards(newDeck);
     onDeckChange(newDeck);
 
@@ -80,27 +104,34 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
   // 카드 제거
   const removeCard = (index: number) => {
     const removedCardId = selectedCards[index];
+    if (!removedCardId) return;
+
     const newDeck = selectedCards.filter((_, i) => i !== index);
     setSelectedCards(newDeck);
     onDeckChange(newDeck);
 
-    if (removedCardId) {
-      setUserCards((prev) => prev.map((c) => (c.cardId === removedCardId ? { ...c, count: c.count + 1 } : c)));
-    }
+    setUserCards((prev) => prev.map((c) => (c.cardId === removedCardId ? { ...c, count: c.count + 1 } : c)));
   };
 
   // 새 덱 생성
   const createNewDeck = () => {
     setSelectedCards([]);
     onDeckChange([]);
+    setUserCards(allUserCards); // 원래 카드 수량 복구
   };
 
   // 덱 저장
   const saveDeck = async () => {
     if (!token) return;
     try {
-      await axios.post(`${API_URL}/userdeck/save`, { deck: selectedCards }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        `${API_URL}/userdeck/single/save`,
+        { cards: selectedCards },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
       alert("덱 저장 완료!");
+      // ✅ 저장 후 selectedCards 상태 그대로 유지
     } catch (err) {
       console.error("덱 저장 실패:", err);
       alert("덱 저장 실패");
@@ -109,6 +140,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
 
   return (
     <div className="deck-page">
+      {/* 상단 네비게이션 */}
       <div className="navigation-section">
         <button className="nav-button" onClick={() => navigate("/main")}>
           메인페이지
@@ -119,6 +151,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
         </button>
       </div>
 
+      {/* 버튼 영역 */}
       <div style={{ margin: "1rem" }}>
         <button className="nav-button" onClick={createNewDeck} style={{ marginRight: "1rem" }}>
           새 덱 생성
@@ -128,7 +161,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
         </button>
       </div>
 
-      {/* 선택 카드 영역: 항상 30칸 */}
+      {/* 선택된 카드 영역 */}
       <div className="selected-cards-container">
         <div className="selected-cards">
           {Array.from({ length: maxSelectedCards }).map((_, index) => {
@@ -148,7 +181,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange, selectedDeck }) => {
         </div>
       </div>
 
-      {/* 유저 카드 목록 */}
+      {/* 보유 카드 목록 */}
       <div className="card-list">
         {userCards.map((card) => (
           <div key={card.cardId} className={`card ${card.count <= 0 ? "unowned" : ""}`} onClick={() => selectCard(card.cardId)}>

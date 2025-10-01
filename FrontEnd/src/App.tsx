@@ -1,6 +1,6 @@
 // App.tsx
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -25,9 +25,10 @@ import Dex from "./pages/Dex/Dex";
 function App() {
   const [selectedDeck, setSelectedDeck] = useState<string[]>(() => {
     const savedDeck = localStorage.getItem("selectedDeck");
-    return savedDeck ? JSON.parse(savedDeck) : [];
+    return savedDeck ? JSON.parse(savedDeck) : Array(30).fill("");
   });
 
+  // 덱 변경 핸들러
   const handleDeckChange = (newDeck: string[]) => {
     setSelectedDeck(newDeck);
     localStorage.setItem("selectedDeck", JSON.stringify(newDeck));
@@ -39,25 +40,15 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<LoginPage />} />
-
             <Route path="/main" element={<MainPage />} />
-
             <Route path="/signup" element={<SignUpPage />} />
-
             <Route path="/store" element={<StorePage />} />
-
             <Route path="/inventory" element={<Inventory />} />
 
-            <Route
-              path="/deck"
-              element={
-                <DeckPage
-                  onDeckChange={handleDeckChange}
-                  selectedDeck={selectedDeck}
-                />
-              }
-            />
+            {/* 단일 덱 페이지 */}
+            <Route path="/deck" element={<DeckPage selectedDeck={selectedDeck} onDeckChange={handleDeckChange} />} />
 
+            {/* 배틀 페이지 */}
             <Route
               path="/battle/:roomCode"
               element={

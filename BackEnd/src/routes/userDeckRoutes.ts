@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { isAuthenticated, AuthenticatedRequest } from "../middleware/isAuthenticated";
 import UserDeck from "../models/UserDeck";
+import mongoose from "mongoose";
 
 const router = Router();
 
@@ -23,12 +24,17 @@ router.post("/single/save", isAuthenticated, async (req: AuthenticatedRequest, r
       return res.status(400).json({ message: "카드 배열이 필요합니다." });
     }
 
+    // ObjectId 변환 (빈 문자열 등 무효값 필터링)
+    const cardIds = cards
+      .filter((c: string) => mongoose.Types.ObjectId.isValid(c))
+      .map((c: string) => new mongoose.Types.ObjectId(c));
+
     let userDeck = await UserDeck.findOne({ user: req.user?._id });
 
     if (!userDeck) {
-      userDeck = new UserDeck({ user: req.user?._id, cards });
+      userDeck = new UserDeck({ user: req.user?._id, cards: cardIds });
     } else {
-      userDeck.cards = cards;
+      userDeck.cards = cardIds;
     }
 
     await userDeck.save();

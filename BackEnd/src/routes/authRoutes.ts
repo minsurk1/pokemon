@@ -23,9 +23,11 @@ router.post("/signup", async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "모든 필드를 입력해주세요." });
     }
 
+    /* 잠시 생략 */
+    /*
     if (password.length < 8) {
       return res.status(400).json({ success: false, message: "비밀번호는 최소 8자 이상이어야 합니다." });
-    }
+    }*/
 
     // 중복 검사
     if (await User.findOne({ username })) {

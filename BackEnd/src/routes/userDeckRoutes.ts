@@ -1,7 +1,6 @@
 import { Router, Response } from "express";
 import { isAuthenticated, AuthenticatedRequest } from "../middleware/isAuthenticated";
 import UserDeck from "../models/UserDeck";
-import mongoose from "mongoose";
 
 const router = Router();
 
@@ -20,16 +19,16 @@ router.get("/single", isAuthenticated, async (req: AuthenticatedRequest, res: Re
 router.post("/single/save", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { cards } = req.body;
-    if (!Array.isArray(cards) || cards.length === 0) return res.status(400).json({ message: "카드 배열이 필요합니다." });
-
-    const cardIds = cards.map((c: string) => new mongoose.Types.ObjectId(c));
+    if (!Array.isArray(cards)) {
+      return res.status(400).json({ message: "카드 배열이 필요합니다." });
+    }
 
     let userDeck = await UserDeck.findOne({ user: req.user?._id });
 
     if (!userDeck) {
-      userDeck = new UserDeck({ user: req.user?._id, cards: cardIds });
+      userDeck = new UserDeck({ user: req.user?._id, cards });
     } else {
-      userDeck.cards = cardIds;
+      userDeck.cards = cards;
     }
 
     await userDeck.save();

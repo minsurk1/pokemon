@@ -10,9 +10,9 @@
     align-items: center;
   }
   /*내 인벤토리 텍스트*/
-  .inventory-page h2 {
+  /* .inventory-page h2 {
     font-family: "Do Hyeon", serif;
-    color: #dfe439; /* 글자 색상 */
+    color: #dfe439; 
     font-size: 4rem;
     margin-bottom: 3vh;
     text-shadow:
@@ -20,13 +20,14 @@
       1.5px -1.5px 0 black,
       -1.5px 1.5px 0 black,
       1.5px 1.5px 0 black;
-  }
+  } */
 
   .pack-zone{
-    height : 55vh;
-    width: 90vw;
+    height : 60vh;
+    width: 60vw;
     overflow-y: auto;
     margin-top: 18vh;
+    overflow-x: hidden;
   }
   /* 스크롤바 스타일링 */
   .pack-zone::-webkit-scrollbar {
@@ -46,8 +47,9 @@
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 30px;
     width: 100%;
-    max-width: 1200px;
+    max-width: 80vw;
     padding: 20px;
+    
   }
   
   /*카드팩 호버*/
@@ -74,9 +76,9 @@
   }
   
   .card-pack-image {
-    width: 180px;
-    height: 250px;
-    object-fit: contain;
+    width: 160px;
+    height: 280px;
+    object-fit: 'contain';
     margin-bottom: 15px;
     border-radius: 10px;
     transition: transform 0.3s ease;

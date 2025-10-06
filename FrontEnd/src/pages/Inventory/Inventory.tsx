@@ -9,7 +9,8 @@ import axios from "axios";
 function Inventory() {
   const { userInfo, setUserInfo } = useUser();
   const [showModal, setShowModal] = useState(false);
-  const [openedCards, setOpenedCards] = useState<CardPack[]>([]);
+  // openedCards 타입에 tier 정보가 포함되도록 가정하고 any로 처리
+  const [openedCards, setOpenedCards] = useState<any[]>([]); 
 
   if (!userInfo) return <div>로딩 중...</div>;
 
@@ -32,7 +33,7 @@ function Inventory() {
       const drawnCards = res.data.drawnCards || [];
       const userPacks = res.data.userPacks || [];
 
-      // 1) 개봉된 카드 저장 (CSS 구조에 맞게)
+      // 1) 개봉된 카드 저장 (CSS 구조에 맞게, tier 정보 포함)
       setOpenedCards(
         drawnCards.map((c: any) => ({
           id: c.id,
@@ -41,6 +42,7 @@ function Inventory() {
           quantity: 1,
           isOpened: true,
           packImage: c.image,    // 서버 필드명 그대로
+          tier: c.tier,          // 👈 서버 응답에서 tier를 가져온다고 가정
         }))
       );
 
@@ -96,9 +98,12 @@ function Inventory() {
                     ) : (
                       <div className="placeholder-image">No Image</div>
                     )}
-                    <p>
-                      {pack.name} x{pack.quantity}
-                    </p>
+                    {/* 👇 수량 및 이름 표시 개선 */}
+                    <div className="pack-info">
+                      <p className="pack-name">{pack.name}</p>
+                      <span className="pack-quantity">재고: {pack.quantity}개</span>
+                    </div>
+                    {/* 👆 수량 및 이름 표시 개선 */}
                     <button
                       className="open-button"
                       onClick={() => openCardPack(pack.id, pack.type)}
@@ -135,6 +140,9 @@ function Inventory() {
                   ) : (
                     <div className="placeholder-image">No Image</div>
                   )}
+                  {/* 👇 등급 표시 추가 */}
+                  <p className="card-tier">⭐ {card.tier} 등급</p>
+                  {/* 👆 등급 표시 추가 */}
                   <p>{card.name}</p>
                 </div>
               ))}

@@ -67,17 +67,22 @@ const StyleMenuButton = styled.button<ButtonProps>`
     background: ${(props) => props.background || "transparent"};
     border: ${(props) => props.border || "none"};
     border-radius:${(props) => props.borderRadius || "15px"};
-    transition: background 0.3s ease,transform 0.3s ease;
+    transition: background 0.3s ease,transform 0.3s ease, box-shadow 0.3s ease; /* transition에 box-shadow 추가 */
     cursor: ${(props) => props.cursor || "pointer"};
     box-shadow: inset 0 0 6px var(--theme-accent-color);
     width: 100%;
     overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
     &:hover {
         background: var(--theme-hover-color);
-        opacity: ${(props) => props.hoverOpacity || 0.8};
-        transform: ${(props) => props.transform || "scale(1.03)"}; 
-        transition: ${(props) => props.transition || "all 0.2s ease-in-out"};
+        opacity: ${(props) => props.hoverOpacity || 1}; 
+        transform: ${(props) => props.transform || "scale(1.05)"}; 
+        transition: ${(props) => props.transition || "all 0.3s ease-in-out"};
         border-radius:${(props) => props.borderRadius || "15px"};
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
     }
 `
 

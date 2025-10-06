@@ -77,10 +77,6 @@ function MainPage() {
   const [serverError, setServerError] = useState("");
   const [serverResponse, setServerResponse] = useState("");
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
-
   const [randomVideo] = useState(() => {
     const randomIndex = Math.floor(Math.random() * videoFiles.length);
     return videoFiles[randomIndex];
@@ -200,17 +196,7 @@ function MainPage() {
     <div className="main-container">
       <BackgroundVideo src={randomVideo} opacity={1} zIndex={1} />
 
-      {!isSidebarOpen && (
-        <button className="sidebar-toggle-button open" onClick={toggleSidebar}>
-          메뉴 열기
-        </button>
-      )}
-
-      <div className={`sidebar-panel ${isSidebarOpen ? "open" : ""}`}>
-        <button className="sidebar-toggle-button close" onClick={toggleSidebar}>
-          닫기
-        </button>
-
+      <div className="sidebar-fixed">
         <motion.ul
           variants={list}
           initial="hidden"
@@ -221,46 +207,46 @@ function MainPage() {
             <MenuButton
               onClick={handleStore}
               marginBottom="3.3rem"
-              marginTop="0.8rem"
+              // marginTop="0.8rem"
             >
               상점
-              <FaStore style={{ marginLeft: "3px" }} />
+              <FaStore />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleDeck} marginBottom="3.3rem">
               카드
-              <SiPokemon style={{ marginLeft: "3px" }} />
+              <SiPokemon />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handledex} marginBottom="3.3rem">
               도감
-              <MdCatchingPokemon style={{ marginLeft: "3px" }} />
+              <MdCatchingPokemon />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleBattle} marginBottom="3.3rem">
               배틀
-              <GiBattleGear style={{ marginLeft: "3px" }} />
+              <GiBattleGear />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleRule} marginBottom="3.3rem" cursor="help">
               Rule
-              <FaBook style={{ marginLeft: "3px" }} />
+              <FaBook />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={toggleRoomTab} marginBottom="3.3rem">
               {showRoomTab ? "탭 닫기" : "방 만들기/입장"}
-              <MdMeetingRoom style={{ marginLeft: "3px" }} />
+              <MdMeetingRoom />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleProfile} marginBottom="3.3rem">
               마이페이지
-              <IoIosInformationCircleOutline style={{ marginLeft: "3px" }} />
+              <IoIosInformationCircleOutline />
             </MenuButton>
           </motion.li>
         </motion.ul>
@@ -285,27 +271,31 @@ function MainPage() {
 
       <div className="main-content">
         <div className="main-header">
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            className="theme-name"
-            onClick={toggleCardTab}
-          >
-            {themeName}
-          </motion.button>
-          
-          <span className="user-nickname" style={{ marginLeft: "1rem" }}>
-            {loading
-              ? "로딩 중..."
-              : userInfo
-              ? `환영합니다, ${userInfo.nickname}님`
-              : "로그인 해주세요"}
-          </span>
+          <div className="main-header-info-group">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              className="theme-name"
+              onClick={toggleCardTab}
+            >
+              {themeName}
+            </motion.button>
 
-          <span className="money" style={{ marginLeft: "1rem" }}>
-            {userInfo ? `현재 돈: ${userInfo.money.toLocaleString()} G` : ""}
-          </span>
+            <div className="user-status-box">
+              <span className="user-nickname">
+                {loading
+                  ? "로딩 중..."
+                  : userInfo
+                  ? `환영합니다, ${userInfo.nickname}님`
+                  : "로그인 해주세요"}
+              </span>
+
+              <span className="money-display">
+                {userInfo ? `💰 ${userInfo.money.toLocaleString()} G` : ""}
+              </span>
+            </div>
+          </div>
 
           <button className="logout-button" onClick={handleLogout}>
             로그아웃

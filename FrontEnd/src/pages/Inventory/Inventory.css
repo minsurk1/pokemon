@@ -9,24 +9,13 @@
     flex-direction: column;
     align-items: center;
   }
-  /*내 인벤토리 텍스트*/
-  /* .inventory-page h2 {
-    font-family: "Do Hyeon", serif;
-    color: #dfe439; 
-    font-size: 4rem;
-    margin-bottom: 3vh;
-    text-shadow:
-      -1.5px -1.5px 0 black,
-      1.5px -1.5px 0 black,
-      -1.5px 1.5px 0 black,
-      1.5px 1.5px 0 black;
-  } */
-
+  
   .pack-zone{
-    height : 60vh;
-    width: 60vw;
+    height : 70vh;
+    width: 70vw;
     overflow-y: auto;
-    margin-top: 18vh;
+    /* margin-top 조정 */
+    margin-top: 15vh;
     overflow-x: hidden;
   }
   /* 스크롤바 스타일링 */
@@ -50,13 +39,18 @@
     max-width: 80vw;
     padding: 20px;
     
+    
   }
   
-  /*카드팩 호버*/
+  /*카드팩 호버 (글래스모피즘 강조)*/
   .inventory-item {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(2px);
+    /* 투명도 증가 */
+    background: rgba(255, 255, 255, 0.15);
+    /* 블러 효과 강화 */
+    backdrop-filter: blur(8px);
     border-radius: 20px;
+    /* 테두리 추가 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -87,20 +81,35 @@
   .card-pack:hover .card-pack-image {
     transform: scale(1.05);
   }
+  
+  /* 카드팩 정보 영역 */
+  .pack-info {
+    text-align: center;
+    margin: 10px 0;
+  }
 
-  .card-pack p {
+  .pack-name {
     color: white;
     font-size: 1.2rem;
     font-weight: 600;
-    margin: 10px 0;
-    text-align: center;
+    margin: 0 0 5px 0;
   }
-  /*카드팩 개봉*/
+  /* 수량 강조 */
+  .pack-quantity {
+    color: #ffeb3b; /* 밝은 노란색 */
+    font-size: 0.95rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    display: block;
+    margin-bottom: 10px;
+  }
+  
+  /*카드팩 개봉 (청록색 그라데이션)*/
   .open-button {
     font-family: "Do hyeon",serif;
     width: 80%;
     padding: 12px;
-    background: linear-gradient(45deg,  #651fff, #448aff);
+    background: linear-gradient(45deg,  #00BCD4, #00E5FF); /* 청록색 계열 */
     color: white;
     border: none;
     border-radius: 10px;
@@ -111,8 +120,10 @@
   }
   /*카드팩 개봉에 커서올렸을때 호버*/
   .open-button:hover {
-    background: linear-gradient(45deg, #000000, #2979ff);
+    background: linear-gradient(45deg, #0097A7, #00BCD4);
     transform: translateY(-2px);
+    /* 그림자 추가 */
+    box-shadow: 0 4px 10px rgba(0, 188, 212, 0.5);
   }
 
   .modal-overlay {
@@ -181,6 +192,14 @@
     border-radius: 10px;
     margin-bottom: 10px;
   }
+  /* 카드 등급 표시 */
+  .card-tier {
+    color: #ffc107; /* 노란색 별 */
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 5px 0 5px 0;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  }
   /*카드 텍스트*/
   .modal-card p {
     color: #333;
@@ -216,7 +235,7 @@
   /*상점으로 돌아가기 버튼*/
   .back-button {
     position: fixed;
-    bottom: 30px;
+    bottom: 33px;
     left: 50%;
     transform: translateX(-50%);
     padding: 15px 30px;

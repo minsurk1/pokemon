@@ -11,7 +11,8 @@ import inventoryRoutes from "./routes/inventoryRoutes";
 import userCardRoutes from "./routes/userCardRoutes";
 import userDeckRoutes from "./routes/userDeckRoutes";
 import path from "path";
-import { setupRoomHandlers } from "./routes/room";
+import { setupRoomHandlers } from "./socket/room";
+import { setupBattleHandlers } from "./socket/battle";
 
 dotenv.config();
 
@@ -87,6 +88,7 @@ const io = new SocketIOServer(server, {
 
 // ✅ 소켓 연결 이벤트
 setupRoomHandlers(io);
+setupBattleHandlers(io);
 
 // ✅ 서버 시작
 const PORT = process.env.PORT || 5001;

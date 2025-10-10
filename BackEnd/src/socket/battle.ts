@@ -39,17 +39,38 @@ export function initializeBattle(io: Server, roomCode: string, room: any) {
 export default function battleHandler(io: Server, socket: Socket) {
   console.log(`⚔️ 배틀 소켓 연결됨: ${socket.id}`);
 
+  /**
+   * ✅ 새로 연결된 클라이언트가 자신의 방 상태 자동 수신
+   *    (새로고침 or 재접속 시)
+   */
+  for (const [code, room] of Object.entries(rooms)) {
+    if (room.players.includes(socket.id) && room.gameState) {
+      socket.emit("updateGameState", {
+        currentTurn: room.gameState.currentTurn,
+        hp: room.gameState.hp,
+      });
+      console.log(`♻️ ${socket.id} 재연결 감지 → 방 ${code} 상태 자동 전송`);
+      break;
+    }
+  }
+
+  /**
+   * 📡 클라이언트가 명시적으로 요청할 때 현재 게임 상태 전송
+   */
   socket.on("getGameState", ({ roomCode }) => {
     const room = rooms[roomCode];
-    if (!room || !room.gameState) return;
+    if (!room || !room.gameState) {
+      console.log(`⚠️ [getGameState] 유효하지 않은 방: ${roomCode}`);
+      return;
+    }
+
     socket.emit("updateGameState", {
       currentTurn: room.gameState.currentTurn,
       hp: room.gameState.hp,
     });
-    
+
     console.log(`📨 ${socket.id}이(가) ${roomCode}의 현재 상태 요청 → 전송 완료`);
   });
-
 
   /**
    * 🃏 카드 사용 이벤트
@@ -149,10 +170,18 @@ export default function battleHandler(io: Server, socket: Socket) {
       const room = rooms[roomCode];
       if (!room.players.includes(socket.id)) continue;
 
+      // ✅ 방에 남은 플레이어에게 알림
       if (room.gameState) {
         socket.to(roomCode).emit("opponentLeft");
         delete room.gameState;
         console.log(`🚪 ${socket.id} 퇴장 → ${roomCode} 게임 종료`);
+      }
+
+      // ✅ 플레이어 제거
+      room.players = room.players.filter((id: string) => id !== socket.id);
+      if (room.players.length === 0) {
+        delete rooms[roomCode];
+        console.log(`🧹 빈 방 삭제: ${roomCode}`);
       }
     }
   });

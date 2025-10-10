@@ -39,6 +39,18 @@ export function initializeBattle(io: Server, roomCode: string, room: any) {
 export default function battleHandler(io: Server, socket: Socket) {
   console.log(`⚔️ 배틀 소켓 연결됨: ${socket.id}`);
 
+  socket.on("getGameState", ({ roomCode }) => {
+    const room = rooms[roomCode];
+    if (!room || !room.gameState) return;
+    socket.emit("updateGameState", {
+      currentTurn: room.gameState.currentTurn,
+      hp: room.gameState.hp,
+    });
+    
+    console.log(`📨 ${socket.id}이(가) ${roomCode}의 현재 상태 요청 → 전송 완료`);
+  });
+
+
   /**
    * 🃏 카드 사용 이벤트
    */

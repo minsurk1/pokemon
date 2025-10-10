@@ -23,7 +23,7 @@ export default function roomHandler(io: Server, socket: Socket) {
    * 🏗️ 방 생성 (방장 전용)
    */
   socket.on("createRoom", () => {
-    const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase(); // 예: R2FVB
+    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
     rooms[roomCode] = {
       players: [socket.id],

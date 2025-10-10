@@ -21,13 +21,10 @@ export default function roomHandler(io: Server, socket: Socket) {
 
   /**
    * 🏗️ 방 생성 (방장 전용)
-   * 프론트에서 socket.emit("createRoom") 호출 시 생성됨
    */
   socket.on("createRoom", () => {
-    // 랜덤 방 코드 생성
-    const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase(); // 예: 4RRS7U
+    const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase(); // 예: R2FVB
 
-    // rooms에 방 등록
     rooms[roomCode] = {
       players: [socket.id],
       ready: {},
@@ -36,8 +33,6 @@ export default function roomHandler(io: Server, socket: Socket) {
     };
 
     socket.join(roomCode);
-
-    // 방 생성자(호스트)에게 알림
     socket.emit("roomCreated", { roomCode, isHost: true });
 
     console.log(`✅ 방 생성됨: ${roomCode}, 호스트: ${socket.id}`);
@@ -45,13 +40,12 @@ export default function roomHandler(io: Server, socket: Socket) {
   });
 
   /**
-   * 🏠 방 참여 (입장)
-   * 프론트에서 socket.emit("joinRoom", roomCode) 호출 시 실행
+   * 🏠 방 참여
    */
   socket.on("joinRoom", (roomCode: string) => {
     console.log(`▶ joinRoom 수신 ${socket.id} -> ${roomCode}`);
 
-    // 방 존재 확인
+    // 존재하지 않는 방
     if (!rooms[roomCode]) {
       console.log(`❌ 존재하지 않는 방: ${roomCode}`);
       socket.emit("roomNotFound");
@@ -60,20 +54,26 @@ export default function roomHandler(io: Server, socket: Socket) {
 
     const room = rooms[roomCode];
 
-    // 중복 입장 방지
+    // ✅ 이미 들어와 있는 경우: 무시하지 말고 정상 상태 응답
     if (room.players.includes(socket.id)) {
-      console.log(`⚠️ ${socket.id}는 이미 ${roomCode}에 있음`);
+      console.log(`⚠️ ${socket.id}는 이미 ${roomCode} 방에 있음 (중복 join 무시)`);
+
+      // 이미 방에 있어도 정상 응답 (프론트 혼선 방지)
+      socket.emit("roomJoined", {
+        roomCode,
+        isHost: room.players[0] === socket.id,
+      });
       return;
     }
 
-    // 인원 초과 확인
+    // 인원 초과
     if (room.players.length >= 2) {
       console.log(`🚫 ${roomCode} 방이 가득 참`);
       socket.emit("roomFull");
       return;
     }
 
-    // 정상 입장 처리
+    // ✅ 정상 입장 처리
     room.players.push(socket.id);
     socket.join(roomCode);
 
@@ -119,7 +119,6 @@ export default function roomHandler(io: Server, socket: Socket) {
       return;
     }
 
-    // 이미 시작된 방이면 무시
     if (room.gameState) {
       socket.emit("error", "이미 게임이 시작되었습니다.");
       return;
@@ -173,7 +172,7 @@ export default function roomHandler(io: Server, socket: Socket) {
 
     room.turnIndex = (room.turnIndex + 1) % room.players.length;
     room.gameState.currentTurn = room.players[room.turnIndex];
-    room.gameState.cardsPlayed = {}; // 카드 기록 초기화
+    room.gameState.cardsPlayed = {};
 
     const nextTurnId = room.gameState.currentTurn;
     io.to(roomCode).emit("turnChanged", nextTurnId);
@@ -193,8 +192,8 @@ export default function roomHandler(io: Server, socket: Socket) {
       room.players = room.players.filter((id) => id !== socket.id);
       delete room.ready[socket.id];
       delete room.hp[socket.id];
-      socket.to(roomCode).emit("opponentLeft");
 
+      socket.to(roomCode).emit("opponentLeft");
       console.log(`🚪 ${socket.id} 방 ${roomCode} 퇴장`);
 
       if (room.players.length === 0) {
@@ -203,6 +202,7 @@ export default function roomHandler(io: Server, socket: Socket) {
       } else {
         console.log(`👑 새로운 방장: ${room.players[0]} (${roomCode})`);
       }
+
       break;
     }
   });

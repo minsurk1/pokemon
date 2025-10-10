@@ -22,10 +22,20 @@ export function initializeBattle(io: Server, roomCode: string, room: any) {
     cardsPlayed: {},
   };
 
+  // ✅ 모든 플레이어에게 게임 시작 이벤트 전송
   io.to(roomCode).emit("gameStart", {
     roomCode,
     currentTurn: player1,
     hp: room.gameState.hp,
+  });
+
+  // ✅ 각 플레이어별로 자신의 턴 상태를 즉시 전송 (동기화 강화)
+  room.players.forEach((pid: string) => {
+    io.to(pid).emit("updateGameState", {
+      currentTurn: room.gameState.currentTurn,
+      hp: room.gameState.hp,
+    });
+    console.log(`📤 초기 턴 상태 전송 → ${pid}`);
   });
 
   console.log(
@@ -69,7 +79,9 @@ export default function battleHandler(io: Server, socket: Socket) {
       hp: room.gameState.hp,
     });
 
-    console.log(`📨 ${socket.id}이(가) ${roomCode}의 현재 상태 요청 → 전송 완료`);
+    console.log(
+      `📨 ${socket.id}이(가) ${roomCode}의 현재 상태 요청 → 턴 ${room.gameState.currentTurn}`
+    );
   });
 
   /**

@@ -1,4 +1,5 @@
 import { Server, Socket } from "socket.io";
+import { initializeBattle } from "./battle"; // ✅ 전투 초기화 연결
 
 export interface GameState {
   currentTurn: string;
@@ -16,6 +17,9 @@ interface RoomInfo {
 
 export const rooms: Record<string, RoomInfo> = {};
 
+/**
+ * 🏠 roomHandler - 대기실 관리 전용
+ */
 export default function roomHandler(io: Server, socket: Socket) {
   console.log(`🔵 새로운 클라이언트 연결: ${socket.id}`);
 
@@ -36,7 +40,6 @@ export default function roomHandler(io: Server, socket: Socket) {
     socket.emit("roomCreated", { roomCode, isHost: true });
 
     console.log(`✅ 방 생성됨: ${roomCode}, 호스트: ${socket.id}`);
-    console.log(`📊 현재 방 수: ${Object.keys(rooms).length}`);
   });
 
   /**
@@ -45,31 +48,27 @@ export default function roomHandler(io: Server, socket: Socket) {
   socket.on("joinRoom", (roomCode: string) => {
     console.log(`▶ joinRoom 수신 ${socket.id} -> ${roomCode}`);
 
-    // 존재하지 않는 방
-    if (!rooms[roomCode]) {
-      console.log(`❌ 존재하지 않는 방: ${roomCode}`);
+    const room = rooms[roomCode];
+    if (!room) {
       socket.emit("roomNotFound");
+      console.log(`❌ 존재하지 않는 방: ${roomCode}`);
       return;
     }
 
-    const room = rooms[roomCode];
-
-    // ✅ 이미 들어와 있는 경우: 무시하지 말고 정상 상태 응답
+    // ✅ 이미 들어와 있는 경우
     if (room.players.includes(socket.id)) {
-      console.log(`⚠️ ${socket.id}는 이미 ${roomCode} 방에 있음 (중복 join 무시)`);
-
-      // 이미 방에 있어도 정상 응답 (프론트 혼선 방지)
       socket.emit("roomJoined", {
         roomCode,
         isHost: room.players[0] === socket.id,
       });
+      console.log(`⚠️ ${socket.id}는 이미 ${roomCode} 방에 있음`);
       return;
     }
 
     // 인원 초과
     if (room.players.length >= 2) {
-      console.log(`🚫 ${roomCode} 방이 가득 참`);
       socket.emit("roomFull");
+      console.log(`🚫 ${roomCode} 방이 가득 참`);
       return;
     }
 
@@ -94,11 +93,12 @@ export default function roomHandler(io: Server, socket: Socket) {
 
     room.ready[socket.id] = isReady;
     socket.to(roomCode).emit("opponentReady", isReady);
+
     console.log(`💡 ${socket.id} 준비 상태: ${isReady} (방: ${roomCode})`);
   });
 
   /**
-   * ▶ 게임 시작
+   * ▶ 게임 시작 (battle.ts의 initializeBattle 호출)
    */
   socket.on("startGame", ({ roomCode }) => {
     const room = rooms[roomCode];
@@ -124,86 +124,9 @@ export default function roomHandler(io: Server, socket: Socket) {
       return;
     }
 
-    // HP 초기화
-    players.forEach((id: string) => {
-      room.hp[id] = 1000;
-    });
+    // ✅ battle.ts로 전투 초기화 위임
+    initializeBattle(io, roomCode, room);
 
-    // 턴 초기화
-    room.turnIndex = 0;
-    room.gameState = {
-      currentTurn: players[0],
-      hp: { ...room.hp },
-      cardsPlayed: {},
-    };
-
-    io.to(roomCode).emit("gameStart", {
-      roomCode,
-      currentTurn: room.gameState.currentTurn,
-      hp: room.hp,
-    });
-
-    console.log(`🎮 게임 시작: 방 ${roomCode}, 첫 턴 → ${room.gameState.currentTurn}`);
-  });
-
-  /**
-   * 🃏 카드 사용
-   */
-  socket.on("playCard", ({ roomCode, card }) => {
-    const room = rooms[roomCode];
-    if (!room || !room.gameState) return;
-
-    const { currentTurn } = room.gameState;
-    if (socket.id !== currentTurn) {
-      socket.emit("error", "당신의 턴이 아닙니다.");
-      return;
-    }
-
-    console.log(`🃏 ${socket.id}가 ${card.name} 사용 in ${roomCode}`);
-    socket.to(roomCode).emit("opponentPlayCard", card);
-  });
-
-  /**
-   * 🔁 턴 종료
-   */
-  socket.on("endTurn", ({ roomCode }) => {
-    const room = rooms[roomCode];
-    if (!room || !room.gameState) return;
-
-    room.turnIndex = (room.turnIndex + 1) % room.players.length;
-    room.gameState.currentTurn = room.players[room.turnIndex];
-    room.gameState.cardsPlayed = {};
-
-    const nextTurnId = room.gameState.currentTurn;
-    io.to(roomCode).emit("turnChanged", nextTurnId);
-
-    console.log(`🔄 턴 변경: ${socket.id} → ${nextTurnId}`);
-  });
-
-  /**
-   * ❌ 연결 종료
-   */
-  socket.on("disconnect", () => {
-    console.log(`🔴 클라이언트 연결 해제: ${socket.id}`);
-
-    for (const [roomCode, room] of Object.entries(rooms)) {
-      if (!room.players.includes(socket.id)) continue;
-
-      room.players = room.players.filter((id) => id !== socket.id);
-      delete room.ready[socket.id];
-      delete room.hp[socket.id];
-
-      socket.to(roomCode).emit("opponentLeft");
-      console.log(`🚪 ${socket.id} 방 ${roomCode} 퇴장`);
-
-      if (room.players.length === 0) {
-        delete rooms[roomCode];
-        console.log(`🧹 방 ${roomCode} 삭제`);
-      } else {
-        console.log(`👑 새로운 방장: ${room.players[0]} (${roomCode})`);
-      }
-
-      break;
-    }
+    console.log(`🎮 게임 시작 명령 수신 (방: ${roomCode})`);
   });
 }

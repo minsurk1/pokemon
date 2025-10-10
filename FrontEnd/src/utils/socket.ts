@@ -1,11 +1,10 @@
-// src/utils/socket.ts
-import { io, type Socket } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
+import { DefaultEventsMap } from "@socket.io/component-emitter";
 
-const socket: Socket = io(
-  "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/",
+export const socket: Socket<DefaultEventsMap, DefaultEventsMap> = io(
+  "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app",
   {
+    transports: ["websocket"],
     withCredentials: true,
   }
 );
-
-export { socket };

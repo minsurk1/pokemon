@@ -7,6 +7,10 @@ import "./LoginPanel.css";
 import logo from "../../assets/images/logo.png";
 import loginVideo from "../../assets/videos/loginvideo2.mp4";
 
+// ✅ 추가 import
+import axiosInstance from "../../utils/axiosInstance";
+import { useUser } from "../../context/UserContext";
+
 interface LoginResponse {
   token: string;
   user: {
@@ -21,40 +25,39 @@ function LoginPanel() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
-
   const openButtonRef = useRef<HTMLButtonElement>(null);
 
-  const togglePanel = () => setIsOpen(!isOpen);
+  // ✅ UserContext에서 refreshUser 가져오기
+  const { refreshUser, setUserInfo } = useUser();
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-  const toggleConfirmPasswordVisibility = () => {
-    setShowConfirmPassword(!showConfirmPassword);
-  };
+  const togglePanel = () => setIsOpen(!isOpen);
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const response: AxiosResponse<LoginResponse> =
-        await axios.post<LoginResponse>(
-          "/api/auth/login",
-          {
-            username,
-            password,
-          },
-          {
-            withCredentials: true, // 이 부분 추가
-          }
-        );
+      const response: AxiosResponse<LoginResponse> = await axios.post<LoginResponse>(
+        "/api/auth/login",
+        { username, password },
+        { withCredentials: true }
+      );
+
       if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        const token = response.data.token;
+        localStorage.setItem("token", token);
+
+        // ✅ axiosInstance에 바로 Authorization 헤더 세팅
+        axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+        // ✅ Context 초기화 후 새 유저 정보 요청
+        setUserInfo(null);
+        await refreshUser();
+
+        // ✅ 메인 페이지로 이동
         navigate("/main");
       }
-    } catch {
+    } catch (error) {
       alert("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.");
     } finally {
       setIsLoading(false);
@@ -97,17 +100,13 @@ function LoginPanel() {
               type="text"
               placeholder="아이디"
               value={username}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setUsername(e.target.value)
-              }
+              onChange={(e) => setUsername(e.target.value)}
             />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="비밀번호"
               value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setPassword(e.target.value)
-              }
+              onChange={(e) => setPassword(e.target.value)}
             />
             <span onClick={togglePasswordVisibility}>
               {showPassword ? <FaEyeSlash /> : <FaEye />}
@@ -129,12 +128,7 @@ function LoginPanel() {
           className="toggle-button open"
           onClick={togglePanel}
           onKeyDown={(e) => {
-            if (
-              e.key === "Enter" ||
-              e.key === " " ||
-              e.key === "Spacebar" ||
-              e.key === "Tab"
-            ) {
+            if (["Enter", " ", "Spacebar", "Tab"].includes(e.key)) {
               e.preventDefault();
               togglePanel();
             }

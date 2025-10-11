@@ -124,6 +124,12 @@ export default function roomHandler(io: Server, socket: Socket) {
       return;
     }
 
+    // ✅ 현재 실제 연결된 socket.id로 갱신 (핵심)
+    const socketsInRoom = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
+    room.players = socketsInRoom;
+
+    console.log(`🔄 현재 방 ${roomCode}의 소켓 갱신:`, room.players);
+
     // ✅ battle.ts로 전투 초기화 위임
     initializeBattle(io, roomCode, room);
 

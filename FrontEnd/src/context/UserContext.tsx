@@ -36,11 +36,12 @@ interface UserContextType {
   refreshUser: () => Promise<User | null>;
   buyCardPack: (packType: CardPackType) => Promise<User>;
   openCardPack: (packId: string) => Promise<{ updatedInventory: CardPack[]; drawnCards: CardData[] }>;
+  logout: () => void; // ✅ 로그아웃 추가
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// inventory 변환 (pack null 방지 + id string 변환)
+// ✅ inventory 변환 (pack null 방지 + id string 변환)
 const transformInventory = (inventoryData: any[]): CardPack[] =>
   inventoryData
     ?.map((item: any) => {
@@ -62,6 +63,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ✅ 공통 유저 정보 불러오기
   const fetchUser = async (): Promise<User | null> => {
     setLoading(true);
     try {
@@ -87,16 +89,41 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ✅ 로그인 유지(새로고침 시 토큰 반영)
   useEffect(() => {
-    fetchUser();
+    const token = localStorage.getItem("token");
+    if (token) {
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
+      fetchUser(); // ✅ 토큰이 있으면 자동 로그인 유지
+    } else {
+      setLoading(false); // 토큰이 없으면 로딩만 해제
+    }
   }, []);
 
-  const refreshUser = async () => fetchUser();
+  // ✅ 토큰 변경 시 강제로 리로드할 수 있는 함수
+  const refreshUser = async () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
+    } else {
+      delete axiosInstance.defaults.headers.common.Authorization;
+      setUserInfo(null);
+      return null;
+    }
+    return fetchUser();
+  };
 
+  // ✅ 로그아웃 함수 추가
+  const logout = () => {
+    localStorage.removeItem("token");
+    delete axiosInstance.defaults.headers.common.Authorization;
+    setUserInfo(null);
+  };
+
+  // ✅ 카드팩 구매
   const buyCardPack = async (packType: CardPackType) => {
     try {
       const res = await axiosInstance.post("/store/buy", { packType });
-      console.log("📦 buy response:", res.data); // ✅ 응답 구조 확인
       const data = res.data;
 
       const updatedUser: User = {
@@ -113,6 +140,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ✅ 카드팩 개봉
   const openCardPack = async (packId: string): Promise<{ updatedInventory: CardPack[]; drawnCards: CardData[] }> => {
     if (!userInfo) throw new Error("유저 정보 없음");
     const pack = userInfo.inventory.find((p) => p.id === packId);
@@ -140,7 +168,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider value={{ userInfo, setUserInfo, loading, error, refreshUser, buyCardPack, openCardPack }}>
+    <UserContext.Provider
+      value={{ userInfo, setUserInfo, loading, error, refreshUser, buyCardPack, openCardPack, logout }}
+    >
       {children}
     </UserContext.Provider>
   );

@@ -67,7 +67,7 @@ const StyleMenuButton = styled.button<ButtonProps>`
     background: ${(props) => props.background || "transparent"};
     border: ${(props) => props.border || "none"};
     border-radius:${(props) => props.borderRadius || "15px"};
-    transition: background 0.3s ease,transform 0.3s ease, box-shadow 0.3s ease; /* transition에 box-shadow 추가 */
+    transition: background 0.3s ease,transform 0.3s ease, box-shadow 0.3s ease; 
     cursor: ${(props) => props.cursor || "pointer"};
     box-shadow: inset 0 0 6px var(--theme-accent-color);
     width: 100%;

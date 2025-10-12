@@ -11,13 +11,13 @@
 }
 
 .sidebar-fixed {
-  position: fixed; /* 화면에 고정 */
+  position: fixed; 
   top: 0;
   left: 0;
   width: 200px;
   height: 100vh;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2));
-  border-right: 3px solid var(--theme-accent-color); /* 테마 강조색 테두리 */
+  border-right: 3px solid var(--theme-accent-color); 
   backdrop-filter: blur(5px);
   z-index: 999;
   display: flex;
@@ -159,6 +159,7 @@ ul {
 
 .logout-button:hover {
   background: #c62828;
+  transform: scale(1.1);
 }
 
 .monster-card {
@@ -340,9 +341,7 @@ ul {
   background: var(--theme-hover-color);
 }
 
-/* 반응형 디자인 */
 @media (max-width: 768px) {
-  /* 사이드바 너비 축소 */
   .sidebar-fixed {
     width: 160px; 
     padding: 2rem 0.5rem;
@@ -354,7 +353,7 @@ ul {
   }
 
   .main-content {
-    padding-top: 8rem; /* 헤더가 더 커질 수 있으므로 패딩 증가 */
+    padding-top: 8rem; 
   }
 
   /* 헤더 위치 조정 */

@@ -201,7 +201,7 @@ function MainPage() {
           variants={list}
           initial="hidden"
           animate="visible"
-          style={{ overflow: "hidden" } as React.CSSProperties}
+          // style={{ overflow: "hidden" } as React.CSSProperties}
         >
           <motion.li variants={item}>
             <MenuButton

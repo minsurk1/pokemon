@@ -735,3 +735,38 @@
     font-size: 1.2rem;
   }
 }
+
+/* 카드 등장 애니메이션 */
+.fade-in-card {
+  animation: fadeInCard 0.7s ease-out forwards;
+}
+@keyframes fadeInCard {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 🔥 타이머 점멸 효과 */
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+.turn-timer {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #0d47a1;
+  margin-top: 8px;
+  transition: color 0.3s ease;
+}
+
+.turn-timer.low-time {
+  color: #ff4d4d;
+  animation: blink 1s infinite;
+}

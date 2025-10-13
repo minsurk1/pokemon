@@ -35,8 +35,8 @@ import phantomImage from "../../assets/images/poisontier6.png";
 import ligiaImage from "../../assets/images/flytier7.png";
 import { CardAnimation } from "@lasbe/react-card-animation";
 
-import { useSocket } from "../../context/SocketContext"; // context에서 소켓 가져오기
-import { useUser } from "../../context/UserContext"; // UserContext에서 유저 정보 가져오기
+import { useSocket } from "../../context/SocketContext";
+import { useUser } from "../../context/UserContext";
 
 const videoFiles = [
   phantomVideo,
@@ -67,8 +67,10 @@ function MainPage() {
   const navigate = useNavigate();
   const { socket } = useSocket();
 
-  const [nickname, setNickname] = useState<string | null>(null);
-  const [money, setMoney] = useState<number | null>(null);
+  // ❌ 사용하지 않는 지역 상태 제거 (혼동 방지)
+  // const [nickname, setNickname] = useState<string | null>(null);
+  // const [money, setMoney] = useState<number | null>(null);
+
   const { userInfo, loading, error, refreshUser } = useUser();
 
   const [showRoomTab, setShowRoomTab] = useState(false);
@@ -82,10 +84,11 @@ function MainPage() {
     return videoFiles[randomIndex];
   });
 
-  const themeColorClass = videoThemes[randomVideo].color;
-  const themeName = videoThemes[randomVideo].name;
-  const themeImage = videoThemes[randomVideo].image;
+  const themeColorClass = (videoThemes as any)[randomVideo].color;
+  const themeName = (videoThemes as any)[randomVideo].name;
+  const themeImage = (videoThemes as any)[randomVideo].image;
 
+  // 1) 테마 컬러 CSS 변수 주입
   useEffect(() => {
     document.documentElement.style.setProperty(
       "--theme-color",
@@ -101,39 +104,51 @@ function MainPage() {
     );
   }, [themeColorClass]);
 
+  // 2) 마운트 시 토큰을 axios 전역 헤더에 반영 (중요)
+  //    로그인 직후 navigate 된 경우에도 /auth/me 가 바로 성공하도록 보장
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
+    } else {
+      delete axiosInstance.defaults.headers.common.Authorization;
+    }
+  }, []);
+
+  // 3) 토큰이 있고 userInfo 가 비어 있으면 즉시 프로필 갱신 (중요)
+  //    => 새로고침 없이 우측 상단에 닉네임/돈 표시
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!loading && token && !userInfo) {
+      // 에러로 한번 실패했어도 토큰이 있으면 재시도
+      refreshUser().catch((e) => {
+        // 필요 시 디버깅 로그
+        console.warn("refreshUser 실패:", e);
+      });
+    }
+  }, [loading, userInfo, refreshUser]);
+
+  // 4) 소켓 리스너: 전역 탐색을 유발하는 리스너는 "명시적 액션"에서만 등록
+  //    - 여기서는 메시지/에러만 구독하고, create/join 성공에 따른 navigate는
+  //      각 버튼 핸들러에서 socket.once 로 처리(중복 네비게이션 방지)
   useEffect(() => {
     if (!socket) return;
 
     const onMessage = (data: string) => setServerResponse(data);
-    const onRoomCreated = (data: { roomCode: string }) => {
-      console.log("방 생성됨:", data.roomCode);
-      navigate(`/wait/${data.roomCode}`);
-    };
-
-    const onRoomJoined = (data: { roomCode: string }) => {
-      console.log("방 참가 성공:", data.roomCode);
-      navigate(`/wait/${data.roomCode}`);
-    };
-
-    const onError = (error: string) => {
-      setServerError(error);
-    };
+    const onError = (err: string) => setServerError(err);
 
     socket.on("message", onMessage);
-    socket.on("roomCreated", onRoomCreated);
-    socket.on("roomJoined", onRoomJoined);
     socket.on("error", onError);
 
     return () => {
       socket.off("message", onMessage);
-      socket.off("roomCreated", onRoomCreated);
-      socket.off("roomJoined", onRoomJoined);
       socket.off("error", onError);
     };
-  }, [socket, navigate]);
+  }, [socket]);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
+    delete axiosInstance.defaults.headers.common.Authorization; // 🔐 헤더 정리
     navigate("/");
   }, [navigate]);
 
@@ -159,21 +174,42 @@ function MainPage() {
       return;
     }
     setServerError("");
+
+    console.log("▶ createRoom emit 요청");
     socket.emit("createRoom");
-  }, [socket]);
+
+    // ✅ 성공 이벤트에 대해 '단 한 번'만 네비게이션
+    socket.once("roomCreated", ({ roomCode }) => {
+      console.log("◀ roomCreated 수신:", roomCode);
+      navigate(`/wait/${roomCode}`, { state: { isHost: true } });
+    });
+
+    // 필요 시 에러 once 도 추가 가능
+    socket.once("error", (err: string) => setServerError(err));
+  }, [socket, navigate]);
 
   const handleJoinRoom = useCallback(() => {
     if (!socket) {
       setServerError("서버 연결이 되어있지 않습니다.");
       return;
     }
-    if (roomCode.length === 6) {
+
+    const trimmedCode = roomCode.trim().toUpperCase();
+    if (trimmedCode.length === 6) {
       setServerError("");
-      socket.emit("joinRoom", roomCode.trim().toUpperCase());
+      socket.emit("joinRoom", trimmedCode);
+
+      // ✅ 성공 이벤트 '단 한 번'만 네비게이션
+      socket.once("roomJoined", (data: { roomCode: string }) => {
+        console.log("◀ roomJoined 수신:", data.roomCode);
+        navigate(`/wait/${data.roomCode}`, { state: { isHost: false } });
+      });
+
+      socket.once("error", (err: string) => setServerError(err));
     } else {
       setServerError("올바른 방 코드를 입력해주세요.");
     }
-  }, [roomCode, socket]);
+  }, [roomCode, socket, navigate]);
 
   const onRoomCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleJoinRoom();
@@ -204,11 +240,7 @@ function MainPage() {
           // style={{ overflow: "hidden" } as React.CSSProperties}
         >
           <motion.li variants={item}>
-            <MenuButton
-              onClick={handleStore}
-              marginBottom="3.3rem"
-              // marginTop="0.8rem"
-            >
+            <MenuButton onClick={handleStore} marginBottom="3.3rem">
               상점
               <FaStore />
             </MenuButton>

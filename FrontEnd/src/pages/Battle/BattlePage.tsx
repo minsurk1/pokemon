@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useSocket } from "../../context/SocketContext"; // ✅ Context 훅 사용
+import { useSocket } from "../../context/SocketContext";
 import { CiClock1 } from "react-icons/ci";
 
 import "./BattlePage.css";
@@ -26,8 +26,95 @@ interface BattlePageProps {
   selectedDeck: string[];
 }
 
+// 타이머 관련 상수
+const INITIAL_TIME = 30;
+
+// --- CircularTimer Component ---
+const CircularTimer = ({ turnTime }: { turnTime: number }) => {
+  const getTimerColor = (timeLeft: number) => {
+    const timeRatio = timeLeft / INITIAL_TIME;
+    if (timeRatio > 0.75) return "#00FF00";
+    if (timeRatio > 0.5) return "#FFFF00";
+    if (timeRatio > 0.25) return "#FF8800";
+    return "#FF0000";
+  };
+
+  const timerColor = getTimerColor(turnTime);
+  const progress = ((INITIAL_TIME - turnTime) / INITIAL_TIME) * 100;
+
+  const timerStyle: React.CSSProperties = {
+    width: "70px",
+    height: "70px",
+    borderRadius: "50%",
+    position: "relative",
+    background: `conic-gradient(${timerColor} ${progress * 3.6}deg, #eee 0deg)`,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 0 5px rgba(0, 0, 0, 0.5)",
+  };
+
+  const timerInnerStyle: React.CSSProperties = {
+    width: "60px",
+    height: "60px",
+    borderRadius: "50%",
+    backgroundColor: "black",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const timerTextStyle: React.CSSProperties = {
+    color: timerColor,
+    fontSize: "16px",
+    fontWeight: "bold",
+  };
+
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', margin: '10px 0' }}>
+      <div style={timerStyle}>
+        <div style={timerInnerStyle}>
+          <div style={timerTextStyle}>{turnTime}초</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- BurnLineComponent ---
+const BurnLineComponent = ({ timeLeft, isMyTurn }: { timeLeft: number, isMyTurn: boolean }) => {
+    // 내 턴이 아니면 흰색 라인을 유지
+    if (!isMyTurn) {
+        return <div className="horizontal-line" style={{ background: "#ffffff" }} />;
+    }
+
+    const progress = ((INITIAL_TIME - timeLeft) / INITIAL_TIME) * 100;
+
+    const getFireColor = (progress: number) => {
+      if (progress < 25) return "#00FF00";
+      if (progress < 50) return "#FFFF00";
+      if (progress < 75) return "#FF8800";
+      return "#FF0000";
+    };
+
+    const color = getFireColor(progress);
+
+    return (
+      <div
+        className="horizontal-line"
+        style={{
+          background:
+            progress > 0
+              ? `linear-gradient(to right, ${color} ${progress}%, #ffffff ${progress}%)`
+              : "linear-gradient(to right, #ffffff 0%, #ffffff 100%)",
+        }}
+      />
+    );
+};
+
+
 function BattlePage({ selectedDeck }: BattlePageProps) {
-  const { socket, connected } = useSocket(); // ✅ SocketContext에서 가져오기
+  const { socket, connected } = useSocket();
   const navigate = useNavigate();
   const location = useLocation() as any;
   const roomCode: string = location?.state?.roomCode || "defaultRoomCode";
@@ -56,7 +143,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
   const [lastEnemyCardId, setLastEnemyCardId] = useState<string | null>(null);
 
   // 타이머
-  const [turnTime, setTurnTime] = useState(30);
+  const [turnTime, setTurnTime] = useState(INITIAL_TIME);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // ===== 내 소켓 ID 설정 =====
@@ -89,7 +176,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       }
 
       setTurn(1);
-      setTurnTime(30);
+      setTurnTime(INITIAL_TIME);
       setMessage("🎮 게임이 시작되었습니다!");
       setShowMessage(true);
     };
@@ -113,7 +200,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       setCurrentTurnId(nextTurnId);
       setIsMyTurn(mine);
       setTurn((t) => t + 1);
-      setTurnTime(30);
+      setTurnTime(INITIAL_TIME); // 턴 변경 시 초기 시간으로 리셋
 
       setPlayerCostIcons((prev) => Math.min(prev + (mine ? 1 : 0), 8));
       setOpponentCostIcons((prev) => Math.min(prev + (!mine ? 1 : 0), 8));
@@ -163,12 +250,14 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
     };
   }, [socket, connected, roomCode]);
 
-  // ===== 턴 타이머 =====
+  // ===== 턴 타이머 로직 =====
   useEffect(() => {
     if (!isMyTurn) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
+
+    if (timerRef.current) clearInterval(timerRef.current);
 
     timerRef.current = setInterval(() => {
       setTurnTime((prev) => {
@@ -226,7 +315,11 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
         setShowMessage(true);
         return;
       }
-      if (myCardsInZone.length >= 5) return;
+      if (myCardsInZone.length >= 5) {
+        setMessage("카드 존이 가득 찼습니다! (최대 5장)");
+        setShowMessage(true);
+        return;
+      }
 
       setHandCards((prev) => prev.filter((c) => c.id !== cardId));
       setMyCardsInZone((prev) => [...prev, card]);
@@ -235,6 +328,7 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
       setTimeout(() => setLastPlayedCardId(null), 1000);
       socket.emit("playCard", { roomCode, card });
     }
+    // 존 카드의 클릭 이벤트는 공격 로직으로 이어집니다. (현재는 미구현)
   };
 
   // ===== 턴 종료 =====
@@ -287,7 +381,8 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           </div>
         </div>
 
-        <div className="horizontal-line"></div>
+        {/* === 중앙 구분선 (BurnLineComponent 적용) === */}
+        <BurnLineComponent timeLeft={turnTime} isMyTurn={isMyTurn} />
 
         {/* === 플레이어 카드존 === */}
         <div className="player-field" />
@@ -306,13 +401,10 @@ function BattlePage({ selectedDeck }: BattlePageProps) {
           )}
         </div>
 
-        {/* === 턴 정보 === */}
+        {/* === 턴 정보 (CircularTimer 적용) === */}
         <div className="time-zone">
           <div className="turn-indicator">턴: {turn}</div>
-          <div>내ID: {mySocketId ?? "-"}</div>
-          <div>현재턴ID: {currentTurnId ?? "-"}</div>
-          <div>내턴?: {isMyTurn ? "예" : "아니오"}</div>
-          <div className={`turn-timer ${turnTime <= 10 ? "low-time" : ""}`}>⏱ 남은 시간: {turnTime}초</div>
+          <CircularTimer turnTime={turnTime} />
         </div>
 
         {/* === 덱 / 손패 === */}

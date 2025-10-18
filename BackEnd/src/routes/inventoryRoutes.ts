@@ -1,3 +1,4 @@
+// src/routes/inventoryRoutes.ts
 import express, { Response } from "express";
 import mongoose from "mongoose";
 import User from "../models/User";
@@ -7,7 +8,9 @@ import { isAuthenticated, AuthenticatedRequest } from "../middleware/isAuthentic
 
 const router = express.Router();
 
-// packType별 확률
+/**
+ * 🎲 packType별 확률
+ */
 function getProbabilities(packType: string): { [key: number]: number } {
   switch (packType) {
     case "B":
@@ -21,7 +24,9 @@ function getProbabilities(packType: string): { [key: number]: number } {
   }
 }
 
-// 랜덤 등급 선택
+/**
+ * 🎯 랜덤 등급 선택
+ */
 function getRandomTier(probabilities: { [key: number]: number }) {
   const rand = Math.random();
   let cumulative = 0;
@@ -29,36 +34,54 @@ function getRandomTier(probabilities: { [key: number]: number }) {
     cumulative += probabilities[+tier];
     if (rand <= cumulative) return +tier;
   }
-  // fallback: 마지막 tier 반환
   const tiers = Object.keys(probabilities).map(Number);
   return tiers[tiers.length - 1];
 }
 
-// ✅ 카드팩 개봉 API
-router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
+/**
+ * ✅ 카드팩 개봉 API
+ */
+router.post("/open-pack", isAuthenticated, async (req, res: Response) => {
   try {
-    const userId = req.user?._id;
-    const { type } = req.body;
-    if (!userId) return res.status(401).json({ message: "인증 실패" });
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?._id) {
+      return res.status(401).json({ message: "인증 실패: 유효하지 않은 사용자입니다." });
+    }
 
-    const user = await User.findById(userId).populate("inventory.pack");
-    if (!user) return res.status(404).json({ message: "유저를 찾을 수 없음" });
+    const { type } = req.body as { type: string };
+    if (!type) {
+      return res.status(400).json({ message: "packType(type) 누락" });
+    }
 
-    const inventoryIndex = user.inventory.findIndex((p) => p.type === type);
-    if (inventoryIndex === -1 || user.inventory[inventoryIndex].quantity <= 0) {
+    const userId = user._id;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ message: "유효하지 않은 사용자 ID 형식입니다." });
+    }
+
+    // ✅ 유저 + 인벤토리 조회
+    const userData = await User.findById(userId).populate("inventory.pack");
+    if (!userData) return res.status(404).json({ message: "유저를 찾을 수 없습니다." });
+
+    // ✅ 해당 타입의 카드팩 인벤토리 확인
+    const packIndex = userData.inventory.findIndex((p) => p.type === type);
+    if (packIndex === -1 || userData.inventory[packIndex].quantity <= 0) {
       return res.status(400).json({ message: "보유한 카드팩이 없습니다." });
     }
 
-    // 카드팩 수량 차감
-    user.inventory[inventoryIndex].quantity -= 1;
-    if (user.inventory[inventoryIndex].quantity <= 0) user.inventory.splice(inventoryIndex, 1);
-    await user.save();
+    // ✅ 카드팩 수량 차감
+    userData.inventory[packIndex].quantity -= 1;
+    if (userData.inventory[packIndex].quantity <= 0) {
+      userData.inventory.splice(packIndex, 1);
+    }
+    await userData.save();
 
+    // ✅ 전체 카드 목록 로드
     const allCards: ICard[] = await Card.find();
     const probabilities = getProbabilities(type);
-    const drawnCards: any[] = [];
+    const drawnCards: Record<string, any>[] = [];
 
-    // 카드 5장 랜덤 추출
+    // ✅ 카드 5장 랜덤 추첨
     for (let i = 0; i < 5; i++) {
       const tier = getRandomTier(probabilities);
       const tierCards = allCards.filter((card) => card.tier === tier);
@@ -66,26 +89,29 @@ router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res
 
       const randomCard = tierCards[Math.floor(Math.random() * tierCards.length)];
 
-      // UserCard upsert: count 1 증가
+      // ✅ UserCard upsert (존재하면 +1, 없으면 새로 생성)
       await UserCard.findOneAndUpdate(
         { user: userId, card: randomCard._id },
-        { $inc: { count: 1 } },
+        {
+          $inc: { count: 1 },
+          $setOnInsert: { createdAt: new Date(), updatedAt: new Date() },
+        },
         { upsert: true }
       );
 
-      // 클라이언트용 DTO
+      // ✅ 프론트엔드 전달용 데이터
       drawnCards.push({
         id: randomCard._id.toString(),
-        name: randomCard.cardName,  // 🔹 서버에서 name으로 통일
+        name: randomCard.cardName,
         damage: randomCard.attack,
         hp: randomCard.hp,
         tier: randomCard.tier,
-        image: randomCard.image2D || "default.png", // 🔹 image 필드와 기본 이미지
+        image: randomCard.image2D || "default.png",
       });
     }
 
-    // 남은 팩 정보
-    const userPacks = user.inventory.map((p) => {
+    // ✅ 최신 인벤토리 정보 재구성
+    const userPacks = userData.inventory.map((p) => {
       const pack = p.pack as any;
       return {
         packId: pack?._id?.toString() || "",
@@ -102,8 +128,8 @@ router.post("/open-pack", isAuthenticated, async (req: AuthenticatedRequest, res
       userPacks,
     });
   } catch (error: any) {
-    console.error("카드팩 개봉 오류:", error);
-    res.status(400).json({ message: error.message || "카드팩 개봉 실패" });
+    console.error("❌ 카드팩 개봉 오류:", error);
+    res.status(500).json({ message: error.message || "카드팩 개봉 실패" });
   }
 });
 

@@ -1,12 +1,17 @@
-import { Router, Request, Response } from "express";
+// src/routes/storeRoutes.ts
+import { Router, Response } from "express";
+import mongoose from "mongoose";
 import CardPack from "../models/CardPack";
 import User from "../models/User";
 import { isAuthenticated, AuthenticatedRequest } from "../middleware/isAuthenticated";
 
 const router = Router();
 
-// ✅ 카드팩 전체 조회
-router.get("/card-packs", async (req: Request, res: Response) => {
+/**
+ * ✅ 1) 카드팩 전체 조회
+ * GET /api/store/card-packs
+ */
+router.get("/card-packs", async (req, res: Response) => {
   try {
     const packs = await CardPack.find({});
     const result = packs.map((p) => ({
@@ -16,70 +21,87 @@ router.get("/card-packs", async (req: Request, res: Response) => {
       image: p.image,
       price: p.price,
     }));
-    res.json(result);
+
+    res.status(200).json(result);
   } catch (err) {
-    console.error("카드팩 조회 실패:", err);
+    console.error("❌ 카드팩 조회 실패:", err);
     res.status(500).json({ message: "카드팩 조회 실패" });
   }
 });
 
-// ✅ 카드팩 구매
-router.post("/buy", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user?._id;
-  const { packType } = req.body;
-
-  if (!userId || !packType) {
-    return res.status(400).json({ message: "userId 또는 packType 누락" });
-  }
-
+/**
+ * ✅ 2) 카드팩 구매
+ * POST /api/store/buy
+ */
+router.post("/buy", isAuthenticated, async (req, res: Response) => {
   try {
-    const user = await User.findById(userId).populate("inventory.pack");
-    if (!user) {
+    // ✅ 안전한 접근 (undefined 방지)
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?._id) {
+      return res.status(401).json({ message: "인증 실패: 유효하지 않은 사용자 정보입니다." });
+    }
+
+    const userId = user._id;
+    const { packType } = req.body as { packType: string };
+
+    if (!packType) {
+      return res.status(400).json({ message: "packType 누락" });
+    }
+
+    // ✅ ObjectId 유효성 검증
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ message: "유효하지 않은 사용자 ID 형식입니다." });
+    }
+
+    // ✅ 사용자 조회
+    const userData = await User.findById(userId).populate("inventory.pack");
+    if (!userData) {
       return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
     }
 
+    // ✅ 카드팩 조회
     const cardPack = await CardPack.findOne({ type: packType });
     if (!cardPack) {
-      return res.status(404).json({ message: "카드팩을 찾을 수 없습니다." });
+      return res.status(404).json({ message: "해당 카드팩을 찾을 수 없습니다." });
     }
 
-    if (user.money < cardPack.price) {
-      return res.status(400).json({ message: "잔액 부족" });
+    // ✅ 잔액 확인
+    if (userData.money < cardPack.price) {
+      return res.status(400).json({ message: "잔액이 부족합니다." });
     }
 
-    // 🛠 디버깅 로그
-    console.log("🛠 user.inventory:", user.inventory);
-    console.log("🛠 cardPack:", cardPack);
-    console.log("🛠 cardPack._id:", cardPack._id);
+    // ✅ 금액 차감
+    userData.money -= cardPack.price;
 
-    user.money -= cardPack.price;
-
-    // ✅ 안전하게 null 방어
-    const existingPack = user.inventory?.find((i) => i.pack && i.pack._id && i.pack._id.equals(cardPack._id));
+    // ✅ 기존 팩 존재 여부 확인 (populate 이후 비교)
+    const existingPack = userData.inventory?.find((i) => i.pack && i.pack._id && i.pack._id.equals(cardPack._id));
 
     if (existingPack) {
       existingPack.quantity += 1;
-      console.log(`🛠 기존 팩 ${existingPack.type} 수량 증가`);
+      console.log(`🟢 기존 팩(${existingPack.type}) 수량 +1`);
     } else {
-      user.inventory.push({
+      userData.inventory.push({
         pack: cardPack._id,
         type: cardPack.type,
         quantity: 1,
         opened: false,
       });
-      console.log(`🛠 새 팩 ${cardPack.type} 추가`);
+      console.log(`🟢 새 팩(${cardPack.type}) 추가`);
     }
 
-    await user.save();
+    await userData.save();
 
+    // ✅ 갱신된 유저 데이터 재조회
     const updatedUser = await User.findById(userId).populate("inventory.pack");
-    res.json({
+
+    res.status(200).json({
       message: `${cardPack.name} 구매 완료`,
+      updatedMoney: updatedUser?.money ?? 0,
       user: updatedUser,
     });
-  } catch (err) {
-    console.error("카드팩 구매 실패:", err);
-    res.status(500).json({ message: "서버 오류" });
+  } catch (err: any) {
+    console.error("❌ 카드팩 구매 실패:", err);
+    res.status(500).json({ message: err.message || "서버 오류" });
   }
 });
 

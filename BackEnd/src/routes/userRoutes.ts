@@ -1,65 +1,89 @@
-import { Router, Response, Request } from "express"; // 👈 @types/express 설치 후 이 구문이 오류 없이 작동해야 합니다.
+// src/routes/userRoutes.ts
+import { Router, Response } from "express";
+import mongoose from "mongoose";
 import { isAuthenticated, AuthenticatedRequest } from "../middleware/isAuthenticated";
 import User, { IUser } from "../models/User";
 
 const router = Router();
 
-console.log("userRoutes 라우터 로드됨");
+console.log("✅ userRoutes 라우터 로드됨");
 
-// ✅ 유저 돈 추가 (치트용) - 개발 끝나면 삭제
+/**
+ * ✅ 1) 유저 돈 추가 (치트용) — 개발 종료 후 비활성화 예정
+ */
 router.post("/add-money", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user?._id; 
-  // req.body는 기본적으로 Request 타입에 포함되므로, AuthenticatedRequest가 Request를 상속하면 문제 없습니다.
-  const { amount } = req.body; 
-
-  if (!userId) return res.status(401).json({ message: "로그인이 필요합니다." });
-  if (!amount || typeof amount !== "number") return res.status(400).json({ message: "amount 필요" });
-
   try {
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?._id) {
+      return res.status(401).json({ message: "로그인이 필요합니다." });
+    }
 
-    user.money += amount;
-    await user.save();
+    const { amount } = req.body as { amount: number };
 
-    res.status(200).json({ message: `돈 ${amount}G 추가 완료`, money: user.money });
-  } catch (err) {
-    console.error("돈 추가 오류:", err);
-    res.status(500).json({ message: "서버 오류", error: err });
+    if (typeof amount !== "number" || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ message: "amount는 양수 형태의 숫자여야 합니다." });
+    }
+
+    if (!mongoose.isValidObjectId(user._id)) {
+      return res.status(400).json({ message: "유효하지 않은 사용자 ID 형식입니다." });
+    }
+
+    const targetUser = await User.findById(user._id);
+    if (!targetUser) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
+
+    targetUser.money += amount;
+    await targetUser.save();
+
+    res.status(200).json({
+      message: `💰 ${amount}G 추가 완료`,
+      newMoney: targetUser.money,
+    });
+  } catch (err: any) {
+    console.error("❌ 돈 추가 오류:", err);
+    res.status(500).json({ message: "서버 오류", error: err.message });
   }
 });
 
-// ✅ 로그인한 유저 정보 가져오기 (⭐ 인벤토리 populate 및 오류 7006 해결)
+/**
+ * ✅ 2) 로그인한 유저 정보 조회
+ * GET /api/user/me
+ */
 router.get("/me", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
-  const userId = req.user?._id; 
-  if (!userId) {
-    return res.status(401).json({ message: "인증이 필요합니다." });
-  }
-
   try {
-    const user = await User.findById(userId)
-      .populate("inventory.pack") 
-      .lean<IUser>();
+    const user = (req as AuthenticatedRequest).user;
+    if (!user?._id) {
+      return res.status(401).json({ message: "인증이 필요합니다." });
+    }
 
-    if (!user) return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
-    
-    // 오류 7006 해결: item 매개변수에 명시적으로 'any' 타입을 지정
-    const populatedInventory = (user.inventory || []).map((item: any) => ({
-        packId: item.pack?._id?.toString() || '',
-        type: item.type,
-        quantity: item.quantity,
-        name: (item.pack as any)?.name || "", 
-        packImage: (item.pack as any)?.image || "",
+    if (!mongoose.isValidObjectId(user._id)) {
+      return res.status(400).json({ message: "유효하지 않은 사용자 ID 형식입니다." });
+    }
+
+    const foundUser = await User.findById(user._id).populate("inventory.pack").lean<IUser>();
+
+    if (!foundUser) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
+
+    // ✅ 인벤토리 데이터 구조 정리
+    const populatedInventory = (foundUser.inventory || []).map((item: any) => ({
+      packId: item.pack?._id?.toString() ?? "",
+      type: item.type ?? "",
+      quantity: item.quantity ?? 0,
+      name: item.pack?.name ?? "",
+      packImage: item.pack?.image ?? "",
     }));
 
-    res.json({
-      nickname: user.nickname,
-      money: user.money,
-      inventory: populatedInventory, 
+    res.status(200).json({
+      nickname: foundUser.nickname,
+      money: foundUser.money,
+      inventory: populatedInventory,
     });
-  } catch (err) {
-    console.error("유저 정보 조회 오류:", err);
-    res.status(500).json({ message: "서버 오류", error: err });
+  } catch (err: any) {
+    console.error("❌ 유저 정보 조회 오류:", err);
+    res.status(500).json({ message: "서버 오류", error: err.message });
   }
 });
 

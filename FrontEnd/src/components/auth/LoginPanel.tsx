@@ -46,6 +46,7 @@ function LoginPanel() {
       if (response.data.token) {
         const token = response.data.token;
         localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(response.data.user)); // ✅ 추가
 
         // ✅ axiosInstance에 바로 Authorization 헤더 세팅
         axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -96,21 +97,14 @@ function LoginPanel() {
               handleLogin();
             }}
           >
-            <input
-              type="text"
-              placeholder="아이디"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
+            <input type="text" placeholder="아이디" value={username} onChange={(e) => setUsername(e.target.value)} />
             <input
               type={showPassword ? "text" : "password"}
               placeholder="비밀번호"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <span onClick={togglePasswordVisibility}>
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </span>
+            <span onClick={togglePasswordVisibility}>{showPassword ? <FaEyeSlash /> : <FaEye />}</span>
             <button className="login-button" type="submit" disabled={isLoading}>
               {isLoading ? "로그인 중..." : "로그인"}
             </button>

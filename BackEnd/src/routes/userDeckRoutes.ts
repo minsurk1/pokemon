@@ -1,63 +1,50 @@
-import { Router, Response } from "express";
-import { isAuthenticated, AuthenticatedRequest } from "../middleware/isAuthenticated";
+// src/routes/userDeckRoutes.ts
+import express from "express";
 import UserDeck from "../models/UserDeck";
-import { ICard } from "../models/Card";
+import { isAuthenticated, AuthenticatedRequest } from "../middleware/isAuthenticated";
 
-const router = Router();
+const router = express.Router();
 
-// ✅ 단일 덱 조회 (카드 정보까지 반환)
-router.get("/single", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
+// ✅ 유저의 덱 불러오기
+router.get("/single", isAuthenticated, async (req, res) => {
   try {
-    const userDeck = await UserDeck.findOne({ user: req.user?._id })
-      .populate("cards") // 카드 정보 join
-      .lean();
+    const { _id } = (req as AuthenticatedRequest).user; // ✅ 안전하게 캐스팅
+    const deck = await UserDeck.findOne({ user: _id }).populate("cards");
 
-    if (!userDeck) {
-      return res.json({ deck: { cards: [] } });
+    if (!deck) {
+      return res.status(404).json({ message: "덱이 존재하지 않습니다." });
     }
 
-    // ✅ 카드 정보를 프론트에서 바로 쓸 수 있도록 변환
-    const formattedDeck = {
-      ...userDeck,
-      cards: (userDeck.cards as unknown as ICard[]).map((card) => ({
-        cardId: card._id.toString(),
-        name: card.cardName,
-        damage: card.attack,
-        hp: card.hp,
-        tier: card.tier,
-        image: card.image2D,
-      })),
-    };
-
-    res.json({ deck: formattedDeck });
+    res.json({ deck });
   } catch (err) {
-    console.error("단일 덱 조회 실패:", err);
-    res.status(500).json({ message: "단일 덱 조회 실패" });
+    console.error("❌ 덱 불러오기 실패:", err);
+    res.status(500).json({ message: "서버 오류" });
   }
 });
 
-// ✅ 단일 덱 저장/업데이트
-router.post("/single/save", isAuthenticated, async (req: AuthenticatedRequest, res: Response) => {
+// ✅ 덱 저장
+router.post("/single/save", isAuthenticated, async (req, res) => {
   try {
+    const { _id } = (req as AuthenticatedRequest).user; // ✅ 안전하게 캐스팅
     const { cards } = req.body;
+
     if (!Array.isArray(cards)) {
-      return res.status(400).json({ message: "카드 배열이 필요합니다." });
+      return res.status(400).json({ message: "잘못된 카드 데이터 형식입니다." });
     }
 
-    let userDeck = await UserDeck.findOne({ user: req.user?._id });
+    let deck = await UserDeck.findOne({ user: _id });
 
-    if (!userDeck) {
-      userDeck = new UserDeck({ user: req.user?._id, cards });
+    if (!deck) {
+      deck = new UserDeck({ user: _id, cards });
     } else {
-      userDeck.cards = cards;
+      deck.cards = cards;
     }
 
-    await userDeck.save();
-
-    res.json({ message: "단일 덱 저장 완료" });
+    await deck.save();
+    res.json({ message: "덱 저장 완료", deck });
   } catch (err) {
-    console.error("덱 저장 실패:", err);
-    res.status(500).json({ message: "단일 덱 저장 중 오류 발생" });
+    console.error("❌ 덱 저장 실패:", err);
+    res.status(500).json({ message: "서버 오류" });
   }
 });
 

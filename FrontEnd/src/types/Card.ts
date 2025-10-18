@@ -3,7 +3,8 @@
 // 백엔드 models/Card.ts의 구조를 기반으로 함
 
 export interface Card {
-  cardId: string; // 서버에서 전달되는 카드 ID (_id 대신 문자열)
+  id: string; // 프론트엔드에서 사용하는 고유 ID
+  cardId?: string; // (선택적) 백엔드 DB용 카드 ID
   name: string; // 카드 이름 (cardName)
   attack: number; // 공격력
   hp: number; // 체력

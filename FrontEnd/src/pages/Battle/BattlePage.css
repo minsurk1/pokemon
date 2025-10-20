@@ -85,7 +85,7 @@
   width: 86vw;
   height: 49.9vh;
   background-image: url("../../assets/images/BattleTopBlue.png");
-  background-size:contain;
+  background-size: contain;
   clip-path: polygon(0 0, 100% 0, 100% 80%, 95% 44%, 10% 44%, 0 55%);
   display: flex;
   justify-content: center;
@@ -111,14 +111,16 @@
 
 .enemy-card-zone {
   position: absolute;
-  display: flex;
   top: 0vh;
-  gap: 13px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
   justify-content: center;
   align-items: center;
+  gap: 13px;
   padding: 20px;
   min-height: 150px;
-  z-index: 50;
+  z-index: 500; /* ✅ 카드가 항상 위 */
 }
 
 .player-card-zone {
@@ -136,7 +138,7 @@
   align-items: center;
   padding-bottom: 10.8vh;
   border-radius: 15px;
-  z-index: 250;
+  z-index: 600;
 }
 .player-card-bg {
   position: absolute;
@@ -173,19 +175,58 @@
   background-repeat: no-repeat;
 }
 
+/* ▼▼▼ 여기서부터 카드 사이즈/이미지 비율 수정 반영 ▼▼▼ */
 .enemy-card-slot,
 .card-slot {
-  width: 80px;
-  height: 120px;
+  width: 100px; /* 기존 80px → 100px */
+  height: 140px; /* 기존 120px → 140px */
   flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* 이미지 넘침 방지 */
+  position: relative;
 }
 
-.empty-zone {
-  color: rgba(0, 0, 0, 0.8);
-  font-size: 1.2rem;
-  text-align: center;
-  padding: 20px;
+.my-card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.5s ease-in-out, z-index 0.5s;
 }
+
+/* 카드 이미지 비율 유지(손패/적 카드 공통) */
+.my-card img,
+.enemy-card-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* ✅ 비율 유지하며 축소 */
+  border-radius: 8px;
+  transition: transform 0.2s ease-in-out;
+  pointer-events: none; /* 이미지 드래그 방지 */
+}
+
+.my-card:hover:not(.in-zone) {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+/* 필드에 올라간 카드 크기 */
+.my-card.in-zone,
+.enemy-card.in-zone {
+  width: 110px; /* 기존 120px → 110px */
+  height: 155px; /* 기존 165px → 155px */
+}
+
+.my-card.in-zone img,
+.enemy-card.in-zone img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* ✅ 전장 카드도 비율 유지 */
+  border-radius: 8px;
+}
+/* ▲▲▲ 카드 이미지/사이즈 수정 끝 ▲▲▲ */
 
 .time-zone {
   position: absolute;
@@ -656,7 +697,7 @@
   border-radius: 10px;
   cursor: pointer;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  background-color: #000000; 
+  background-color: #000000;
   color: white;
   border: none;
   font-family: "Do Hyeon", serif;
@@ -753,9 +794,15 @@
 
 /* 🔥 타이머 점멸 효과 */
 @keyframes blink {
-  0% { opacity: 1; }
-  50% { opacity: 0.3; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .turn-timer {

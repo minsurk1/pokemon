@@ -5,11 +5,14 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-d
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 
+// ✅ 공통 타입 import
+import { Card } from "./types/Card";
+
 // Context
 import { UserProvider } from "./context/UserContext";
 import { SocketProvider } from "./context/SocketContext";
 
-// 페이지 컴포넌트
+// Pages
 import LoginPage from "./pages/Login/Login";
 import MainPage from "./pages/Main/MainPage";
 import SignUpPage from "./pages/Signup/SignUpPage";
@@ -23,50 +26,69 @@ import ProfilePage from "./pages/Profile/ProfilePage";
 import Dex from "./pages/Dex/Dex";
 
 function App() {
-  // ✅ 덱 상태를 localStorage에 저장하여 BattlePage에서도 사용
-  const [selectedDeck, setSelectedDeck] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem("selectedDeck");
-      return saved ? JSON.parse(saved) : Array(30).fill("");
-    } catch {
-      return Array(30).fill("");
-    }
-  });
+  // ✅ 실제 카드 객체 배열 상태 (공통 타입 Card 사용)
+  const [selectedDeck, setSelectedDeck] = useState<Card[]>([]);
 
-  const handleDeckChange = (newDeck: string[]) => {
-    setSelectedDeck(newDeck);
-    localStorage.setItem("selectedDeck", JSON.stringify(newDeck));
-  };
-
-  // ✅ localStorage 동기화 (다른 탭에서도 덱 데이터 유지)
+  // ✅ 로그인된 유저의 덱 불러오기
   useEffect(() => {
-    const onStorageChange = (e: StorageEvent) => {
-      if (e.key === "selectedDeck" && e.newValue) {
-        setSelectedDeck(JSON.parse(e.newValue));
+    const fetchUserDeck = async () => {
+      try {
+        const token = localStorage.getItem("token"); // 로그인 시 저장된 JWT
+        if (!token) {
+          console.warn("❌ 토큰이 없습니다. 로그인 후 이용해주세요.");
+          return;
+        }
+
+        const response = await fetch("https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/userdeck/single", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) throw new Error("덱 불러오기 실패");
+        const data = await response.json();
+
+        const cards = data?.deck?.cards || [];
+        if (Array.isArray(cards)) {
+          // ✅ 백엔드 구조에 맞춰서 Card 타입으로 변환
+          const formatted: Card[] = cards.map((c: any, i: number) => ({
+            id: c._id || `card-${i}`,
+            cardId: c.cardId || c._id || `card-${i}`,
+            name: c.name,
+            image: c.image,
+            attack: c.attack,
+            hp: c.hp,
+            cost: c.cost,
+            tier: c.tier,
+          }));
+
+          setSelectedDeck(formatted);
+          console.log("✅ 유저 덱 불러오기 성공:", formatted);
+        } else {
+          console.warn("⚠️ 덱 카드 데이터가 비어있습니다.");
+        }
+      } catch (err) {
+        console.error("❌ 유저 덱 불러오기 중 오류:", err);
       }
     };
-    window.addEventListener("storage", onStorageChange);
-    return () => window.removeEventListener("storage", onStorageChange);
+
+    fetchUserDeck();
   }, []);
 
-  // ✅ 브라우저 닫을 때 socket 끊기 (세션 깔끔하게 정리)
+  // ✅ 브라우저 종료 시 socket 정리
   useEffect(() => {
-    const handleUnload = () => {
-      console.log("🧹 페이지 종료 → socket disconnect 시도");
-      // 전역 socket.ts의 disconnectSocket을 import 후 호출 가능
-      // 또는 context에서 자동 cleanup됨
-    };
+    const handleUnload = () => console.log("🧹 페이지 종료: socket disconnect 예정");
     window.addEventListener("beforeunload", handleUnload);
     return () => window.removeEventListener("beforeunload", handleUnload);
   }, []);
 
   return (
-    // ✅ SocketProvider가 앱 전체를 감싸도록 유지 (UserProvider보다 바깥쪽에 위치)
     <SocketProvider>
       <UserProvider>
         <Router>
           <Routes>
-            {/* 기본 로그인 페이지 */}
             <Route path="/" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/main" element={<MainPage />} />
@@ -76,13 +98,25 @@ function App() {
             {/* ✅ 덱 페이지 */}
             <Route
               path="/deck"
-              element={<DeckPage selectedDeck={selectedDeck} onDeckChange={handleDeckChange} />}
+              element={
+                <DeckPage
+                  selectedDeck={selectedDeck.map((c) => c.image)}
+                  onDeckChange={(imgs) =>
+                    setSelectedDeck((prev) =>
+                      imgs.map((img, i) => ({
+                        ...prev[i],
+                        image: img,
+                      }))
+                    )
+                  }
+                />
+              }
             />
 
-            {/* ✅ 대기방 페이지 (룸 코드 기반) */}
+            {/* ✅ 대기방 */}
             <Route path="/wait/:roomCode" element={<WaitPage />} />
 
-            {/* ✅ 배틀 페이지 (DnDProvider 감싸기 필수) */}
+            {/* ✅ 배틀 페이지 (DnDProvider로 감싸기) */}
             <Route
               path="/battle/:roomCode"
               element={
@@ -92,12 +126,9 @@ function App() {
               }
             />
 
-            {/* 기타 페이지 */}
             <Route path="/rule" element={<RulePage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/dex" element={<Dex />} />
-
-            {/* 잘못된 경로 접근 시 메인으로 리다이렉트 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>

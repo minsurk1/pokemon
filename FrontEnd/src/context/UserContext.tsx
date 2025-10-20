@@ -36,22 +36,23 @@ interface UserContextType {
   refreshUser: () => Promise<User | null>;
   buyCardPack: (packType: CardPackType) => Promise<User>;
   openCardPack: (packId: string) => Promise<{ updatedInventory: CardPack[]; drawnCards: CardData[] }>;
-  logout: () => void; // ✅ 로그아웃 추가
+  logout: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// ✅ inventory 변환 (pack null 방지 + id string 변환)
+// ✅ 인벤토리 변환 함수
 const transformInventory = (inventoryData: any[]): CardPack[] =>
-  inventoryData
-    ?.map((item: any) => {
+  (inventoryData || [])
+    .map((item: any) => {
       const packId = item.packId || item.pack?._id;
       if (!packId) return null;
+
       return {
         id: packId.toString(),
         name: item.name || item.pack?.name || "Unknown Pack",
-        packImage: item.image || item.pack?.image,
-        type: item.type,
+        packImage: item.packImage || item.image || item.pack?.image || "",
+        type: item.type as CardPackType,
         isOpened: item.isOpened ?? false,
         quantity: item.quantity ?? 1,
       };
@@ -71,7 +72,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       const data = res.data;
 
       const updatedUser: User = {
-        id: data._id,
+        id: data.id ?? data._id ?? "",
         nickname: data.nickname,
         money: data.money,
         inventory: transformInventory(data.inventory || []),
@@ -81,6 +82,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       setError("");
       return updatedUser;
     } catch (err: any) {
+      console.error("❌ 유저 정보 불러오기 실패:", err);
       setError(err.response?.data?.message || err.message || "유저 정보 불러오기 실패");
       setUserInfo(null);
       return null;
@@ -89,31 +91,31 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // ✅ 로그인 유지(새로고침 시 토큰 반영)
+  // ✅ 로그인 유지 (새로고침 시 토큰 유지)
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
-      fetchUser(); // ✅ 토큰이 있으면 자동 로그인 유지
+      fetchUser();
     } else {
-      setLoading(false); // 토큰이 없으면 로딩만 해제
+      setLoading(false);
     }
   }, []);
 
-  // ✅ 토큰 변경 시 강제로 리로드할 수 있는 함수
-  const refreshUser = async () => {
+  // ✅ 토큰 변경 시 새로고침
+  const refreshUser = async (): Promise<User | null> => {
     const token = localStorage.getItem("token");
     if (token) {
       axiosInstance.defaults.headers.common.Authorization = `Bearer ${token}`;
+      return fetchUser();
     } else {
       delete axiosInstance.defaults.headers.common.Authorization;
       setUserInfo(null);
       return null;
     }
-    return fetchUser();
   };
 
-  // ✅ 로그아웃 함수 추가
+  // ✅ 로그아웃
   const logout = () => {
     localStorage.removeItem("token");
     delete axiosInstance.defaults.headers.common.Authorization;
@@ -127,7 +129,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       const data = res.data;
 
       const updatedUser: User = {
-        id: data.user._id || data.user.id,
+        id: data.user._id ?? data.user.id ?? "",
         nickname: data.user.nickname,
         money: data.user.money,
         inventory: transformInventory(data.user.inventory),
@@ -136,7 +138,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       setUserInfo(updatedUser);
       return updatedUser;
     } catch (err: any) {
-      throw new Error(err.response?.data?.message || err.message || "구매 실패");
+      throw new Error(err.response?.data?.message || err.message || "카드팩 구매 실패");
     }
   };
 
@@ -150,10 +152,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       const res = await axiosInstance.post("/inventory/open-pack", { type: pack.type });
       const data = res.data;
 
-      const updatedInventory = transformInventory(data.userPacks);
+      const updatedInventory = transformInventory(data.userPacks || []);
       setUserInfo((prev) => (prev ? { ...prev, inventory: updatedInventory } : prev));
 
-      const drawnCards: CardData[] = data.drawnCards.map((c: any) => ({
+      const drawnCards: CardData[] = (data.drawnCards || []).map((c: any) => ({
         id: c.id,
         name: c.name,
         damage: c.damage,
@@ -168,9 +170,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <UserContext.Provider
-      value={{ userInfo, setUserInfo, loading, error, refreshUser, buyCardPack, openCardPack, logout }}
-    >
+    <UserContext.Provider value={{ userInfo, setUserInfo, loading, error, refreshUser, buyCardPack, openCardPack, logout }}>
       {children}
     </UserContext.Provider>
   );

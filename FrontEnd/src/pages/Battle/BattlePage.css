@@ -1,0 +1,819 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
+.battle-container {
+  max-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  font-family: "Do Hyeon", serif;
+  box-sizing: border-box;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.animating-card-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.animating-card {
+  position: absolute;
+  width: 80px;
+  height: 120px;
+  border-radius: 5px;
+  overflow: hidden;
+  animation: cardToZone 0.7s ease-in-out forwards;
+  z-index: 10000;
+}
+
+.animating-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.animating-card .card-cost {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 2px 5px;
+  border-radius: 30%;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+@keyframes cardToZone {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(2.5) translateY(-200px);
+  }
+  100% {
+    transform: scale(1.2) translate(400px, -300px);
+    opacity: 0;
+  }
+}
+
+.field-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.horizontal-line {
+  width: 100%;
+  height: 0.4vh;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: 20;
+  opacity: 0.8;
+  transition: background 0.3s ease;
+}
+
+.enemy-field {
+  width: 86vw;
+  height: 49.9vh;
+  background-image: url("../../assets/images/BattleTopBlue.png");
+  background-size: contain;
+  clip-path: polygon(0 0, 100% 0, 100% 80%, 95% 44%, 10% 44%, 0 55%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+}
+
+.player-field {
+  width: 86vw;
+  height: 49.9vh;
+  background-image: url("../../assets/images/BattleBottomBlue.png");
+  background-size: contain;
+  background-position: bottom;
+  clip-path: polygon(0 100%, 100% 100%, 100% 20%, 95% 56%, 10% 56%, 0 45%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  background-repeat: no-repeat;
+  z-index: 10;
+}
+
+.enemy-card-zone {
+  position: absolute;
+  top: 0vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 13px;
+  padding: 20px;
+  min-height: 150px;
+  z-index: 500; /* ✅ 카드가 항상 위 */
+}
+
+.player-card-zone {
+  position: absolute;
+  bottom: 20vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1020px;
+  width: 70vw;
+  background-color: transparent;
+  height: 19vh;
+  display: flex;
+  gap: 50px;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 10.8vh;
+  border-radius: 15px;
+  z-index: 600;
+}
+.player-card-bg {
+  position: absolute;
+  bottom: 0vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90vw;
+  height: 49.9vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  clip-path: polygon(0 0%, 100% 0%, 100% 20%, 95% 61%, 10% 61%, 0 45%);
+  background-image: url("../../assets/images/BottomGrass.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.enemy-card-bg {
+  position: absolute;
+  top: 0vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90vw;
+  height: 49.9vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  clip-path: polygon(0 100%, 100% 100%, 100% 80%, 95% 39%, 10% 39%, 0 55%);
+  background-image: url("../../assets/images/TopGrass.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* ▼▼▼ 여기서부터 카드 사이즈/이미지 비율 수정 반영 ▼▼▼ */
+.enemy-card-slot,
+.card-slot {
+  width: 100px; /* 기존 80px → 100px */
+  height: 140px; /* 기존 120px → 140px */
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* 이미지 넘침 방지 */
+  position: relative;
+}
+
+.my-card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.5s ease-in-out, z-index 0.5s;
+}
+
+/* 카드 이미지 비율 유지(손패/적 카드 공통) */
+.my-card img,
+.enemy-card-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* ✅ 비율 유지하며 축소 */
+  border-radius: 8px;
+  transition: transform 0.2s ease-in-out;
+  pointer-events: none; /* 이미지 드래그 방지 */
+}
+
+.my-card:hover:not(.in-zone) {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+/* 필드에 올라간 카드 크기 */
+.my-card.in-zone,
+.enemy-card.in-zone {
+  width: 110px; /* 기존 120px → 110px */
+  height: 155px; /* 기존 165px → 155px */
+}
+
+.my-card.in-zone img,
+.enemy-card.in-zone img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* ✅ 전장 카드도 비율 유지 */
+  border-radius: 8px;
+}
+/* ▲▲▲ 카드 이미지/사이즈 수정 끝 ▲▲▲ */
+
+.time-zone {
+  position: absolute;
+  height: 27vh;
+  clip-path: polygon(0 0, 100% 22.6%, 100% 100%, 0 100%);
+  background-color: transparent;
+  z-index: 100;
+  width: 130px;
+  left: 0vw;
+  bottom: 0vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: white;
+}
+
+/* 수정된 타이머 스타일 */
+.timer-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.timer {
+  border-radius: 50%;
+  height: 100px;
+  width: 100px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background 0.1s ease;
+}
+
+.timer-inner {
+  background: #2d2d2d;
+  border-radius: 50%;
+  height: 80px;
+  width: 80px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.timer-text {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  z-index: 101;
+}
+
+.deck-area {
+  position: absolute;
+  bottom: 20px;
+  left: 150px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  z-index: 150;
+}
+
+.deck-card {
+  width: 7vw;
+  height: 17vh;
+  background-image: url("../../assets/images/default.png");
+  background-size: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Do Hyeon", serif;
+  font-size: 1.2rem;
+  font-weight: bold;
+  background-color: transparent;
+  color: white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+.deck-card:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+}
+
+.deck-card:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #666;
+}
+
+.deck-count {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.hand-cards {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 60vw;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.player-cost-zone {
+  position: absolute;
+  height: 37.3vh;
+  clip-path: polygon(0 45%, 100% 0%, 100% 100%, 0% 100%);
+  /* background-color: transparent; */
+  background-color: #2d2d2d;
+  z-index: 100;
+  width: 4.4vw;
+  right: 0;
+  top: 60.3vh;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.enemy-cost-zone {
+  position: absolute;
+  height: 37.3vh;
+  clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 55%);
+  /* background-color: transparent; */
+  background-color: #2d2d2d;
+  z-index: 100;
+  width: 4.4vw;
+  right: 0;
+  top: 0vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.cost-icon {
+  background-image: url("../../assets/images/cost.png");
+  background-size: cover;
+  display: block;
+  border-radius: 50px;
+  height: 25px;
+  width: 25px;
+}
+
+.right-container {
+  height: 100vh;
+  width: 10vw;
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+  display: flex;
+  flex-direction: column;
+  border-left: 2px solid #444;
+}
+
+.enemy-info {
+  height: 40vh;
+  background: linear-gradient(135deg, #4a90e2, #0b0b39);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  color: white;
+}
+
+.event-zone {
+  height: 20vh;
+  background: linear-gradient(135deg, #ffffff, #3e3b3b, #ffffff);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  position: relative;
+}
+
+.player-info {
+  height: 40vh;
+  background: linear-gradient(135deg, #480c0c, #ff0000);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  color: white;
+}
+
+.game-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+  text-align: center;
+}
+
+.turn-indicator {
+  margin-top: 50px;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.hp-bar {
+  width: 140px;
+  height: 20px;
+  background: #ddd;
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.hp-bar-inner {
+  background: rgb(255, 0, 0);
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: width 0.5s linear;
+}
+
+.hp-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-weight: bold;
+  font-family: "Do Hyeon", serif;
+}
+
+.player-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #4a90e2;
+  margin-bottom: 10px;
+}
+
+.enemy-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-image: url("../../assets/images/enemyavata.png");
+  background-size: cover;
+  margin-bottom: 10px;
+}
+
+.endturn-button {
+  width: 80px;
+  height: 40px;
+  border-radius: 20%;
+  color: #ffffff;
+  background: radial-gradient(#000000, #000000, #270834);
+  border: 2px solid rgb(255, 255, 255);
+  font-weight: 900;
+  cursor: pointer;
+  position: absolute;
+  bottom: 60px;
+  right: 147px;
+  font-family: "Do Hyeon", serif;
+  transition: transform 0.3s ease;
+  z-index: 300;
+}
+
+.endturn-button:hover {
+  transform: scale(1.1);
+}
+
+.event-items-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.card-cost {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 2px 5px;
+  border-radius: 30%;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.my-card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.5s ease-in-out, z-index 0.5s;
+}
+
+.my-card:hover:not(.in-zone) {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+.my-card.righthover {
+  transform: scale(2.5);
+  transition: transform 0.5s;
+  z-index: 100;
+}
+
+.enemy-card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.card-back {
+  background-image: url("../../assets/images/default.png");
+  background-size: cover;
+  width: 110%;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.card-front {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.card-front img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.my-card.in-zone,
+.enemy-card.in-zone {
+  width: 120px;
+  height: 165px;
+}
+
+.my-card.in-zone:hover {
+  transform: none;
+}
+
+.my-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.card-hp-bar {
+  width: 120px;
+  height: 20px;
+  background: #150000;
+  border-radius: 5px;
+  position: relative;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.card-hp-bar-inner {
+  background: rgb(255, 0, 0);
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: width 0.5s linear;
+}
+
+.card-hp-text {
+  position: absolute;
+  font-size: 1.2rem;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-family: "Do Hyeon", serif;
+}
+
+.event-item {
+  width: 60px;
+  height: 60px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  animation: eventPulse 2s infinite;
+  transition: transform 0.3s ease;
+}
+
+.event-item-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.event-hp-container {
+  width: 80px;
+  display: flex;
+  justify-content: center;
+}
+
+@keyframes eventPulse {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+}
+
+.game-over-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.game-over-panel {
+  background-color: #4e4343;
+  border: 2px solid #ff0000;
+  border-radius: 15px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+  color: white;
+  font-family: "Do Hyeon", serif;
+}
+
+.game-over-message {
+  color: white;
+  font-size: 3rem;
+  margin-bottom: 30px;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
+}
+
+.game-over-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.game-over-button {
+  padding: 15px 30px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  background-color: #000000;
+  color: white;
+  border: none;
+  font-family: "Do Hyeon", serif;
+}
+
+.game-over-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
+}
+
+@media (max-width: 768px) {
+  .right-container {
+    width: 200px;
+  }
+
+  .card-slot,
+  .enemy-card-slot {
+    width: 60px;
+    height: 90px;
+  }
+
+  .my-card.in-zone,
+  .enemy-card.in-zone {
+    width: 80px;
+    height: 120px;
+  }
+
+  .hp-bar {
+    width: 150px;
+  }
+
+  .player-avatar,
+  .enemy-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .player-card-zone {
+    width: 90%;
+    bottom: 60px;
+  }
+
+  .hand-cards {
+    max-width: 400px;
+  }
+
+  @keyframes cardToZone {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(2) translateY(-150px);
+    }
+    100% {
+      transform: scale(1) translate(200px, -200px);
+      opacity: 0;
+    }
+  }
+
+  .game-over-panel {
+    padding: 20px;
+    width: 90%;
+  }
+
+  .game-over-message {
+    font-size: 2rem;
+  }
+
+  .game-over-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .game-over-button {
+    width: 100%;
+    font-size: 1.2rem;
+  }
+}
+
+/* 카드 등장 애니메이션 */
+.fade-in-card {
+  animation: fadeInCard 0.7s ease-out forwards;
+}
+@keyframes fadeInCard {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 🔥 타이머 점멸 효과 */
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.turn-timer {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #0d47a1;
+  margin-top: 8px;
+  transition: color 0.3s ease;
+}
+
+.turn-timer.low-time {
+  color: #ff4d4d;
+  animation: blink 1s infinite;
+}

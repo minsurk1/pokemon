@@ -1,0 +1,118 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
+/* 전체 배경 스타일 */
+.rule-page {
+    height: 100vh;
+}
+
+/* 레이아웃과 폰트 설정 */
+.rule-body {
+    font-family: 'Do Hyeon', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #000000;
+}
+
+/* 배경 이미지 적용 */
+.rule-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding-top: 1.5rem;
+}
+
+/* 메인 버튼 스타일 */
+.rule-mainbutton {
+    font-family: 'Do Hyeon', Arial, sans-serif;
+    position: absolute;
+    right: 2vw;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: rgb(0, 0, 0);
+    background: #ffffff;
+    border: 3px, solid , black;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.3s ease, transform 0.3s ease;
+    cursor: pointer;
+}
+
+/* 버튼 hover 상태 */
+.rule-mainbutton:hover {
+    background: #5a4f72;
+    transform: scale(1.05);
+}
+
+/* 버튼 그룹 스타일 */
+.rule-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-bottom: -1rem;
+    justify-content: center; /* 버튼을 가운데 정렬 */
+    margin-top: 1rem;
+}
+
+/* 각 버튼 스타일 */
+.rule-buttons button {
+    font-family: 'Do Hyeon', Arial, sans-serif;
+    padding: 0.7rem;
+    font-size: 1.1rem;
+    color: rgb(0, 0, 0);
+    background: #ffffff;
+    border: 3px, solid , black;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    transition: background 0.3s ease, transform 0.3s ease;
+    cursor: pointer;
+}
+
+/* 버튼 hover 상태 */
+.rule-buttons button:hover {
+    background: #5a4f72;
+    transform: scale(1.05);
+}
+
+/* 룰 텍스트 표시 영역 스타일 */
+.rule-display {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #352350;
+    border-radius: 15px;
+    width: 80%;
+    max-width: 65vw;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+    margin-bottom: 2vh;
+    background-color: rgba(155, 211, 194, 0.5);
+}
+
+.rule-display::-webkit-scrollbar {
+    height: 12px;
+  }
+  
+  .rule-display::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .rule-display::-webkit-scrollbar-thumb {
+    background: rgba(123, 121, 159, 0.3);
+    border-radius: 4px;
+  }
+
+/* 룰 텍스트 스타일 */
+.rule-display p {
+    font-size: 1.3rem;
+    line-height: 1.6;
+    color: #ffffff;
+    text-align: center;
+    font-weight: bold;
+    text-shadow: 
+    0.6px 0.6px 0 #000000,   
+    -0.6px -0.6px 0 #000000,
+    0.6px -0.6px 0 #000, 
+    -0.6px 0.6px 0 #000;  
+}

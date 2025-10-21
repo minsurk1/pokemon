@@ -1,0 +1,190 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
+.deck-body {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  color: #2c3e50;
+}
+
+.navigation-section {
+  background-image: url("../../assets/images/mainbg.png");
+  padding-right: 2vw;
+  padding-left: 2vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 200;
+  position: sticky;
+  top: 0;
+}
+
+.deck-header-image {
+  background-image: url("../../assets/images/deckheader.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+  width: 70vw;
+  height: 12.5vh;
+}
+
+.nav-button {
+  font-family: "Do Hyeon", serif;
+  background: #000000;
+  color: #ffd803;
+  border: none;
+  border-radius: 14px;
+  padding: 1rem 2rem;
+  font-size: 1.18rem;
+  font-weight: bold;
+  box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
+  text-shadow: 0 0 8px #ffd803;
+  transition: box-shadow 0.2s, color 0.2s;
+}
+
+.nav-button:hover {
+  color: #fff;
+  box-shadow: 0 0 28px #ffd803, 0 0 60px #232946 inset;
+}
+
+.selected-cards-container {
+  position: sticky;
+  font-family: "Do Hyeon", serif;
+  top: 12vh;
+  z-index: 100;
+  background-color: rgb(0, 0, 0);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-top: 4px solid #1f3a4c;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.selected-cards-container::-webkit-scrollbar {
+  height: 1vh;
+}
+.selected-cards-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.selected-cards-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 225, 0, 0.3);
+  border-radius: 4px;
+}
+
+.selected-cards {
+  display: inline-flex;
+  gap: 1.5vw;
+  padding: 1vh 1vw;
+}
+
+.selected-card {
+  flex: 0 0 auto;
+  width: 9.5vw;
+  height: 23vh;
+  border-radius: 5px;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.3s ease;
+}
+.selected-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.selected-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-list {
+  padding: 30px;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 15px;
+  background-image: url("../../assets/images/mainbg.png");
+}
+
+/* 카드 기본 스타일 */
+.card {
+  width: 11vw;
+  height: auto;
+  background-color: #2980b9;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+}
+
+/* hover 효과 (살짝 위로 + 확대 + 그림자 강화 + glow) */
+.card:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 15px #ffd803;
+}
+
+/* 카드 이미지 */
+.card img {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* 카드 정보 오버레이 */
+.card-info {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 5px;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+/* 카드 정보 hover 시 표시 */
+.card:hover .card-info {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 카드 정보 글자 스타일 */
+.card-info p {
+  margin: 3px 0;
+  font-family: "Jua", sans-serif;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #ffd803;
+  text-shadow: 0 0 4px #000;
+}
+.card-info .card-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fffa65;
+  text-shadow: 0 0 5px #000;
+  margin-bottom: 5px;
+}
+
+/* 소유하지 않은 카드 스타일 */
+.card-list .grayscale {
+  filter: grayscale(100%);
+  opacity: 0.4;
+}
+.card.unowned {
+  pointer-events: none;
+}

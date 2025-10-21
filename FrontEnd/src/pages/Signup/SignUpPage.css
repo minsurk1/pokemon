@@ -1,0 +1,219 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
+.signup-page {
+  background-size: 90%;
+  background-repeat: no-repeat;
+  font-family: "Do hyeon", serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  position: relative;
+}
+
+.signup-page h1 {
+  font-size: 3.2rem;
+  color: #496a85;
+  margin-bottom: 5vh;
+}
+.signup-logo{
+  background-image: url("../../assets/images/deckheader.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  /* width: 20vw; */
+  height: 12vh;
+  /* margin-left: 4vw; */
+}
+
+
+.signup-main button {
+  position: absolute;
+  top: 1vh;
+  right: 1vw;
+  font-family: "Do Hyeon", serif;
+  font-weight: bold;
+  margin-top: 1rem;
+  padding: 1vw 2vh;
+  font-size: 1.0rem;
+  background: linear-gradient(to right,#00ffff,#18d8d8,#11cfcc);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: none;
+  color: #000000;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+  font-weight: 500;
+  z-index: 10;
+}
+
+.signup-main button:hover {
+  background-color: #4fa3e2;
+  transform: translateY(-2px);
+}
+
+.signup-page form {
+  opacity: 0.9;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.signup-page input {
+  font-family: "Do Hyeon", serif;
+  margin-bottom: 1.5rem;
+  padding: 12px 15px;
+  font-size: 1.4rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+.signup-page input:focus {
+  border-color: #61dafb;
+  box-shadow: 0 0 0 2px rgba(97, 218, 251, 0.3);
+  outline: none;
+}
+
+.signup-page form button {
+  font-family: "Do Hyeon", serif;
+  margin-top: 1rem;
+  padding: 12px;
+  font-size: 1.4rem;
+  background-color: #61dafb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+  font-weight: 500;
+}
+
+.signup-page form button:hover {
+  background-color: #4fa3e2;
+  transform: translateY(-2px);
+}
+
+.signup-page form button:last-of-type {
+  font-family: "Do Hyeon", serif;
+  font-weight: bold;
+  margin-top: 1rem;
+  padding: 1vw 2vh;
+  font-size: 1.0rem;
+  background: linear-gradient(to right,#1aff00,#18d868,#11cf8d);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: none;
+  color: #000000;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+  font-weight: 500;
+  z-index: 10;
+  opacity: 1 ;
+}
+
+.signup-page form button:last-of-type:hover {
+  background-color: #f1f1f1;
+  color: #000000;
+  border-color: #61dafb;
+}
+
+/* .message-box {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffffff;
+    border: 2px solid #9c27b0;
+    padding: 15px 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    text-align: center;
+    animation: slideDown 0.5s ease-out;
+} */
+/* .su-close-button{
+    background:linear-gradient(#92c4db,#458abc,#4a148c) ;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+  } */
+.go-login button {
+  font-family: "Do Hyeon", serif;
+  margin-top: 1rem;
+  padding: 12px;
+  font-size: 1.4rem;
+  background-color: #ff0000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+  font-weight: 500;
+}
+
+.go-login button:hover {
+  background-color: #4fa3e2;
+  transform: translateY(-2px);
+}
+
+.message-box p {
+  font-size: 1.2rem;
+  color: #4a148c;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-container input {
+  flex: 1;
+  padding-right: 40px;
+}
+
+.password-container span {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: #666;
+  font-size: 1.4rem;
+}
+
+.password-container span:hover {
+  color: #333;
+}
+
+@media (max-width: 480px) {
+  .signup-page h1 {
+    font-size: 2rem;
+  }
+
+  .signup-page form {
+    padding: 1.5rem;
+    width: 90%;
+  }
+
+  .signup-page input {
+    padding: 10px;
+  }
+
+  .signup-page button {
+    padding: 10px;
+    font-size: 1rem;
+  }
+}

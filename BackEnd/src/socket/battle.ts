@@ -175,19 +175,19 @@ export default function battleHandler(io: Server, socket: Socket) {
       return;
     }
 
-    // ✅ 1️⃣ 턴 교체
+    // ✅ 턴 교체
     const nextIndex = (currentIndex + 1) % room.players.length;
     const nextTurn = room.players[nextIndex];
     game.currentTurn = nextTurn;
     game.cardsPlayed = {};
 
-    // ✅ 2️⃣ 코스트 회복 (턴을 넘긴 플레이어도 다음 턴 대비 +1)
+    // ✅ 턴을 넘길 때, 모든 플레이어의 코스트를 +1 (최대 8)
     for (const pid of room.players) {
       if (!game.cost[pid]) game.cost[pid] = 0;
       game.cost[pid] = Math.min(game.cost[pid] + 1, 8);
     }
 
-    // ✅ 3️⃣ 프론트로 전체 상태 전송 (hp, cost, currentTurn)
+    // ✅ 프론트에 동기화 (hp, cost, currentTurn)
     io.to(roomCode).emit("turnChanged", {
       currentTurn: nextTurn,
       cost: game.cost,

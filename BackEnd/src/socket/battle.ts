@@ -71,47 +71,49 @@ export default function battleHandler(io: Server, socket: Socket) {
   });
 
   // ==================== 🃏 카드 소환 ====================
-  socket.on("summonCard", ({ roomCode, card }: { roomCode: string; card: CardData }) => {
+  socket.on("summonCard", ({ roomCode, card }: { roomCode: string; card: any }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
     const game = room.gameState;
 
-    // ✅ 1️⃣ cost 안전 처리
+    // ✅ cost 안전 처리
     const costValue = typeof card.cost === "number" && !isNaN(card.cost) ? Math.max(0, card.cost) : 0;
 
-    // ✅ 2️⃣ 턴 검사
+    // ✅ 턴 검사
     if (socket.id !== game.currentTurn) {
       socket.emit("error", "지금은 당신의 턴이 아닙니다.");
       return;
     }
 
-    // ✅ 3️⃣ 코스트 검사
+    // ✅ 코스트 검사
     const playerCost = game.cost[socket.id] ?? 0;
     if (playerCost < costValue) {
       socket.emit("error", "코스트가 부족합니다!");
       return;
     }
 
-    // ✅ 4️⃣ 카드존 검사
-    if (!game.cardsInZone[socket.id]) {
-      game.cardsInZone[socket.id] = [];
-    }
+    // ✅ 카드존 검사
+    if (!game.cardsInZone[socket.id]) game.cardsInZone[socket.id] = [];
     if (game.cardsInZone[socket.id].length >= 5) {
       socket.emit("error", "필드가 가득 찼습니다! (최대 5장)");
       return;
     }
 
-    // ✅ 5️⃣ 카드 소환 처리
-    game.cardsInZone[socket.id].push({ ...card, cost: costValue });
+    // ✅ 코스트 차감
     game.cost[socket.id] = Math.max(0, playerCost - costValue);
 
+    // ✅ 카드 소환 처리
+    game.cardsInZone[socket.id].push({ ...card, cost: costValue });
+
+    // ✅ 모든 플레이어에게 동기화
     io.to(roomCode).emit("cardSummoned", {
       playerId: socket.id,
       card: { ...card, cost: costValue },
+      cost: game.cost, // 🔥 모든 플레이어 코스트 갱신 정보 전송
     });
 
-    console.log(`🃏 ${socket.id} → ${roomCode}에 ${card.name} 소환 (코스트 ${costValue})`);
+    console.log(`🃏 ${socket.id} → ${roomCode}에 ${card.name} 소환 (코스트 ${costValue}), 남은 코스트: ${game.cost[socket.id]}`);
   });
 
   // ==================== 💥 공격 / 피해 ====================

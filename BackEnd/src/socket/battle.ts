@@ -76,44 +76,48 @@ export default function battleHandler(io: Server, socket: Socket) {
     if (!room?.gameState) return;
 
     const game = room.gameState;
+    const playerId = socket.id;
 
     // ✅ cost 안전 처리
     const costValue = typeof card.cost === "number" && !isNaN(card.cost) ? Math.max(0, card.cost) : 0;
 
     // ✅ 턴 검사
-    if (socket.id !== game.currentTurn) {
+    if (playerId !== game.currentTurn) {
       socket.emit("error", "지금은 당신의 턴이 아닙니다.");
       return;
     }
 
     // ✅ 코스트 검사
-    const playerCost = game.cost[socket.id] ?? 0;
+    const playerCost = game.cost[playerId] ?? 0;
     if (playerCost < costValue) {
       socket.emit("error", "코스트가 부족합니다!");
       return;
     }
 
     // ✅ 카드존 검사
-    if (!game.cardsInZone[socket.id]) game.cardsInZone[socket.id] = [];
-    if (game.cardsInZone[socket.id].length >= 5) {
+    if (!game.cardsInZone[playerId]) game.cardsInZone[playerId] = [];
+    if (game.cardsInZone[playerId].length >= 5) {
       socket.emit("error", "필드가 가득 찼습니다! (최대 5장)");
       return;
     }
 
-    // ✅ 코스트 차감
-    game.cost[socket.id] = Math.max(0, playerCost - costValue);
+    // ✅ ① 코스트 차감 (🔥 여기서 확실하게 반영)
+    game.cost[playerId] = Math.max(0, playerCost - costValue);
 
-    // ✅ 카드 소환 처리
-    game.cardsInZone[socket.id].push({ ...card, cost: costValue });
-
-    // ✅ 모든 플레이어에게 동기화
-    io.to(roomCode).emit("cardSummoned", {
-      playerId: socket.id,
-      card: { ...card, cost: costValue },
-      cost: game.cost, // 🔥 모든 플레이어 코스트 갱신 정보 전송
+    // ✅ ② 카드 소환 처리
+    game.cardsInZone[playerId].push({
+      ...card,
+      cost: costValue,
     });
 
-    console.log(`🃏 ${socket.id} → ${roomCode}에 ${card.name} 소환 (코스트 ${costValue}), 남은 코스트: ${game.cost[socket.id]}`);
+    // ✅ ③ 모든 플레이어에게 최신 상태 전송 (🔥 cost 동기화 추가)
+    io.to(roomCode).emit("cardSummoned", {
+      playerId,
+      card,
+      cost: { ...game.cost }, // ✅ 프론트에서 cost 복구 방지 (깊은 복사)
+    });
+
+    console.log(`🃏 ${playerId} → ${roomCode}에 ${card.name} 소환 (코스트 ${costValue}), 남은 코스트: ${game.cost[playerId]}`);
   });
 
   // ==================== 💥 공격 / 피해 ====================

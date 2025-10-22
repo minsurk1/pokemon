@@ -1,20 +1,8 @@
 import { Server, Socket } from "socket.io";
 import { initializeBattle } from "./battle"; // ✅ 전투 초기화 연결
+import { RoomInfo } from "../types/gameTypes"; // ✅ 공통 타입 사용
 
-export interface GameState {
-  currentTurn: string;
-  hp: Record<string, number>;
-  cardsPlayed: Record<string, any>;
-}
-
-interface RoomInfo {
-  players: string[];
-  ready: Record<string, boolean>;
-  hp: Record<string, number>;
-  turnIndex: number;
-  gameState?: GameState;
-}
-
+// ✅ 모든 방 상태 저장소
 export const rooms: Record<string, RoomInfo> = {};
 
 /**
@@ -65,7 +53,7 @@ export default function roomHandler(io: Server, socket: Socket) {
       return;
     }
 
-    // 인원 초과
+    // 🚫 인원 초과
     if (room.players.length >= 2) {
       socket.emit("roomFull");
       console.log(`🚫 ${roomCode} 방이 가득 참`);
@@ -87,7 +75,7 @@ export default function roomHandler(io: Server, socket: Socket) {
   /**
    * ⚙️ 준비 상태 토글
    */
-  socket.on("playerReady", ({ roomCode, isReady }) => {
+  socket.on("playerReady", ({ roomCode, isReady }: { roomCode: string; isReady: boolean }) => {
     const room = rooms[roomCode];
     if (!room) return;
 
@@ -100,7 +88,7 @@ export default function roomHandler(io: Server, socket: Socket) {
   /**
    * ▶ 게임 시작 (battle.ts의 initializeBattle 호출)
    */
-  socket.on("startGame", ({ roomCode }) => {
+  socket.on("startGame", ({ roomCode }: { roomCode: string }) => {
     const room = rooms[roomCode];
     if (!room) {
       socket.emit("error", "방이 존재하지 않습니다.");

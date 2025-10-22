@@ -77,20 +77,23 @@ export default function battleHandler(io: Server, socket: Socket) {
 
     const game = room.gameState;
 
-    // ✅ 턴 검사
+    // ✅ 1️⃣ cost 안전 처리
+    const costValue = typeof card.cost === "number" && !isNaN(card.cost) ? Math.max(0, card.cost) : 0;
+
+    // ✅ 2️⃣ 턴 검사
     if (socket.id !== game.currentTurn) {
       socket.emit("error", "지금은 당신의 턴이 아닙니다.");
       return;
     }
 
-    // ✅ 코스트 검사
+    // ✅ 3️⃣ 코스트 검사
     const playerCost = game.cost[socket.id] ?? 0;
-    if (playerCost < card.cost) {
+    if (playerCost < costValue) {
       socket.emit("error", "코스트가 부족합니다!");
       return;
     }
 
-    // ✅ 카드존 검사
+    // ✅ 4️⃣ 카드존 검사
     if (!game.cardsInZone[socket.id]) {
       game.cardsInZone[socket.id] = [];
     }
@@ -99,16 +102,16 @@ export default function battleHandler(io: Server, socket: Socket) {
       return;
     }
 
-    // ✅ 카드 소환 처리
-    game.cardsInZone[socket.id].push(card);
-    game.cost[socket.id] = Math.max(0, playerCost - card.cost);
+    // ✅ 5️⃣ 카드 소환 처리
+    game.cardsInZone[socket.id].push({ ...card, cost: costValue });
+    game.cost[socket.id] = Math.max(0, playerCost - costValue);
 
     io.to(roomCode).emit("cardSummoned", {
       playerId: socket.id,
-      card,
+      card: { ...card, cost: costValue },
     });
 
-    console.log(`🃏 ${socket.id} → ${roomCode}에 ${card.name} 소환 (코스트 ${card.cost})`);
+    console.log(`🃏 ${socket.id} → ${roomCode}에 ${card.name} 소환 (코스트 ${costValue})`);
   });
 
   // ==================== 💥 공격 / 피해 ====================
@@ -170,18 +173,26 @@ export default function battleHandler(io: Server, socket: Socket) {
       return;
     }
 
-    // ✅ 턴 교체
+    // ✅ 1️⃣ 턴 교체
     const nextIndex = (currentIndex + 1) % room.players.length;
     const nextTurn = room.players[nextIndex];
     game.currentTurn = nextTurn;
     game.cardsPlayed = {};
 
-    // ✅ 코스트 증가 (최대 8)
-    if (!game.cost[nextTurn]) game.cost[nextTurn] = 0;
-    game.cost[nextTurn] = Math.min(game.cost[nextTurn] + 1, 8);
+    // ✅ 2️⃣ 코스트 회복 (턴을 넘긴 플레이어도 다음 턴 대비 +1)
+    for (const pid of room.players) {
+      if (!game.cost[pid]) game.cost[pid] = 0;
+      game.cost[pid] = Math.min(game.cost[pid] + 1, 8);
+    }
 
-    io.to(roomCode).emit("turnChanged", nextTurn);
-    console.log(`🔄 턴 변경: ${socket.id} → ${nextTurn}`);
+    // ✅ 3️⃣ 프론트로 전체 상태 전송 (hp, cost, currentTurn)
+    io.to(roomCode).emit("turnChanged", {
+      currentTurn: nextTurn,
+      cost: game.cost,
+      hp: game.hp,
+    });
+
+    console.log(`🔄 턴 변경: ${socket.id} → ${nextTurn} | 코스트 갱신: ${JSON.stringify(game.cost)}`);
   });
 
   // ==================== 📡 현재 턴 요청 ====================

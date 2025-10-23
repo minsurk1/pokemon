@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 interface IDeckCard {
   card: Types.ObjectId;
   name: string;
+  cardType?: string; // ✅ 타입 추가
   attack: number;
   hp: number;
   maxhp: number;
@@ -20,6 +21,7 @@ const DeckCardSchema = new Schema<IDeckCard>(
   {
     card: { type: Schema.Types.ObjectId, ref: "Card", required: true },
     name: String,
+    cardType: String, // ✅ 추가
     attack: Number,
     hp: Number,
     maxhp: Number,

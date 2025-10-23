@@ -20,7 +20,7 @@ router.get("/single", isAuthenticated, async (req, res) => {
       .populate({
         path: "cards.card", // ✅ cards 배열 내의 card 필드 populate
         model: "Card",
-        select: "_id cardName attack hp tier image2D image3D image3DGray",
+        select: "_id cardName cardType attack hp tier image2D",
       })
       .lean();
 
@@ -38,6 +38,7 @@ router.get("/single", isAuthenticated, async (req, res) => {
         return {
           id: card._id?.toString(),
           name: card.cardName ?? entry.name,
+          cardType: card.cardType ?? entry.cardType ?? "fire", // ✅ 추가
           attack: card.attack ?? entry.attack,
           hp: card.hp ?? entry.hp,
           maxhp: card.maxhp ?? entry.maxhp ?? card.hp ?? entry.hp,
@@ -75,6 +76,7 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
     const formattedCards = cards.map((c: any) => ({
       card: new mongoose.Types.ObjectId(c.id),
       name: c.name,
+      cardType: c.cardType ?? "fire", // ✅ 추가
       attack: c.attack ?? 0,
       hp: c.hp ?? 0,
       maxhp: c.maxhp ?? c.hp ?? 0,

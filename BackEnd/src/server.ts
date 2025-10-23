@@ -44,14 +44,15 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/usercard", userCardRoutes);
 app.use("/api/userdeck", userDeckRoutes);
 
-// ✅ 이미지 정적 파일
-app.use("/images", express.static(path.join(__dirname, "../public/images")));
+// ✅ 이미지 정적 파일 (CloudType 절대경로 호환)
+const imagePath = path.resolve(__dirname, "../public/images");
+app.use("/images", express.static(imagePath));
 
 // ✅ React 정적 빌드 연결
-const frontPath = path.join(__dirname, "../../FrontEnd/dist");
+const frontPath = path.resolve(__dirname, "../../FrontEnd/dist");
 app.use(express.static(frontPath));
 
-// ✅ React Router fallback (404 전에 위치해야 함)
+// ✅ React Router fallback
 app.get("*", (req, res) => {
   res.sendFile(path.join(frontPath, "index.html"));
 });

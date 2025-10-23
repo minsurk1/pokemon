@@ -103,9 +103,12 @@ router.post("/open-pack", isAuthenticated, async (req, res: Response) => {
       drawnCards.push({
         id: randomCard._id.toString(),
         name: randomCard.cardName,
-        damage: randomCard.attack,
+        attack: randomCard.attack,
         hp: randomCard.hp,
+        maxhp: randomCard.maxhp,
         tier: randomCard.tier,
+        cost: randomCard.cost,
+        cardType: randomCard.cardType, // 🔥 추가
         image: randomCard.image2D || "default.png",
       });
     }

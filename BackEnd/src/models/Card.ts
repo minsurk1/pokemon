@@ -7,6 +7,7 @@ export interface ICard extends Document {
   tier: number;
   attack: number;
   hp: number;
+  maxhp: number;
   cost: number;
   image2D: string;
 }
@@ -17,6 +18,7 @@ const CardSchema: Schema = new Schema({
   tier: { type: Number, required: true },
   attack: { type: Number, required: true },
   hp: { type: Number, required: true },
+  maxhp: { type: Number, required: true },
   cost: { type: Number, required: true },
   image2D: { type: String, required: true },
 });

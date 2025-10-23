@@ -94,7 +94,7 @@ router.post("/open-pack", isAuthenticated, async (req, res: Response) => {
         { user: userId, card: randomCard._id },
         {
           $inc: { count: 1 },
-          $setOnInsert: { createdAt: new Date(), updatedAt: new Date() },
+          $setOnInsert: { createdAt: new Date() },
         },
         { upsert: true }
       );

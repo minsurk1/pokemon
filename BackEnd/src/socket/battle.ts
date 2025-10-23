@@ -114,7 +114,8 @@ export default function battleHandler(io: Server, socket: Socket) {
     io.to(roomCode).emit("cardSummoned", {
       playerId,
       card,
-      cost: { ...game.cost }, // ✅ 프론트에서 cost 복구 방지 (깊은 복사)
+      updatedCost: game.cost[playerId], // 🔥 플레이어별 최신 코스트 값
+      cost: { ...game.cost }, // 전체 cost 동기화용
     });
 
     console.log(`🃏 ${playerId} → ${roomCode}에 ${card.name} 소환 (코스트 ${costValue}), 남은 코스트: ${game.cost[playerId]}`);

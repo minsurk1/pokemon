@@ -380,6 +380,19 @@
   border-radius: 50px;
   height: 25px;
   width: 25px;
+  transition: transform 0.3s ease, opacity 0.3s ease; /* ✅ 부드럽게 변환 */
+}
+
+/* 🔥 코스트 감소 애니메이션 */
+.cost-icon.fade-out {
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.cost-icon.removed {
+  transform: scale(0.2);
+  opacity: 0;
 }
 
 .right-container {

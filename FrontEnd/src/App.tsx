@@ -60,6 +60,7 @@ function App() {
             image: c.image,
             attack: c.attack,
             hp: c.hp,
+            maxhp: c.maxhp,
             cost: c.cost,
             tier: c.tier,
           }));

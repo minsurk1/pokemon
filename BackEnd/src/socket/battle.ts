@@ -128,18 +128,15 @@ export default function battleHandler(io: Server, socket: Socket) {
     const game = room.gameState;
     const currentTurn = game.currentTurn;
 
-    // 턴 확인
     if (socket.id !== currentTurn) {
       socket.emit("error", "당신의 턴이 아닙니다.");
       return;
     }
 
-    // 상대 찾기
     const opponentId = room.players.find((id) => id !== socket.id);
     if (!opponentId) return;
 
-    // 데미지 계산
-    const damage = Math.max(0, Number(card.attack ?? card.damage ?? 0));
+    const damage = Math.max(0, Number(card.attack ?? 0));
     const prevHP = game.hp[opponentId] ?? 2000;
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;
@@ -155,7 +152,6 @@ export default function battleHandler(io: Server, socket: Socket) {
 
     console.log(`💥 ${socket.id} → ${opponentId}에게 ${damage} 피해`);
 
-    // 게임 종료
     if (newHP <= 0) {
       io.to(roomCode).emit("gameOver", {
         winnerId: socket.id,
@@ -163,6 +159,56 @@ export default function battleHandler(io: Server, socket: Socket) {
       });
       console.log(`🏁 게임 종료: ${socket.id} 승리`);
       delete room.gameState;
+    }
+  });
+
+  // ==================== ⚔️ 카드 간 공격 ====================
+  socket.on("attackCard", ({ roomCode, attackerId, targetId }: { roomCode: string; attackerId: string; targetId: string }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+
+    const game = room.gameState;
+    const playerId = socket.id;
+    const opponentId = room.players.find((id) => id !== playerId);
+    if (!opponentId) return;
+
+    // ✅ 턴 검사
+    if (playerId !== game.currentTurn) {
+      socket.emit("error", "당신의 턴이 아닙니다.");
+      return;
+    }
+
+    const attacker = game.cardsInZone[playerId]?.find((c) => c.id === attackerId);
+    const target = game.cardsInZone[opponentId]?.find((c) => c.id === targetId);
+
+    if (!attacker || !target) {
+      socket.emit("error", "공격자 또는 대상 카드를 찾을 수 없습니다.");
+      return;
+    }
+
+    // ✅ 체력 감소 처리
+    const prevHP = target.hp ?? 0;
+    const newHP = Math.max(0, prevHP - attacker.attack);
+    target.hp = newHP;
+
+    // ✅ 브로드캐스트: 카드 체력 업데이트
+    io.to(roomCode).emit("updateCardHP", {
+      targetId,
+      newHP,
+    });
+
+    console.log(`⚔️ ${attacker.name}(${attacker.attack}) → ${target.name} | HP ${prevHP} → ${newHP}`);
+
+    // ✅ 카드 사망 처리
+    if (newHP <= 0) {
+      game.cardsInZone[opponentId] = game.cardsInZone[opponentId].filter((c) => c.id !== targetId);
+
+      io.to(roomCode).emit("cardDestroyed", {
+        targetId,
+        ownerId: opponentId,
+      });
+
+      console.log(`💀 ${target.name}이(가) 쓰러졌습니다.`);
     }
   });
 

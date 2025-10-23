@@ -20,7 +20,7 @@ router.get("/single", isAuthenticated, async (req, res) => {
       .populate({
         path: "cards.card", // ✅ cards 배열 내의 card 필드 populate
         model: "Card",
-        select: "_id cardName cardType attack hp tier image2D",
+        select: "_id cardName cardType attack hp tier image2D", // ✅ cardType 포함
       })
       .lean();
 
@@ -28,7 +28,7 @@ router.get("/single", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "덱이 존재하지 않습니다." });
     }
 
-    // ✅ 프론트용으로 가공 (이미지 경로 보정)
+    // ✅ 프론트용으로 가공 (image2D, cardType 보존)
     const BASE_URL = process.env.BASE_URL || "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
     const formattedDeck = {
@@ -38,13 +38,13 @@ router.get("/single", isAuthenticated, async (req, res) => {
         return {
           id: card._id?.toString(),
           name: card.cardName ?? entry.name,
-          cardType: card.cardType ?? entry.cardType ?? "fire", // ✅ 추가
+          cardType: card.cardType ?? entry.cardType ?? "fire", // ✅ 타입 보존
           attack: card.attack ?? entry.attack,
           hp: card.hp ?? entry.hp,
           maxhp: card.maxhp ?? entry.maxhp ?? card.hp ?? entry.hp,
           cost: entry.cost ?? card.tier ?? 1,
           tier: card.tier ?? entry.tier ?? 1,
-          // ✅ 통일: image2D 사용
+          // ✅ 반드시 image2D로 통일
           image2D: card.image2D ? `${BASE_URL}/images/${card.image2D.split("/").pop()}` : `${BASE_URL}/images/default.png`,
         };
       }),
@@ -76,13 +76,13 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
     const formattedCards = cards.map((c: any) => ({
       card: new mongoose.Types.ObjectId(c.id),
       name: c.name,
-      cardType: c.cardType ?? "fire", // ✅ 추가
+      cardType: c.cardType ?? "fire", // ✅ 타입 보존
       attack: c.attack ?? 0,
       hp: c.hp ?? 0,
       maxhp: c.maxhp ?? c.hp ?? 0,
       cost: c.cost ?? c.tier ?? 1,
       tier: c.tier ?? 1,
-      image2D: c.image2D || c.image || "default.png", // ✅ 수정됨
+      image2D: c.image2D || c.image || "default.png", // ✅ image2D 통일
     }));
 
     // ✅ 덱 생성 또는 갱신

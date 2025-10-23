@@ -18,9 +18,9 @@ router.get("/single", isAuthenticated, async (req, res) => {
     // ✅ 카드 정보 전체 populate (프론트 표시용)
     const deck = await UserDeck.findOne({ user: userObjectId })
       .populate({
-        path: "cards.card", // ✅ cards 배열 내의 card 필드 populate
+        path: "cards.card",
         model: "Card",
-        select: "_id cardName cardType attack hp tier image2D", // ✅ cardType 포함
+        select: "_id cardName cardType attack hp tier image2D",
       })
       .lean();
 
@@ -28,24 +28,30 @@ router.get("/single", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "덱이 존재하지 않습니다." });
     }
 
-    // ✅ 프론트용으로 가공 (image2D, cardType 보존)
     const BASE_URL = process.env.BASE_URL || "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
+    // ✅ populate 된 카드 또는 저장된 카드 모두 대응
     const formattedDeck = {
       _id: deck._id,
       cards: (deck.cards || []).map((entry: any) => {
-        const card = entry.card || entry; // populate 안됐을 때 fallback
+        const card = entry.card || entry;
+
+        // ✅ image2D 우선순위: ① card.image2D → ② entry.image2D → ③ 기본값
+        const image2DPath =
+          card.image2D || entry.image2D
+            ? `${BASE_URL}/images/${(card.image2D || entry.image2D).split("/").pop()}`
+            : `${BASE_URL}/images/default.png`;
+
         return {
           id: card._id?.toString(),
-          name: card.cardName ?? entry.name,
-          cardType: card.cardType ?? entry.cardType ?? "fire", // ✅ 타입 보존
-          attack: card.attack ?? entry.attack,
-          hp: card.hp ?? entry.hp,
-          maxhp: card.maxhp ?? entry.maxhp ?? card.hp ?? entry.hp,
+          name: card.cardName ?? entry.name ?? "Unknown",
+          cardType: card.cardType ?? entry.cardType ?? "fire",
+          attack: card.attack ?? entry.attack ?? 0,
+          hp: card.hp ?? entry.hp ?? 0,
+          maxhp: card.maxhp ?? entry.maxhp ?? card.hp ?? entry.hp ?? 0,
           cost: entry.cost ?? card.tier ?? 1,
           tier: card.tier ?? entry.tier ?? 1,
-          // ✅ 반드시 image2D로 통일
-          image2D: card.image2D ? `${BASE_URL}/images/${card.image2D.split("/").pop()}` : `${BASE_URL}/images/default.png`,
+          image2D: image2DPath, // ✅ 항상 포함됨
         };
       }),
     };
@@ -72,20 +78,18 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "잘못된 카드 데이터 형식입니다." });
     }
 
-    // ✅ 카드 구조 검증 및 변환
     const formattedCards = cards.map((c: any) => ({
       card: new mongoose.Types.ObjectId(c.id),
       name: c.name,
-      cardType: c.cardType ?? "fire", // ✅ 타입 보존
+      cardType: c.cardType ?? "fire",
       attack: c.attack ?? 0,
       hp: c.hp ?? 0,
       maxhp: c.maxhp ?? c.hp ?? 0,
       cost: c.cost ?? c.tier ?? 1,
       tier: c.tier ?? 1,
-      image2D: c.image2D || c.image || "default.png", // ✅ image2D 통일
+      image2D: c.image2D || c.image || "default.png",
     }));
 
-    // ✅ 덱 생성 또는 갱신
     let deck = await UserDeck.findOne({ user: userObjectId });
 
     if (!deck) {

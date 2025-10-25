@@ -253,13 +253,11 @@ export default function battleHandler(io: Server, socket: Socket) {
     game.currentTurn = nextTurn;
     game.cardsPlayed = {};
 
-    // ✅ 턴을 넘길 때, 모든 플레이어의 코스트를 +1 (최대 8)
-    for (const pid of room.players) {
-      if (!game.cost[pid]) game.cost[pid] = 0;
-      game.cost[pid] = Math.min(game.cost[pid] + 1, 8);
-    }
+    // ✅ 수정: 오직 다음 턴 플레이어만 코스트 +1
+    if (!game.cost[nextTurn]) game.cost[nextTurn] = 0;
+    game.cost[nextTurn] = Math.min(game.cost[nextTurn] + 1, 8);
 
-    // ✅ 프론트에 동기화 (hp, cost, currentTurn)
+    // ✅ 프론트에 동기화
     io.to(roomCode).emit("turnChanged", {
       currentTurn: nextTurn,
       cost: game.cost,

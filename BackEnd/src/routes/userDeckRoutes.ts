@@ -16,7 +16,6 @@ router.get("/single", isAuthenticated, async (req, res) => {
 
     const userObjectId = new mongoose.Types.ObjectId(user._id);
 
-    // ✅ 카드 정보 전체 populate (프론트 표시용)
     const deck = await UserDeck.findOne({ user: userObjectId })
       .populate({
         path: "cards.card",
@@ -26,34 +25,23 @@ router.get("/single", isAuthenticated, async (req, res) => {
       .lean();
 
     if (!deck) {
-      return res.status(404).json({ message: "덱이 존재하지 않습니다." });
+      return res.status(200).json({ deck: { _id: null, cards: [] } }); // ⚠️ 404 대신 200으로 응답
     }
 
     const BASE_URL = process.env.BASE_URL || "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
-    // ✅ populate 된 카드 또는 저장된 카드 모두 대응
+    // ✅ 최소한의 데이터만 전달 (id, name, image)
     const formattedDeck = {
       _id: deck._id,
       cards: (deck.cards || []).map((entry: any) => {
         const card = entry.card || entry;
-
-        // ✅ image2D 우선순위: ① card.image2D → ② entry.image2D → ③ 기본값
-        const image2DPath =
-          card.image2D || entry.image2D
-            ? `${BASE_URL}/images/${(card.image2D || entry.image2D).split("/").pop()}`
-            : `${BASE_URL}/images/default.png`;
+        const imageFile = card.image2D || entry.image2D || "default.png";
+        const imageUrl = `${BASE_URL}/images/${imageFile.split("/").pop()}`;
 
         return {
-          id: card._id?.toString(),
+          id: String(card._id ?? entry._id),
           name: card.cardName ?? entry.name ?? "Unknown",
-          cardType: card.cardType ?? entry.cardType ?? "fire",
-          attack: card.attack ?? entry.attack ?? 0,
-          hp: card.hp ?? entry.hp ?? 0,
-          maxhp: card.maxhp ?? entry.maxhp ?? card.hp ?? entry.hp ?? 0,
-          cost: entry.cost ?? card.tier ?? 1,
-          tier: card.tier ?? entry.tier ?? 1,
-          image2D: image2DPath, // ✅ 기존 유지
-          image: image2DPath,   // ✅ 프론트 호환 필드 추가
+          image: imageUrl,
         };
       }),
     };

@@ -71,7 +71,9 @@ export default function battleHandler(io: Server, socket: Socket) {
   });
 
   // ==================== 🃏 카드 소환 ====================
-  socket.on("summonCard", ({ roomCode, card }: { roomCode: string; card: any }) => {
+  import Card from "../models/Card"; // ✅ 추가
+
+  socket.on("summonCard", async ({ roomCode, card }: { roomCode: string; card: any }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
@@ -108,11 +110,21 @@ export default function battleHandler(io: Server, socket: Socket) {
     // ✅ 5. 코스트 차감
     game.cost[playerId] = Math.max(0, playerCost - costValue);
 
-    // ✅ 6. 카드 소환 처리
+    // ✅ 6. DB에서 카드 세부정보 보강
+    let dbCardData = null;
+    try {
+      dbCardData = await Card.findOne({ cardName: card.name || card.cardName });
+    } catch (err) {
+      console.error("❌ DB 카드 조회 실패:", err);
+    }
+
     const summonedCard = {
       ...card,
       cost: costValue,
+      cardType: dbCardData?.cardType ?? card.cardType ?? "normal",
+      image2D: dbCardData?.image2D ?? card.image2D ?? "default.png",
     };
+
     game.cardsInZone[playerId].push(summonedCard);
 
     // ✅ 7. 모든 플레이어에게 최신 상태 전송
@@ -124,7 +136,7 @@ export default function battleHandler(io: Server, socket: Socket) {
     });
 
     console.log(
-      `🃏 ${playerId} → ${roomCode}에 ${card.name || card.cardName || "Unknown"} 소환 (코스트 ${costValue}), 남은 코스트: ${
+      `🃏 ${playerId} → ${roomCode}에 ${summonedCard.name || summonedCard.cardName || "Unknown"} 소환 (코스트 ${costValue}), 남은 코스트: ${
         game.cost[playerId]
       }`
     );

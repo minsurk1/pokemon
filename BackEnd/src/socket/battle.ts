@@ -1,6 +1,7 @@
 import { Server, Socket } from "socket.io";
 import { rooms } from "./room"; // ✅ room.ts의 rooms 공유
 import { CardData, GameState, RoomInfo } from "../types/gameTypes"; // ✅ 공통 타입 사용
+import Card from "../models/Card"; // ✅ 추가
 
 // ======================= 배틀 초기화 =======================
 export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
@@ -71,7 +72,6 @@ export default function battleHandler(io: Server, socket: Socket) {
   });
 
   // ==================== 🃏 카드 소환 ====================
-  import Card from "../models/Card"; // ✅ 추가
 
   socket.on("summonCard", async ({ roomCode, card }: { roomCode: string; card: any }) => {
     const room = rooms[roomCode];

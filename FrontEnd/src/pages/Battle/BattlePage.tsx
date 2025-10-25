@@ -15,28 +15,89 @@ import { Card } from "../../types/Card";
 const INITIAL_TIME = 30;
 const IMAGE_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images";
 
-// ✅ 이미지 URL 정리 함수
-const getImageUrl = (imagePath: string) => {
-  console.log("🖼 imagePath:", imagePath); // 추가!
-  if (!imagePath) return `${IMAGE_URL}/default.png`;
-  return imagePath.startsWith("http") ? imagePath : `${IMAGE_URL}/${imagePath}`;
+// ✅ 파일명 추출 함수
+const pickFileName = (p?: string) => {
+  if (!p) return "";
+  try {
+    if (p.startsWith("http")) {
+      const u = new URL(p);
+      const seg = u.pathname.split("/").filter(Boolean);
+      return seg[seg.length - 1] || "";
+    }
+  } catch {}
+  const seg = p.split("/").filter(Boolean);
+  return seg[seg.length - 1] || "";
 };
 
-// ✅ 카드 표준화 함수 (서버-프론트 간 필드명 일치용)
+// ✅ 이미지 URL 정리 함수
+const getImageUrl = (imagePath: string) => {
+  if (!imagePath) return `${IMAGE_URL}/default.png`;
+  if (imagePath.startsWith("http")) return imagePath;
+  const fname = pickFileName(imagePath);
+  return `${IMAGE_URL}/${fname || "default.png"}`;
+};
+
+// ✅ 이름 기반 타입 감지 함수 (백업용)
+const detectTypeByName = (name: string) => {
+  const lower = name.toLowerCase();
+  if (lower.includes("불") || lower.includes("fire")) return "fire";
+  if (lower.includes("물") || lower.includes("water")) return "water";
+  if (lower.includes("숲") || lower.includes("forest")) return "forest";
+  if (lower.includes("전기") || lower.includes("electric")) return "electric";
+  if (lower.includes("벌레") || lower.includes("worm")) return "worm";
+  if (lower.includes("에스퍼") || lower.includes("esper")) return "esper";
+  if (lower.includes("땅") || lower.includes("land")) return "land";
+  if (lower.includes("얼음") || lower.includes("ice")) return "ice";
+  if (lower.includes("독") || lower.includes("poison")) return "poison";
+  if (lower.includes("비행") || lower.includes("fly")) return "fly";
+  return "normal";
+};
+
+// ✅ 카드 표준화 함수
 const normalizeCard = (c: any): Card => {
-  const type = c.cardType ?? c.type ?? "fire";
+  const rawType = c.cardType ?? c.type ?? detectTypeByName(c.name ?? c.cardName ?? "") ?? "normal";
+
+  const type = String(rawType).trim();
   const tier = Number(c.tier ?? 1);
+  const isLegend = type === "legend" || tier >= 8;
+  const displayType = isLegend ? "legend" : type;
+  const displayTier = isLegend ? Math.min(tier - 7, 7) || 1 : Math.min(tier, 7);
+
+  const given = (typeof c.image2D === "string" && c.image2D) || (typeof c.image === "string" && c.image) || "";
+
+  const imageFile = pickFileName(given) || `${displayType}Tier${displayTier}.png`;
 
   return {
     id: String(c.id ?? c._id ?? crypto.randomUUID()),
     name: String(c.name ?? c.cardName ?? "Unknown"),
-    cost: Number(c.cost ?? 0) || 0,
-    attack: Number(c.attack ?? c.damage ?? 0) || 0,
-    hp: Number(c.hp ?? 0) || 0,
-    maxhp: Number(c.maxhp ?? c.hp ?? 0) || 0,
-    tier,
-    // ✅ 올바른 이미지 매핑
-    image: c.image && c.image.endsWith(".png") ? c.image : c.image2D && c.image2D.endsWith(".png") ? c.image2D : `${type}Tier${tier}.png`,
+    cost: Number(c.cost ?? 0),
+    attack: Number(c.attack ?? c.damage ?? 0),
+    hp: Number(c.hp ?? 0),
+    maxhp: Number(c.maxhp ?? c.hp ?? 0),
+    tier: displayTier,
+    image: imageFile,
+  };
+};
+
+// ✅ 서버 덱 유지용 보정 함수
+const keepCardShape = (c: any): Card => {
+  const given = (typeof c.image2D === "string" && c.image2D) || (typeof c.image === "string" && c.image) || "";
+
+  const imageFile =
+    pickFileName(given) ||
+    (c.cardType
+      ? `${c.cardType === "legend" ? "legend" : c.cardType}Tier${Math.min(c.tier >= 8 ? c.tier - 7 : c.tier, 7) || 1}.png`
+      : "default.png");
+
+  return {
+    id: String(c.id ?? c._id ?? crypto.randomUUID()),
+    name: String(c.name ?? c.cardName ?? "Unknown"),
+    cost: Number(c.cost ?? 0),
+    attack: Number(c.attack ?? c.damage ?? 0),
+    hp: Number(c.hp ?? 0),
+    maxhp: Number(c.maxhp ?? c.hp ?? 0),
+    tier: Number(c.tier ?? 1),
+    image: imageFile,
   };
 };
 
@@ -138,10 +199,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [turnTime, setTurnTime] = useState(INITIAL_TIME);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // ✅ 덱 초기화 (보유 덱 로드)
+  // ✅ 덱 초기화
   const initializeDeckAndHand = useCallback(() => {
     if (!selectedDeck || selectedDeck.length === 0) return;
-    const normalized = selectedDeck.map(normalizeCard);
+    const normalized = selectedDeck.map(keepCardShape);
     const shuffled = [...normalized].sort(() => Math.random() - 0.5);
     setHandCards(shuffled.slice(0, 3));
     setDeckCards(shuffled.slice(3));
@@ -240,36 +301,42 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     // ✅ 카드 소환 이벤트
-    const onCardSummoned = ({ playerId, card, cost }: any) => {
-      console.log("🧩 수신된 카드:", card); // 여기도 추가
+    const onCardSummoned = ({ playerId, card, updatedCost, cost }: any) => {
+      console.log(`🃏 카드 소환 수신 from ${playerId} | 카드: ${card.name} | cost:`, cost);
+
       const fixedCard = normalizeCard(card);
-      console.log(`🃏 cardSummoned 수신 — from: ${playerId}, card: ${fixedCard.name}, cost:`, cost);
 
       if (playerId === socket.id) {
+        // ✅ 내 카드 필드에 추가
         setMyCardsInZone((prev) => {
           if (prev.find((c) => c.id === fixedCard.id)) return prev;
           return [...prev, fixedCard];
         });
         setLastPlayedCardId(fixedCard.id);
         setTimeout(() => setLastPlayedCardId(null), 1000);
+
+        // ✅ 내 cost 즉시 반영
+        if (typeof updatedCost === "number") {
+          setPlayerCostIcons(Math.max(0, updatedCost));
+        }
       } else {
+        // ✅ 상대 카드 필드에 추가
         setEnemyCardsInZone((prev) => {
           if (prev.find((c) => c.id === fixedCard.id)) return prev;
           return [...prev, fixedCard];
         });
         setLastEnemyCardId(fixedCard.id);
         setTimeout(() => setLastEnemyCardId(null), 1000);
+
         setMessage(`상대가 ${fixedCard.name}을(를) 소환했습니다!`);
         setShowMessage(true);
       }
 
+      // ✅ cost 객체 전체 동기화 (상대방 cost 포함)
       if (cost && typeof cost === "object") {
         const myId = socket.id ?? "";
         const opponentId = Object.keys(cost).find((id) => id !== myId);
 
-        if (cost[myId] !== undefined) {
-          setPlayerCostIcons(Math.max(0, Number(cost[myId])));
-        }
         if (opponentId && cost[opponentId] !== undefined) {
           setOpponentCostIcons(Math.max(0, Number(cost[opponentId])));
         }
@@ -366,6 +433,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     // ✅ 코스트 차감 + 손패에서 제거
     setHandCards((prev) => prev.filter((c) => c.id !== cardId));
     setPlayerCostIcons((prevCost) => Math.max(0, prevCost - cardCost));
+
+    console.log("🎯 소환 시 전송되는 카드:", normalizedCard);
 
     socket.emit("summonCard", {
       roomCode,

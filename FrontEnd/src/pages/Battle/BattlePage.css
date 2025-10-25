@@ -92,6 +92,7 @@
   align-items: center;
   position: relative;
   z-index: 10;
+  pointer-events: none; /* ✅ 배경은 클릭 막기 */
 }
 
 .player-field {
@@ -111,16 +112,17 @@
 
 .enemy-card-zone {
   position: absolute;
-  top: 0vh;
+  top: 26vh;    /* 여기 조절하면 상대 카드 소환 위치 변경 가능 */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 13px;
+  gap: 50px;
   padding: 20px;
   min-height: 150px;
-  z-index: 500; /* ✅ 카드가 항상 위 */
+  z-index: 900; /* ✅ 항상 위로 */
+  pointer-events: auto; /* ✅ 클릭 가능하도록 */
 }
 
 .player-card-zone {
@@ -140,6 +142,7 @@
   border-radius: 15px;
   z-index: 600;
 }
+
 .player-card-bg {
   position: absolute;
   bottom: 0vh;
@@ -184,8 +187,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden; /* 이미지 넘침 방지 */
+  overflow: visible !important; /* ✅ 확대 시 잘리지 않도록 */
   position: relative;
+  z-index: 10;
 }
 
 .my-card {
@@ -339,6 +343,52 @@
   max-width: 60vw;
   max-height: 30vh;
   overflow-y: auto;
+}
+
+/* ===============================
+   🔥 적 손패 표시 (enemy-hand-zone)
+   =============================== */
+.enemy-hand-zone {
+  position: absolute;
+  top: 3vh; /* ✅ 화면 상단 */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4vw;
+  z-index: 650;
+  pointer-events: none; /* ✅ 손패는 클릭 막기 */
+}
+
+.enemy-hand-card {
+  width: 85px;
+  height: 115px;
+  background-image: url("../../assets/images/default.png"); /* 카드 뒷면 */
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+  opacity: 0.85;
+  filter: brightness(0.8);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+/* 🎨 겹쳐진 느낌 */
+.enemy-hand-card:nth-child(1) { transform: translateY(3px) rotate(-8deg); }
+.enemy-hand-card:nth-child(2) { transform: translateY(-2px) rotate(-5deg); }
+.enemy-hand-card:nth-child(3) { transform: translateY(1px) rotate(-3deg); }
+.enemy-hand-card:nth-child(4) { transform: translateY(-1px) rotate(2deg); }
+.enemy-hand-card:nth-child(5) { transform: translateY(2px) rotate(4deg); }
+.enemy-hand-card:nth-child(6) { transform: translateY(-3px) rotate(6deg); }
+.enemy-hand-card:nth-child(7) { transform: translateY(2px) rotate(-2deg); }
+.enemy-hand-card:nth-child(8) { transform: translateY(-2px) rotate(5deg); }
+
+/* 손패 카드 hover 시 강조 */
+.enemy-hand-card:hover {
+  transform: scale(1.1);
+  opacity: 1;
+  filter: brightness(1);
 }
 
 .player-cost-zone {
@@ -591,13 +641,75 @@
   height: 165px;
 }
 
+/* 🔹 내 카드 */
+.my-card.in-zone {
+  cursor: pointer;
+  transition: transform 0.25s ease-in-out, z-index 0.25s;
+  transform-origin: center bottom; /* ✅ 위로 확장되는 느낌 */
+}
+
 .my-card.in-zone:hover {
-  transform: none;
+  transform: scale(1.05);
+  z-index: 50; /* 겹칠 때 위로 올라오도록 */
+}
+
+.my-card.in-zone:active {
+  transform: scale(1.2);
+  opacity: 0.8;
+}
+
+/* === 🧠 상대 카드 클릭 가능 & 시각 효과 === */
+.enemy-clickable {
+  pointer-events: auto;         /* ✅ 클릭 허용 */
+  cursor: pointer;              /* ✅ 손가락 커서 */
+  transition: transform 0.2s ease-in-out; /* ✅ 부드러운 확대 효과 */
+}
+
+.enemy-clickable:hover {
+  transform: scale(1.05);       /* ✅ 호버 시 살짝 확대 */
+  z-index: 40;
 }
 
 .my-card.dragging {
   opacity: 0.5;
   cursor: grabbing;
+}
+
+/* 🔥 드래그 중 상대 카드 하이라이트 효과 */
+.enemy-card-slot.drag-over {
+  transform: scale(1.1);
+  filter: brightness(1.3);
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+/* ✨ 드래그 중 카드 고스트 미리보기 */
+.drag-preview {
+  position: fixed;
+  width: 100px;
+  height: 140px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.8;
+  transform: rotate(2deg);
+  animation: ghostFloat 0.3s ease-in-out infinite alternate;
+}
+
+.drag-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes ghostFloat {
+  from {
+    transform: translateY(-2px) rotate(2deg);
+  }
+  to {
+    transform: translateY(2px) rotate(-2deg);
+  }
 }
 
 .card-hp-bar {
@@ -734,6 +846,7 @@
 
   .my-card.in-zone,
   .enemy-card.in-zone {
+    cursor: pointer; /* ✅ 커서가 손가락 모양으로 바뀜 */
     width: 80px;
     height: 120px;
   }

@@ -16,31 +16,43 @@ router.get("/single", isAuthenticated, async (req, res) => {
 
     const userObjectId = new mongoose.Types.ObjectId(user._id);
 
+    // ✅ 카드 정보 전체 populate (공격력, 체력 등 포함)
     const deck = await UserDeck.findOne({ user: userObjectId })
       .populate({
         path: "cards.card",
         model: "Card",
-        select: "_id cardName cardType attack hp tier image2D",
+        select: "_id cardName cardType attack hp maxhp cost tier image2D", // ✅ 더 많은 필드 포함
       })
       .lean();
 
     if (!deck) {
-      return res.status(200).json({ deck: { _id: null, cards: [] } }); // ⚠️ 404 대신 200으로 응답
+      return res.status(200).json({ deck: { _id: null, cards: [] } });
     }
 
-    const BASE_URL = process.env.BASE_URL || "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
+    const BASE_URL =
+      process.env.BASE_URL ||
+      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
-    // ✅ 최소한의 데이터만 전달 (id, name, image)
+    // ✅ populate된 카드와 수동 저장된 카드 모두 대응
     const formattedDeck = {
       _id: deck._id,
       cards: (deck.cards || []).map((entry: any) => {
         const card = entry.card || entry;
-        const imageFile = card.image2D || entry.image2D || "default.png";
+
+        const imageFile =
+          card.image2D || entry.image2D || "default.png";
         const imageUrl = `${BASE_URL}/images/${imageFile.split("/").pop()}`;
 
         return {
           id: String(card._id ?? entry._id),
           name: card.cardName ?? entry.name ?? "Unknown",
+          cardType: card.cardType ?? entry.cardType ?? "normal",
+          attack: Number(card.attack ?? entry.attack ?? 0),
+          hp: Number(card.hp ?? entry.hp ?? 0),
+          maxhp: Number(card.maxhp ?? entry.maxhp ?? entry.hp ?? 0),
+          cost: Number(card.cost ?? entry.cost ?? card.tier ?? entry.tier ?? 1),
+          tier: Number(card.tier ?? entry.tier ?? 1),
+          image2D: imageFile,
           image: imageUrl,
         };
       }),
@@ -65,7 +77,9 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
     const { cards } = req.body;
 
     if (!Array.isArray(cards)) {
-      return res.status(400).json({ message: "잘못된 카드 데이터 형식입니다." });
+      return res
+        .status(400)
+        .json({ message: "잘못된 카드 데이터 형식입니다." });
     }
 
     const formattedCards = cards.map((c: any) => ({

@@ -1,3 +1,4 @@
+// src/routes/userDeckRoutes.ts
 import express from "express";
 import mongoose from "mongoose";
 import UserDeck from "../models/UserDeck";
@@ -51,7 +52,8 @@ router.get("/single", isAuthenticated, async (req, res) => {
           maxhp: card.maxhp ?? entry.maxhp ?? card.hp ?? entry.hp ?? 0,
           cost: entry.cost ?? card.tier ?? 1,
           tier: card.tier ?? entry.tier ?? 1,
-          image2D: image2DPath, // ✅ 항상 포함됨
+          image2D: image2DPath, // ✅ 기존 유지
+          image: image2DPath,   // ✅ 프론트 호환 필드 추가
         };
       }),
     };

@@ -20,7 +20,6 @@ router.get("/single", isAuthenticated, async (req, res) => {
       .populate({
         path: "cards.card",
         model: "Card",
-        // ✅ 여기 select에 attack, hp, cost, tier 모두 포함해야 함
         select: "_id cardName cardType attack hp cost tier image2D",
       })
       .lean();
@@ -33,23 +32,27 @@ router.get("/single", isAuthenticated, async (req, res) => {
       process.env.BASE_URL ||
       "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
-    // ✅ 능력치 포함해서 클라이언트로 전달
+    // ✅ populate + 직접 저장된 필드 둘 다 읽기
     const formattedDeck = {
       _id: deck._id,
       cards: (deck.cards || []).map((entry: any) => {
         const card = entry.card || entry;
-        const imageFile = card.image2D || entry.image2D || "default.png";
+
+        const imageFile =
+          card.image2D ||
+          entry.image2D ||
+          "default.png";
         const imageUrl = `${BASE_URL}/images/${imageFile.split("/").pop()}`;
 
         return {
           id: String(card._id ?? entry._id),
           name: card.cardName ?? entry.name ?? "Unknown",
-          cardType: card.cardType ?? "normal",
-          attack: Number(card.attack ?? 0),
-          hp: Number(card.hp ?? 0),
-          maxhp: Number(card.hp ?? 0),
-          cost: Number(card.cost ?? card.tier ?? 1),
-          tier: Number(card.tier ?? 1),
+          cardType: card.cardType ?? entry.cardType ?? "normal",
+          attack: Number(card.attack ?? entry.attack ?? 0),
+          hp: Number(card.hp ?? entry.hp ?? 0),
+          maxhp: Number(card.hp ?? entry.hp ?? 0),
+          cost: Number(card.cost ?? entry.cost ?? card.tier ?? entry.tier ?? 1),
+          tier: Number(card.tier ?? entry.tier ?? 1),
           image: imageUrl,
         };
       }),

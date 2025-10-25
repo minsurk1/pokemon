@@ -39,22 +39,26 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
   useEffect(() => {
     if (!user?._id || !token) return;
 
-    // 유저 카드 불러오기
+    // ✅ 유저 카드 불러오기
     const fetchUserCards = async (): Promise<UserCardDTO[]> => {
       try {
         const res = await axios.get(`${API_URL}/usercard/${user._id}/cards`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUserCards(res.data.userCards);
-        setAllUserCards(res.data.userCards);
-        return res.data.userCards;
+        const normalized = res.data.userCards.map((c: any) => ({
+          ...c,
+          image: c.image2D || c.image || `${c.cardType ?? "fire"}Tier${c.tier ?? 1}.png`,
+        }));
+        setUserCards(normalized);
+        setAllUserCards(normalized);
+        return normalized;
       } catch (err) {
         console.error("유저 카드 정보 불러오기 실패:", err);
         return [];
       }
     };
 
-    // 덱 불러오기
+    // ✅ 덱 불러오기
     const fetchUserDeck = async (cardsFromUser: UserCardDTO[]) => {
       try {
         const res = await axios.get(`${API_URL}/userdeck/single`, {
@@ -62,13 +66,15 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
         });
 
         if (res.data.deck) {
-          const deckCards: UserCardDTO[] = res.data.deck.cards;
-          const deckCardIds = deckCards.map((c) => c.id || c.cardId);
+          const deckCards: UserCardDTO[] = res.data.deck.cards.map((c: any) => ({
+            ...c,
+            image: c.image2D || c.image || `${c.cardType ?? "fire"}Tier${c.tier ?? 1}.png`,
+          }));
 
+          const deckCardIds = deckCards.map((c) => c.id || c.cardId);
           setSelectedCards(deckCardIds);
           onDeckChange(deckCardIds);
 
-          // 보유 카드 수량 조정
           const updatedUserCards = cardsFromUser.map((c) => {
             const selectedCount = deckCardIds.filter((id) => id === c.cardId).length;
             return { ...c, count: c.count - selectedCount };

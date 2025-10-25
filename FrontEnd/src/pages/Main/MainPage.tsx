@@ -52,7 +52,7 @@ const videoThemes = {
 function MainPage() {
   const navigate = useNavigate();
   const { socket } = useSocket();
-  const { userInfo, loading, refreshUser, logout } = useUser();
+  const { userInfo, loading, refreshUser, logout, selectedDeck } = useUser();
 
   const [showRoomTab, setShowRoomTab] = useState(false);
   const [showCardTab, setShowCardTab] = useState(false);
@@ -89,11 +89,14 @@ function MainPage() {
 
   // ✅ 새로고침 후 유저 정보 자동 불러오기
   useEffect(() => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
     if (!loading && token && !userInfo) {
-      refreshUser().catch((e) => console.warn("refreshUser 실패:", e));
+      refreshUser().then((data) => {
+        console.log("🎯 User + Deck loaded:", data);
+      });
     }
   }, [loading, userInfo, refreshUser]);
+
 
   // ✅ 소켓 리스너 등록
   useEffect(() => {
@@ -120,7 +123,14 @@ function MainPage() {
   const handleStore = useCallback(() => navigate("/store"), [navigate]);
   const handleDeck = useCallback(() => navigate("/deck"), [navigate]);
   const handleDex = useCallback(() => navigate("/dex"), [navigate]);
-  const handleBattle = useCallback(() => navigate("/battle"), [navigate]);
+  const handleBattle = useCallback(() => {
+    if (!selectedDeck || selectedDeck.length === 0) {
+      alert("⚠️ 덱이 비어 있습니다. 먼저 덱을 구성해주세요!");
+      return;
+    }
+    navigate("/battle", { state: { selectedDeck } }); // ✅ 덱 데이터를 함께 전달
+  }, [navigate, selectedDeck]);
+
   const handleRule = useCallback(() => navigate("/rule"), [navigate]);
   const handleProfile = useCallback(() => navigate("/profile"), [navigate]);
 
@@ -202,9 +212,9 @@ function MainPage() {
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleBattle} marginBottom="3.3rem">
-              배틀 <GiBattleGear />
-            </MenuButton>
+            <MenuButton onClick={handleBattle} marginBottom="3.3rem" disabled={loading || !userInfo}>
+            배틀 <GiBattleGear />
+          </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleRule} marginBottom="3.3rem" cursor="help">

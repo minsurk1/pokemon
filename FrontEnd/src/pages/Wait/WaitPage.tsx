@@ -11,7 +11,7 @@ function WaitPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { roomCode } = useParams<{ roomCode: string }>();
-  const { socket, connected } = useSocket();
+  const socket = useSocket();
 
   const initialHost = (location.state && location.state.isHost) || false;
   const [isHost, setIsHost] = useState(initialHost);
@@ -141,7 +141,7 @@ function WaitPage() {
     navigate("/main");
   };
 
-  if (!connected) {
+  if (!socket.connected) {
     return (
       <div className="wait-body">
         <div className="wait-page">

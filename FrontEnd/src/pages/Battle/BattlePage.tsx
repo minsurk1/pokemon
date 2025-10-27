@@ -9,6 +9,8 @@ import { CiClock1 } from "react-icons/ci";
 import "./BattlePage.css";
 import MessageBox from "../../components/common/MessageBox";
 import GameOverScreen from "../../components/battle/GameOverScreen";
+import CircularTimer from "../../components/battle/CircularTimer"; // ✅ 경로에 맞게 조정
+import BurnLineComponent from "../../components/battle/BurnLineComponent";
 import { Card } from "../../types/Card";
 
 // ===================== 상수 =====================
@@ -56,26 +58,20 @@ const detectTypeByName = (name: string) => {
 // ✅ 카드 표준화 함수
 const normalizeCard = (card: any) => {
   // ✅ 1️⃣ 이미지 경로 우선순위: image → image2D → cardType + tier 조합
-  const imagePath = card.image
-    ? card.image
-    : card.image2D
-    ? card.image2D
-    : `${card.cardType ?? "fire"}Tier${card.tier ?? 1}.png`;
+  const imagePath = card.image ? card.image : card.image2D ? card.image2D : `${card.cardType ?? "fire"}Tier${card.tier ?? 1}.png`;
 
   // ✅ 2️⃣ 절대 경로 처리
-  const fullImageUrl = imagePath.startsWith("http")
-    ? imagePath
-    : `${IMAGE_URL}/${imagePath}`;
+  const fullImageUrl = imagePath.startsWith("http") ? imagePath : `${IMAGE_URL}/${imagePath}`;
 
   return {
     id: card.id || card._id || card.cardId || `card-${Math.random().toString(36).substring(2, 9)}`,
     name: card.name || card.cardName || "Unknown",
     cardType: card.cardType || "fire",
     tier: Number(card.tier ?? 1),
-    attack: Number(card.attack ?? card.damage ?? 0),   // ✅ 숫자 강제 변환
-    hp: Number(card.hp ?? 0),                          // ✅ 숫자 강제 변환
-    maxhp: Number(card.maxhp ?? card.hp ?? 0),         // ✅ 숫자 강제 변환
-    cost: Number(card.cost ?? card.tier ?? 1),         // ✅ 숫자 강제 변환
+    attack: Number(card.attack ?? card.damage ?? 0), // ✅ 숫자 강제 변환
+    hp: Number(card.hp ?? 0), // ✅ 숫자 강제 변환
+    maxhp: Number(card.maxhp ?? card.hp ?? 0), // ✅ 숫자 강제 변환
+    cost: Number(card.cost ?? card.tier ?? 1), // ✅ 숫자 강제 변환
     image: fullImageUrl, // ✅ BattlePage에서 항상 정상 URL로 표시됨
   };
 };
@@ -83,10 +79,7 @@ const normalizeCard = (card: any) => {
 // ✅ 카드 형태 통일 함수 (서버·클라이언트 혼합 대응)
 const keepCardShape = (c: any): Card => {
   // 1️⃣ populate로 받은 카드면 c.card가 실제 데이터, 아니면 c 자체
-  const baseCard =
-    c.card && typeof c.card === "object" && !Array.isArray(c.card)
-      ? c.card
-      : c;
+  const baseCard = c.card && typeof c.card === "object" && !Array.isArray(c.card) ? c.card : c;
 
   // 2️⃣ 이미지 파일 추출
   const rawImage =
@@ -110,9 +103,7 @@ const keepCardShape = (c: any): Card => {
   // 4️⃣ 최종 반환 (id, 이름, 타입 포함)
   return {
     id: String(baseCard._id ?? baseCard.id ?? c.id ?? crypto.randomUUID()),
-    name: String(
-      baseCard.name ?? baseCard.cardName ?? c.cardName ?? c.name ?? "Unknown"
-    ),
+    name: String(baseCard.name ?? baseCard.cardName ?? c.cardName ?? c.name ?? "Unknown"),
     cardType: baseCard.cardType ?? c.cardType ?? "normal",
     attack,
     hp,
@@ -123,71 +114,9 @@ const keepCardShape = (c: any): Card => {
   };
 };
 
-// ===================== CircularTimer =====================
-const CircularTimer = ({ turnTime }: { turnTime: number }) => {
-  const getTimerColor = (timeLeft: number) => {
-    const ratio = timeLeft / INITIAL_TIME;
-    if (ratio > 0.75) return "#00FF00";
-    if (ratio > 0.5) return "#FFFF00";
-    if (ratio > 0.25) return "#FF8800";
-    return "#FF0000";
-  };
-
-  const color = getTimerColor(turnTime);
-  const progress = ((INITIAL_TIME - turnTime) / INITIAL_TIME) * 100;
-
-  return (
-    <div style={{ display: "flex", justifyContent: "center", margin: "10px 0" }}>
-      <div
-        style={{
-          width: "70px",
-          height: "70px",
-          borderRadius: "50%",
-          background: `conic-gradient(${color} ${progress * 3.6}deg, #eee 0deg)`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 0 5px rgba(0,0,0,0.5)",
-        }}
-      >
-        <div
-          style={{
-            width: "60px",
-            height: "60px",
-            borderRadius: "50%",
-            backgroundColor: "black",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div style={{ color, fontSize: "16px", fontWeight: "bold" }}>{turnTime}초</div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ===================== BurnLineComponent =====================
-const BurnLineComponent = ({ timeLeft, isMyTurn }: { timeLeft: number; isMyTurn: boolean }) => {
-  if (!isMyTurn) return <div className="horizontal-line" style={{ background: "#ffffff" }} />;
-
-  const progress = ((INITIAL_TIME - timeLeft) / INITIAL_TIME) * 100;
-  const color = progress < 25 ? "#00FF00" : progress < 50 ? "#FFFF00" : progress < 75 ? "#FF8800" : "#FF0000";
-
-  return (
-    <div
-      className="horizontal-line"
-      style={{
-        background: `linear-gradient(to right, ${color} ${progress}%, #ffffff ${progress}%)`,
-      }}
-    />
-  );
-};
-
 // ===================== BattlePage =====================
 function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
-  const { socket, connected } = useSocket();
+  const socket = useSocket();
   const navigate = useNavigate();
   const location = useLocation() as any;
   const roomCode: string = location?.state?.roomCode || "defaultRoomCode";
@@ -247,22 +176,16 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   // ✅ 덱 초기화 useEffect
   useEffect(() => {
-    const looksLikeIds =
-      Array.isArray(selectedDeck) &&
-      selectedDeck.length > 0 &&
-      typeof selectedDeck[0] === "string";
+    const looksLikeIds = Array.isArray(selectedDeck) && selectedDeck.length > 0 && typeof selectedDeck[0] === "string";
 
     // selectedDeck이 비어있거나, string[]이면 서버에서 가져옴
     if (!selectedDeck || selectedDeck.length === 0 || looksLikeIds) {
       (async () => {
         try {
           const token = localStorage.getItem("token");
-          const res = await fetch(
-            "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/userdeck/single",
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
+          const res = await fetch("https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/userdeck/single", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
           const data = await res.json();
 
           if (data?.deck?.cards?.length) {
@@ -290,16 +213,21 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   // ===== 소켓 연결 =====
   useEffect(() => {
-    if (connected && socket.id) {
+    if (socket.connected && socket.id) {
       setMySocketId(socket.id);
+
+      // ✅ 방 참여 이벤트 추가
+      socket.emit("joinRoom", { roomCode });
+      // ✅ 초기 상태 요청
       socket.emit("getGameState", { roomCode });
+
       console.log("🎮 BattlePage 연결됨:", socket.id);
     }
-  }, [connected, socket, roomCode]);
+  }, [socket, roomCode]);
 
   // ===== 서버 이벤트 처리 =====
   useEffect(() => {
-    if (!connected) return;
+    if (!socket.connected) return;
 
     const onError = (msg: string) => {
       setMessage(`🚫 오류: ${msg}`);
@@ -434,12 +362,25 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setGameOverMessage(myId === winnerId ? "🎉 승리했습니다!" : "💀 패배했습니다...");
     };
 
+    // ✅ 서버에서 타이머 공유값 수신
+    const onTimeUpdate = (time: number) => {
+      setTurnTime(time);
+      // console.log("🕒 타이머 동기화:", time);
+    };
+
+    const onTurnTimeout = () => {
+      console.log("⏰ 턴 제한시간 만료");
+      setIsMyTurn(false);
+    };
+
     socket.on("error", onError);
     socket.on("gameStart", onGameStart);
     socket.on("turnChanged", onTurnChanged);
     socket.on("updateGameState", onUpdateGameState);
     socket.on("cardSummoned", onCardSummoned);
     socket.on("gameOver", onGameOver);
+    socket.on("timeUpdate", onTimeUpdate);
+    socket.on("turnTimeout", onTurnTimeout);
 
     return () => {
       socket.off("error", onError);
@@ -448,32 +389,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("updateGameState", onUpdateGameState);
       socket.off("cardSummoned", onCardSummoned);
       socket.off("gameOver", onGameOver);
+      socket.off("timeUpdate", onTimeUpdate);
+      socket.off("turnTimeout", onTurnTimeout);
     };
-  }, [socket, connected, roomCode]);
-
-  // ===== 턴 타이머 =====
-  useEffect(() => {
-    if (!isMyTurn) {
-      if (timerRef.current) clearInterval(timerRef.current);
-      return;
-    }
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    timerRef.current = setInterval(() => {
-      setTurnTime((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current!);
-          socket.emit("endTurn", { roomCode });
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isMyTurn, socket, roomCode]);
+  }, [socket, roomCode]);
 
   // ===== 카드 클릭 =====
   const handleCardClick = (cardId: string, fromZone: boolean, e: React.MouseEvent<HTMLDivElement>) => {
@@ -532,7 +451,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     // 🧩 클릭형 프리뷰 강제 종료 (드래그 시작 시 중복 방지)
     setIsHoldingCard(false);
     setHeldCard(null);
-    
+
     const attacker = myCardsInZone.find((c) => c.id === attackerId);
     if (!attacker) return;
 
@@ -580,9 +499,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // ✅ 마우스 이동 중
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isHoldingCard) {
-      setDragPreview((prev) =>
-        prev ? { ...prev, x: e.clientX, y: e.clientY } : null
-      );
+      setDragPreview((prev) => (prev ? { ...prev, x: e.clientX, y: e.clientY } : null));
     }
   };
 
@@ -604,9 +521,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
     const attackPower = Number(attacker.attack ?? 0);
     const newHP = Math.max(0, target.hp - attackPower);
-    const updatedEnemy = enemyCardsInZone.map((c) =>
-      c.id === targetId ? { ...c, hp: newHP } : c
-    );
+    const updatedEnemy = enemyCardsInZone.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c));
     setEnemyCardsInZone(updatedEnemy);
 
     setMessage(`🔥 ${attacker.name} ➤ ${target.name}에게 ${attackPower} 피해!`);
@@ -623,20 +538,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.emit("attackCard", { roomCode, attackerId: attacker.id, targetId });
 
     // ✅ 한 턴에 한 번만 공격하도록 canAttack 비활성화
-    setMyCardsInZone((prev) =>
-      prev.map((c) =>
-        c.id === attacker.id ? { ...c, canAttack: false } : c
-      )
-    );
+    setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
 
     setSelectedAttacker(null);
   };
 
   // ===== 상대 카드 클릭(공격 대상 선택) =====
-  const handleEnemyCardClick = (
-    targetId: string,
-    e: React.MouseEvent<HTMLDivElement>
-  ) => {
+  const handleEnemyCardClick = (targetId: string, e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
 
     if (!isMyTurn) {
@@ -679,7 +587,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           zIndex: 9999,
         }}
       >
-        <div>connected: {String(connected)}</div>
+        <div>connected: {String(socket.connected)}</div>
         <div>room: {roomCode}</div>
         <div>socket.id: {socket.id ?? "-"}</div>
         <div>mySocketId: {mySocketId ?? "-"}</div>
@@ -746,11 +654,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                 <div
                   className="my-card in-zone"
                   draggable={isMyTurn}
-                  onMouseDown={(e) => handleCardMouseDown(card, e)}   // 클릭형 고스트
-                  onDragStart={(e) => handleDragStart(card.id, e)}    // 드래그 시작 (위에서 수정한 함수)
-                  onDrag={(e) => handleDrag(e)}                       // 드래그 중 커서 이동
-                  onDragEnd={handleDragEnd}                           // 드래그 끝
-                  onClick={(e) => handleCardClick(card.id, true, e)}  // 기존 공격 선택 유지
+                  onMouseDown={(e) => handleCardMouseDown(card, e)} // 클릭형 고스트
+                  onDragStart={(e) => handleDragStart(card.id, e)} // 드래그 시작 (위에서 수정한 함수)
+                  onDrag={(e) => handleDrag(e)} // 드래그 중 커서 이동
+                  onDragEnd={handleDragEnd} // 드래그 끝
+                  onClick={(e) => handleCardClick(card.id, true, e)} // 기존 공격 선택 유지
                 >
                   <img src={getImageUrl(card.image)} alt={card.name} />
                 </div>
@@ -841,16 +749,16 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       )}
 
       {dragPreview && (
-      <div
-        className="drag-preview"
-        style={{
-          top: dragPreview.y - 60,
-          left: dragPreview.x - 40,
-        }}
-      >
-        <img src={dragPreview.image} alt="drag-preview" />
-      </div>
-    )}
+        <div
+          className="drag-preview"
+          style={{
+            top: dragPreview.y - 60,
+            left: dragPreview.x - 40,
+          }}
+        >
+          <img src={dragPreview.image} alt="drag-preview" />
+        </div>
+      )}
     </div>
   );
 }

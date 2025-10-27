@@ -11,14 +11,15 @@ interface DeckPageProps {
 }
 
 interface UserCardDTO {
-  id?: string; // ✅ 백엔드에서 내려오는 필드
-  cardId: string; // ✅ 프론트 내부에서 사용하는 필드
+  id?: string;
+  cardId: string;
   name: string;
   damage: number;
   hp: number;
   tier: number;
   image: string;
   count: number;
+  cost?: number; // ✅ 추가
 }
 
 const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
@@ -42,22 +43,26 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
   useEffect(() => {
     if (!user?._id || !token) return;
 
-    // 유저 카드 불러오기
+    // ✅ 유저 카드 불러오기
     const fetchUserCards = async (): Promise<UserCardDTO[]> => {
       try {
         const res = await axios.get(`${API_URL}/usercard/${user._id}/cards`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUserCards(res.data.userCards);
-        setAllUserCards(res.data.userCards);
-        return res.data.userCards;
+        const normalized = res.data.userCards.map((c: any) => ({
+          ...c,
+          image: c.image2D || c.image || `${c.cardType ?? "fire"}Tier${c.tier ?? 1}.png`,
+        }));
+        setUserCards(normalized);
+        setAllUserCards(normalized);
+        return normalized;
       } catch (err) {
         console.error("유저 카드 정보 불러오기 실패:", err);
         return [];
       }
     };
 
-    // 덱 불러오기
+    // ✅ 덱 불러오기
     const fetchUserDeck = async (cardsFromUser: UserCardDTO[]) => {
       try {
         const res = await axios.get(`${API_URL}/userdeck/single`, {
@@ -65,13 +70,15 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
         });
 
         if (res.data.deck) {
-          const deckCards: UserCardDTO[] = res.data.deck.cards;
-          const deckCardIds = deckCards.map((c) => c.id || c.cardId);
+          const deckCards: UserCardDTO[] = res.data.deck.cards.map((c: any) => ({
+            ...c,
+            image: c.image2D || c.image || `${c.cardType ?? "fire"}Tier${c.tier ?? 1}.png`,
+          }));
 
+          const deckCardIds = deckCards.map((c) => c.id || c.cardId);
           setSelectedCards(deckCardIds);
           onDeckChange(deckCardIds);
 
-          // 보유 카드 수량 조정
           const updatedUserCards = cardsFromUser.map((c) => {
             const selectedCount = deckCardIds.filter((id) => id === c.cardId).length;
             return { ...c, count: c.count - selectedCount };
@@ -83,7 +90,6 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
       }
     };
 
-    // 순서: 카드 → 덱
     fetchUserCards().then((cardsFromUser) => {
       if (cardsFromUser.length > 0) {
         fetchUserDeck(cardsFromUser);
@@ -126,10 +132,29 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
   // ✅ 덱 저장
   const saveDeck = async () => {
     if (!token) return;
+
+    // 🔥 덱에 포함된 카드의 상세정보를 전부 포함하도록 수정
+    const formattedDeck = selectedCards
+      .map((cardId) => {
+        const card = allUserCards.find((c) => c.cardId === cardId);
+        if (!card) return null;
+        return {
+          id: card.cardId,
+          name: card.name,
+          attack: card.damage ?? 0,
+          hp: card.hp ?? 0,
+          maxhp: card.hp ?? 0,
+          cost: card.cost ?? card.tier ?? 1, // 🔥 cost가 없으면 tier를 기본값으로 사용
+          tier: card.tier ?? 1,
+          image: card.image,
+        };
+      })
+      .filter(Boolean);
+
     try {
       await axios.post(
         `${API_URL}/userdeck/single/save`,
-        { cards: selectedCards },
+        { cards: formattedDeck }, // ✅ 카드 전체 데이터로 전송
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessage("덱 저장 완료!");

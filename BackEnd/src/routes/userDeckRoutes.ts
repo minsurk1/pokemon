@@ -1,3 +1,4 @@
+// src/routes/userDeckRoutes.ts
 import express from "express";
 import mongoose from "mongoose";
 import UserDeck from "../models/UserDeck";
@@ -15,39 +16,46 @@ router.get("/single", isAuthenticated, async (req, res) => {
 
     const userObjectId = new mongoose.Types.ObjectId(user._id);
 
-    // ✅ 카드 정보 전체 populate (프론트 표시용)
     const deck = await UserDeck.findOne({ user: userObjectId })
       .populate({
-        path: "cards",
+        path: "cards.card",
         model: "Card",
-        select: "_id cardName attack hp tier image2D image3D image3DGray",
+        select: "_id cardName cardType attack hp cost tier image2D",
       })
       .lean();
 
     if (!deck) {
-      return res.status(404).json({ message: "덱이 존재하지 않습니다." });
+      return res.status(200).json({ deck: { _id: null, cards: [] } });
     }
 
-    // ✅ 프론트용으로 가공 (이미지 경로 보정)
-    const BASE_URL = process.env.BASE_URL || "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
+    const BASE_URL =
+      process.env.BASE_URL ||
+      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
+    // ✅ populate + 직접 저장된 필드 둘 다 읽기
     const formattedDeck = {
       _id: deck._id,
-      cards: (deck.cards || []).map((card: any) => ({
-        id: card._id.toString(),
-        name: card.cardName,
-        attack: card.attack,
-        hp: card.hp,
-        tier: card.tier,
-        // 🔹 이미지 경로 보정
-        image: card.image2D
-          ? `${BASE_URL}/images/${card.image2D.split("/").pop()}`
-          : card.image3D
-          ? `${BASE_URL}/images/${card.image3D.split("/").pop()}`
-          : card.image3DGray
-          ? `${BASE_URL}/images/${card.image3DGray.split("/").pop()}`
-          : `${BASE_URL}/images/default.png`,
-      })),
+      cards: (deck.cards || []).map((entry: any) => {
+        const card = entry.card || entry;
+
+        const imageFile =
+          card.image2D ||
+          entry.image2D ||
+          "default.png";
+        const imageUrl = `${BASE_URL}/images/${imageFile.split("/").pop()}`;
+
+        return {
+          id: String(card._id ?? entry._id),
+          name: card.cardName ?? entry.name ?? "Unknown",
+          cardType: card.cardType ?? entry.cardType ?? "normal",
+          attack: Number(card.attack ?? entry.attack ?? 0),
+          hp: Number(card.hp ?? entry.hp ?? 0),
+          maxhp: Number(card.hp ?? entry.hp ?? 0),
+          cost: Number(card.cost ?? entry.cost ?? card.tier ?? entry.tier ?? 1),
+          tier: Number(card.tier ?? entry.tier ?? 1),
+          image: imageUrl,
+        };
+      }),
     };
 
     res.status(200).json({ deck: formattedDeck });
@@ -69,18 +77,32 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
     const { cards } = req.body;
 
     if (!Array.isArray(cards)) {
-      return res.status(400).json({ message: "잘못된 카드 데이터 형식입니다." });
+      return res
+        .status(400)
+        .json({ message: "잘못된 카드 데이터 형식입니다." });
     }
+
+    const formattedCards = cards.map((c: any) => ({
+      card: new mongoose.Types.ObjectId(c.id),
+      name: c.name,
+      cardType: c.cardType ?? "fire",
+      attack: c.attack ?? 0,
+      hp: c.hp ?? 0,
+      maxhp: c.maxhp ?? c.hp ?? 0,
+      cost: c.cost ?? c.tier ?? 1,
+      tier: c.tier ?? 1,
+      image2D: c.image2D || c.image || "default.png",
+    }));
 
     let deck = await UserDeck.findOne({ user: userObjectId });
 
     if (!deck) {
       deck = new UserDeck({
         user: userObjectId,
-        cards: cards.map((c: string) => new mongoose.Types.ObjectId(c)),
+        cards: formattedCards,
       });
     } else {
-      deck.cards = cards.map((c: string) => new mongoose.Types.ObjectId(c));
+      deck.cards = formattedCards;
     }
 
     await deck.save();

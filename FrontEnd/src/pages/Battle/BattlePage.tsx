@@ -153,6 +153,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // 상대 손에 들고 있는 패의 개수
   const [enemyHandCount, setEnemyHandCount] = useState<number>(8);
 
+  // ✅ 한 턴에 1번만 드로우 가능
+  const [hasDrawnThisTurn, setHasDrawnThisTurn] = useState(false);
+
   // 🧩 드래그 중 카드 프리뷰 상태
   const [dragPreview, setDragPreview] = useState<{ x: number; y: number; image: string } | null>(null);
   const [dragOverTargetId, setDragOverTargetId] = useState<string | null>(null);
@@ -225,6 +228,47 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     }
   }, [socket, roomCode]);
 
+  // ✅ 수동 드로우 함수
+  const drawCard = useCallback(() => {
+    if (!isMyTurn) {
+      setMessage("지금은 당신의 턴이 아닙니다!");
+      setShowMessage(true);
+      return;
+    }
+
+    if (hasDrawnThisTurn) {
+      setMessage("이번 턴에는 이미 드로우했습니다!");
+      setShowMessage(true);
+      return;
+    }
+
+    if (deckCards.length === 0) {
+      setMessage("덱이 비어 있습니다!");
+      setShowMessage(true);
+      return;
+    }
+
+    const drawnCard = deckCards[0];
+    setHandCards((prev) => [...prev, drawnCard]);
+    setDeckCards((prev) => prev.slice(1));
+    setHasDrawnThisTurn(true);
+
+    console.log(`🎴 드로우: ${drawnCard.name}`);
+    setMessage(`📥 ${drawnCard.name} 카드를 드로우했습니다!`);
+    setShowMessage(true);
+  }, [isMyTurn, hasDrawnThisTurn, deckCards]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "d") {
+        drawCard();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [drawCard]);
+
   // ===== 서버 이벤트 처리 =====
   useEffect(() => {
     if (!socket.connected) return;
@@ -263,6 +307,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         setIsMyTurn(mine);
         setTurn((t) => t + 1);
         setTurnTime(INITIAL_TIME);
+        setHasDrawnThisTurn(false); // ✅ 턴 교체 시 드로우 초기화
         setPlayerCostIcons((p) => Math.min(p + (mine ? 1 : 0), 8));
         setOpponentCostIcons((p) => Math.min(p + (!mine ? 1 : 0), 8));
         setMessage(mine ? "🟢 내 턴입니다!" : "🔴 상대 턴입니다.");
@@ -679,13 +724,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="deck-area">
           <button
             className="deck-card"
-            onClick={() => {
-              if (deckCards.length > 0) {
-                const c = deckCards[0];
-                setHandCards((h) => [...h, c]);
-                setDeckCards((d) => d.slice(1));
-              }
-            }}
+            onClick={drawCard} // ✅ 함수 직접 호출
+            disabled={!isMyTurn || hasDrawnThisTurn}
+            title={!isMyTurn ? "상대 턴입니다!" : hasDrawnThisTurn ? "이번 턴에는 이미 드로우했습니다!" : "드로우 (D 키)"}
           >
             <div className="deck-count">{deckCards.length}</div>
           </button>

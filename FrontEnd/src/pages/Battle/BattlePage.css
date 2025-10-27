@@ -84,7 +84,7 @@
 .enemy-field {
   width: 86vw;
   height: 49.9vh;
-  background-image: url("../../assets/images/BattleTopBlue.png");
+  background-image: url("../../assets/images/BattleTopGray.png");
   background-size: contain;
   clip-path: polygon(0 0, 100% 0, 100% 80%, 95% 44%, 10% 44%, 0 55%);
   display: flex;
@@ -97,7 +97,7 @@
 .player-field {
   width: 86vw;
   height: 49.9vh;
-  background-image: url("../../assets/images/BattleBottomBlue.png");
+  background-image: url("../../assets/images/BattleBottomGray.png");
   background-size: contain;
   background-position: bottom;
   clip-path: polygon(0 100%, 100% 100%, 100% 20%, 95% 56%, 10% 56%, 0 45%);
@@ -120,7 +120,7 @@
   gap: 13px;
   padding: 20px;
   min-height: 150px;
-  z-index: 500; /* ✅ 카드가 항상 위 */
+  z-index: 500; 
 }
 
 .player-card-zone {

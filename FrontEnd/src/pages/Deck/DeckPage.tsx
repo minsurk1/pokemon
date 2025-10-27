@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./DeckPage.css";
+import MessageBox from "../../components/common/MessageBox";
 
 interface DeckPageProps {
   onDeckChange: (deck: string[]) => void;
@@ -25,6 +26,9 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
   const [userCards, setUserCards] = useState<UserCardDTO[]>([]);
   const [allUserCards, setAllUserCards] = useState<UserCardDTO[]>([]);
   const navigate = useNavigate();
+
+  const [message, setMessage] = useState("");
+  const [showMessage, setShowMessage] = useState(false);
 
   const maxSelectedCards = 30;
   const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api";
@@ -128,10 +132,12 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
         { cards: selectedCards },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert("덱 저장 완료!");
+      setMessage("덱 저장 완료!");
+      setShowMessage(true);
     } catch (err) {
       console.error("덱 저장 실패:", err);
-      alert("덱 저장 실패");
+      setMessage("덱 저장 실패");
+      setShowMessage(true);
     }
   };
 
@@ -149,16 +155,27 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
       </div>
 
       {/* 버튼 영역 */}
-      <div style={{ margin: "1rem" }}>
+      {/* <div style={{ margin: "1rem" }}>
         <button className="nav-button" onClick={createNewDeck} style={{ marginRight: "1rem" }}>
           새 덱 생성
         </button>
         <button className="nav-button" onClick={saveDeck}>
           덱 저장
         </button>
+      </div> */}
+      
+      <div className="sticky-deck-row">
+      <div className="button-deck-sidebar">
+         {/* 버튼 영역 */}
+      <div style={{ margin: "1rem" }}>
+        <button className="deck-new-button" onClick={createNewDeck} style={{ marginRight: "1rem" }}>
+          new
+        </button>
+        <button className="deck-save-button" onClick={saveDeck}>
+          save
+        </button>
+      </div> 
       </div>
-
-      {/* 선택된 카드 영역 */}
       <div className="selected-cards-container">
         <div className="selected-cards">
           {Array.from({ length: maxSelectedCards }).map((_, index) => {
@@ -182,7 +199,13 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
           })}
         </div>
       </div>
-
+      </div>
+       {showMessage && (
+              <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1" onClose={() => setShowMessage(false)}>
+                {message}
+              </MessageBox>
+            )}
+      
       {/* 보유 카드 목록 */}
       <div className="card-list">
         {userCards.map((card) => (

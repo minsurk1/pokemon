@@ -26,4 +26,7 @@ export interface RoomInfo {
   hp: Record<string, number>;
   turnIndex: number;
   gameState?: GameState;
+  // ✅ 타이머 공유용 필드 추가
+  timeLeft?: number; // 남은 시간(초)
+  timer?: NodeJS.Timeout | null; // setInterval 핸들 (NodeJS 전용)
 }

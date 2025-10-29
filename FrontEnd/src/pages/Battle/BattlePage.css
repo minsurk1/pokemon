@@ -1,3 +1,4 @@
+/* BattlePage.css 전체 코드 */
 @import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
 
 .battle-container {
@@ -98,7 +99,7 @@
 .player-field {
   width: 86vw;
   height: 49.9vh;
-  background-image: url("../../assets/images/BattleBottomGray.png");
+  background-image: url("../../assets/images/BattleBottomGreen.png");
   background-size: contain;
   background-position: bottom;
   clip-path: polygon(0 100%, 100% 100%, 100% 20%, 95% 56%, 10% 56%, 0 45%);
@@ -290,7 +291,8 @@
   display: flex;
   gap: 20px;
   align-items: flex-end;
-  z-index: 150;
+  /* 🔥 Z-index 수정 */
+  z-index: 3000;
 }
 
 .deck-card {
@@ -336,13 +338,114 @@
   font-size: 0.9rem;
 }
 
-.hand-cards {
+/* 🔥 손패 겹침/펼침 컨테이너 스타일 */
+.hand-cards-wrapper {
+  position: relative;
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  max-width: 60vw;
-  max-height: 30vh;
-  overflow-y: auto;
+  /* flex-wrap: wrap; // 겹침 기능 때문에 주석 처리 */
+  align-items: flex-end;
+  cursor: pointer;
+  height: 17vh; /* 카드 높이와 맞춤 */
+  transition: width 0.3s ease, transform 0.3s ease;
+  box-sizing: content-box;
+}
+
+/* 접힌 상태 (기본) */
+.hand-cards-wrapper.collapsed {
+  width: 7vw; /* 덱 카드와 동일한 너비로 겹침 */
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+/* 펼쳐진 상태 */
+.hand-cards-wrapper.expanded {
+  width: auto; /* 내용물 너비에 맞게 조정 */
+  gap: 10px; /* 펼쳐질 때 간격 */
+  background: rgba(0, 0, 0, 0.6); /* 펼쳤을 때 배경 추가 */
+  padding: 10px;
+  border-radius: 10px;
+}
+
+/* 접힌 상태에서 카드 위치 조정 */
+.hand-cards-wrapper.collapsed .card-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 7vw; /* 덱 카드와 동일한 너비 */
+  height: 17vh; /* 덱 카드와 동일한 높이 */
+}
+
+/* 접힌 상태에서 겹치는 효과 */
+.hand-cards-wrapper.collapsed .card-slot:not(:first-child) {
+  transform: translate(2px, 2px); /* 살짝 겹쳐 보이도록 */
+}
+
+.hand-cards-wrapper.collapsed .card-slot .my-card {
+  transform: scale(1); /* 접힌 상태에서는 확대 방지 */
+}
+
+/* 펼쳐진 상태에서 카드 위치 조정 */
+.hand-cards-wrapper.expanded .card-slot {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100px; /* 원래 카드 사이즈 */
+  height: 140px; /* 원래 카드 사이즈 */
+  transition: transform 0.3s ease, margin 0.3s ease;
+}
+
+.hand-cards-wrapper.expanded .card-slot .my-card {
+  cursor: pointer;
+}
+
+/* 접힌 상태에서 카드 개수 표시 */
+.hand-count-overlay {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: rgba(135, 206, 235, 0.8); /* 하늘색 계열로 변경 */
+  color: rgb(255, 255, 255);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  pointer-events: none; /* 클릭 방지 */
+  z-index: 100;
+  border: 1px solid #ffffff;
+}
+
+.hand-count-overlay.no-cards {
+  background: rgba(128, 128, 128, 0.8);
+  color: #fff;
+}
+
+/* 🔥 펼침/접힘 버튼 스타일 */
+.toggle-hand-button {
+  position: absolute;
+  top: -30px; /* 손패 영역 위에 배치 */
+  right: 0;
+  padding: 5px 10px;
+  border: 1px solid white;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 100;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-hand-button.expand-button {
+  background-color: #4a90e2; /* 파란색 계열 */
+  color: white;
+}
+
+.toggle-hand-button.collapse-button {
+  background-color: #ff4d4d; /* 붉은색 계열 */
+  color: white;
+}
+
+.toggle-hand-button:hover {
+  filter: brightness(1.2);
 }
 
 /* ===============================
@@ -421,6 +524,27 @@
   flex-direction: column;
   align-items: center;
   padding: 10px 0;
+}
+
+.player-grave{
+  position: absolute;
+  top: 80.5vh;
+  width: 10vw;
+  height:19.5vh;
+  right :4.4vw;
+  background:url(../../assets/images/grave.png);
+  background-size: cover;
+  z-index: 1000;
+}
+.enemy-grave{
+  position: absolute;
+  top:0vh;
+  width: 10vw;
+  height: 19.5vh;
+  right: 4.4vw;
+  background:url(../../assets/images/grave.png);
+  background-size: cover;
+  z-index: 1000;
 }
 
 .cost-icon {
@@ -865,10 +989,11 @@
     width: 90%;
     bottom: 60px;
   }
-
-  .hand-cards {
+  
+  /* 미디어 쿼리 안의 hand-cards는 삭제 */
+  /* .hand-cards {
     max-width: 400px;
-  }
+  } */
 
   @keyframes cardToZone {
     0% {

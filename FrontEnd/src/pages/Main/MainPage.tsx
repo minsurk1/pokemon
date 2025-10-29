@@ -123,6 +123,7 @@ function MainPage() {
   const handleStore = useCallback(() => navigate("/store"), [navigate]);
   const handleDeck = useCallback(() => navigate("/deck"), [navigate]);
   const handleDex = useCallback(() => navigate("/dex"), [navigate]);
+  const handleInventory = useCallback(() => navigate("/inventory"), [navigate]);
   const handleBattle = useCallback(() => {
     if (!selectedDeck || selectedDeck.length === 0) {
       alert("⚠️ 덱이 비어 있습니다. 먼저 덱을 구성해주세요!");
@@ -212,8 +213,8 @@ function MainPage() {
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={handleBattle} marginBottom="3.3rem" disabled={loading || !userInfo}>
-            배틀 <GiBattleGear />
+            <MenuButton onClick={handleInventory} marginBottom="3.3rem">
+            Inventory <GiBattleGear />
           </MenuButton>
           </motion.li>
           <motion.li variants={item}>
@@ -222,8 +223,8 @@ function MainPage() {
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={toggleRoomTab} marginBottom="3.3rem">
-              {showRoomTab ? "탭 닫기" : "방 만들기/입장"} <MdMeetingRoom />
+            <MenuButton onClick={toggleRoomTab} marginBottom="3.3rem" disabled={loading || !userInfo}>
+              {showRoomTab ? "탭 닫기" : "방 만들기/입장"}<MdMeetingRoom />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>

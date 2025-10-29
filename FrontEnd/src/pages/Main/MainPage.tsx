@@ -51,7 +51,7 @@ const videoThemes = {
 
 function MainPage() {
   const navigate = useNavigate();
-  const { socket } = useSocket();
+  const socket = useSocket();
   const { userInfo, loading, refreshUser, logout, selectedDeck } = useUser();
 
   const [showRoomTab, setShowRoomTab] = useState(false);
@@ -89,14 +89,13 @@ function MainPage() {
 
   // ✅ 새로고침 후 유저 정보 자동 불러오기
   useEffect(() => {
-  const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token");
     if (!loading && token && !userInfo) {
       refreshUser().then((data) => {
         console.log("🎯 User + Deck loaded:", data);
       });
     }
   }, [loading, userInfo, refreshUser]);
-
 
   // ✅ 소켓 리스너 등록
   useEffect(() => {

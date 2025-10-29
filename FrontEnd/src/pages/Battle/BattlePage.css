@@ -113,7 +113,7 @@
 
 .enemy-card-zone {
   position: absolute;
-  top: 26vh;    /* 여기 조절하면 상대 카드 소환 위치 변경 가능 */
+  top: 26vh; /* 여기 조절하면 상대 카드 소환 위치 변경 가능 */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -302,7 +302,7 @@
   background-size: cover;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.15s, box-shadow 0.3s;
   position: relative;
   display: flex;
   align-items: center;
@@ -319,12 +319,14 @@
 .deck-card:hover:not(:disabled) {
   transform: scale(1.05);
   box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+  cursor: pointer;
 }
 
 .deck-card:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   border-color: #666;
+  cursor: not-allowed;
 }
 
 .deck-count {
@@ -478,14 +480,30 @@
 }
 
 /* 🎨 겹쳐진 느낌 */
-.enemy-hand-card:nth-child(1) { transform: translateY(3px) rotate(-8deg); }
-.enemy-hand-card:nth-child(2) { transform: translateY(-2px) rotate(-5deg); }
-.enemy-hand-card:nth-child(3) { transform: translateY(1px) rotate(-3deg); }
-.enemy-hand-card:nth-child(4) { transform: translateY(-1px) rotate(2deg); }
-.enemy-hand-card:nth-child(5) { transform: translateY(2px) rotate(4deg); }
-.enemy-hand-card:nth-child(6) { transform: translateY(-3px) rotate(6deg); }
-.enemy-hand-card:nth-child(7) { transform: translateY(2px) rotate(-2deg); }
-.enemy-hand-card:nth-child(8) { transform: translateY(-2px) rotate(5deg); }
+.enemy-hand-card:nth-child(1) {
+  transform: translateY(3px) rotate(-8deg);
+}
+.enemy-hand-card:nth-child(2) {
+  transform: translateY(-2px) rotate(-5deg);
+}
+.enemy-hand-card:nth-child(3) {
+  transform: translateY(1px) rotate(-3deg);
+}
+.enemy-hand-card:nth-child(4) {
+  transform: translateY(-1px) rotate(2deg);
+}
+.enemy-hand-card:nth-child(5) {
+  transform: translateY(2px) rotate(4deg);
+}
+.enemy-hand-card:nth-child(6) {
+  transform: translateY(-3px) rotate(6deg);
+}
+.enemy-hand-card:nth-child(7) {
+  transform: translateY(2px) rotate(-2deg);
+}
+.enemy-hand-card:nth-child(8) {
+  transform: translateY(-2px) rotate(5deg);
+}
 
 /* 손패 카드 hover 시 강조 */
 .enemy-hand-card:hover {
@@ -784,13 +802,13 @@
 
 /* === 🧠 상대 카드 클릭 가능 & 시각 효과 === */
 .enemy-clickable {
-  pointer-events: auto;         /* ✅ 클릭 허용 */
-  cursor: pointer;              /* ✅ 손가락 커서 */
+  pointer-events: auto; /* ✅ 클릭 허용 */
+  cursor: pointer; /* ✅ 손가락 커서 */
   transition: transform 0.2s ease-in-out; /* ✅ 부드러운 확대 효과 */
 }
 
 .enemy-clickable:hover {
-  transform: scale(1.05);       /* ✅ 호버 시 살짝 확대 */
+  transform: scale(1.05); /* ✅ 호버 시 살짝 확대 */
   z-index: 40;
 }
 

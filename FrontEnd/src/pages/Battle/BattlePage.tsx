@@ -13,6 +13,7 @@ import GameOverScreen from "../../components/battle/GameOverScreen";
 import CircularTimer from "../../components/battle/CircularTimer"; // ✅ 경로에 맞게 조정
 import BurnLineComponent from "../../components/battle/BurnLineComponent";
 import { Card } from "../../types/Card";
+import { CiFlag1 } from "react-icons/ci";
 
 // ===================== 상수 =====================
 const INITIAL_TIME = 30;
@@ -703,14 +704,17 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   </div>
                 </div>
               </div>
+              
             ))
           ) : (
             <div className="empty-zone">상대 필드가 비어있습니다</div>
+            
           )}
         </div>
 
         {/* ▼ 중앙 타이머 라인 */}
         <BurnLineComponent timeLeft={turnTime} isMyTurn={isMyTurn} />
+        
 
         {/* ▼ 내 카드 존 */}
         <div className="player-card-zone">
@@ -848,6 +852,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             <div className="hp-bar-inner" style={{ width: `${(playerHP / 2000) * 100}%` }} />
             <div className="hp-text">{playerHP}/2000</div>
           </div>
+          <div className="surrender-button" onClick={() => setShowGameOver(true)}>항복 <CiFlag1 /></div>
         </div>
       </div>
 

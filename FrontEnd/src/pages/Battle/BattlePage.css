@@ -235,7 +235,7 @@
 
 .time-zone {
   position: absolute;
-  height: 27vh;
+  height: 24vh;
   clip-path: polygon(0 0, 100% 22.6%, 100% 100%, 0 100%);
   background-color: transparent;
   z-index: 100;
@@ -544,23 +544,27 @@
   padding: 10px 0;
 }
 
-.player-grave{
-  position: absolute;
-  top: 80.5vh;
-  width: 10vw;
-  height:19.5vh;
-  right :4.4vw;
-  background:url(../../assets/images/grave.png);
-  background-size: cover;
-  z-index: 1000;
-}
+  .player-grave{
+    position: absolute;
+    top: 50.1vh;
+    width: 9vw;
+    height:30.4vh;
+    left: 0;
+    clip-path: polygon(0 0, 100% 0% ,100% 100%,0 74%);
+    /* background:url(../../assets/images/grave.png); */
+    background-color: red;
+    background-size: cover;
+    z-index: 1000;
+  }
 .enemy-grave{
   position: absolute;
-  top:0vh;
-  width: 10vw;
-  height: 19.5vh;
-  right: 4.4vw;
-  background:url(../../assets/images/grave.png);
+  top:19.4vh;
+  width: 9vw;
+  height: 30.4vh;
+  left: 0;
+  clip-path: polygon(0 26%, 100% 0%,100% 100%,0 100%);
+  /* background:url(../../assets/images/grave.png); */
+  background-color: red;
   background-size: cover;
   z-index: 1000;
 }
@@ -627,6 +631,17 @@
   align-items: center;
   padding: 20px;
   color: white;
+  overflow: hidden;   
+}
+
+.surrender-button{
+  margin-top: 30px;
+  padding: 15px 15px;
+  background-color: rgb(0, 0, 0);
+  z-index: 1000;
+  border-radius: 15px;
+  align-items: center;
+  border: solid gold 2px;
 }
 
 .game-info {

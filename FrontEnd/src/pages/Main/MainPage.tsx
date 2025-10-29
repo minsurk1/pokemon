@@ -213,12 +213,12 @@ function MainPage() {
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleInventory} marginBottom="3.3rem">
-            Inventory <GiBattleGear />
+            인벤토리 <GiBattleGear />
           </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleRule} marginBottom="3.3rem" cursor="help">
-              Rule <FaBook />
+              규칙 <FaBook />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>

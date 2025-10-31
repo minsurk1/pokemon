@@ -13,7 +13,66 @@
   background-position: center;
   position: relative;
 }
-
+.Top-Line{
+  position: relative;
+  width:76.5vw;
+  height: 2px;
+  background-color: rgb(255, 255, 255);
+  z-index: 1001;
+  top: 19.3vh;
+  left:9vw;
+}
+.Bottom-Line{
+  position: relative;
+  width: 76.5vw; 
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top: 79.8vh;
+  left: 9vw;
+}
+.TopLeft-Dia{
+  position: relative;
+  width: 10vw;
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top: 26.8vh;
+  transform: rotate(-24deg);
+  transform-origin:0 0;
+}
+.BottomLeft-Dia{
+  position: relative;
+  width: 10vw;
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top: 71.7vh;
+  transform: rotate(24deg);
+  transform-origin: 0 0;
+}
+.TopRight-Dia{
+  position: relative;
+  left: 85.5vw;
+  width: 12vw;
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top:18.8vh;
+  transform: rotate(67.4deg);
+  transform-origin: 0 0;
+}
+.BottomRight-Dia{
+  position: relative;
+  left: 85.4vw;
+  width: 11.6vw;
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top: 79.35vh;
+  transform: rotate(-66.8deg);
+  transform-origin: 0 0;
+}
 .animating-card-overlay {
   position: fixed;
   top: 0;
@@ -77,7 +136,13 @@
   height: 0.4vh;
   background-size: 100% 100%;
   background-repeat: no-repeat;
-  z-index: 20;
+
+  /* 💡 추가/수정: 이 세 줄이 핵심 */
+  position: absolute; 
+  top: 50%;
+  transform: translateY(-50%);
+
+  z-index: 300; /* ✅ 배경 (200)보다 높게 설정 */
   opacity: 0.8;
   transition: background 0.3s ease;
 }
@@ -85,22 +150,22 @@
 .enemy-field {
   width: 86vw;
   height: 49.9vh;
-  background-image: url("../../assets/images/BattleTopGray.png");
-  background-size: contain;
+  background-image: url("../../assets/images/BattleTop.png");
+  background-size: cover;
   clip-path: polygon(0 0, 100% 0, 100% 80%, 95% 44%, 10% 44%, 0 55%);
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   z-index: 10;
-  pointer-events: none; /* ✅ 배경은 클릭 막기 */
+  pointer-events: none; 
 }
 
 .player-field {
   width: 86vw;
   height: 49.9vh;
-  background-image: url("../../assets/images/BattleBottomGreen.png");
-  background-size: contain;
+  background-image: url("../../assets/images/BattleBottom.png");
+  background-size: cover;
   background-position: bottom;
   clip-path: polygon(0 100%, 100% 100%, 100% 20%, 95% 56%, 10% 56%, 0 45%);
   display: flex;
@@ -156,8 +221,8 @@
   align-items: center;
   z-index: 200;
   clip-path: polygon(0 0%, 100% 0%, 100% 20%, 95% 61%, 10% 61%, 0 45%);
-  background-image: url("../../assets/images/BottomGrass.png");
-  background-size: cover;
+  background-image: url("../../assets/images/fieldBottom.png");
+  background-size: 90vw 49.9vh;
   background-position: center;
   background-repeat: no-repeat;
 }
@@ -173,8 +238,8 @@
   align-items: center;
   z-index: 200;
   clip-path: polygon(0 100%, 100% 100%, 100% 80%, 95% 39%, 10% 39%, 0 55%);
-  background-image: url("../../assets/images/TopGrass.png");
-  background-size: cover;
+  background-image: url("../../assets/images/fieldTop.png");
+  background-size: 90vw 49.9vh;
   background-position: center;
   background-repeat: no-repeat;
 }
@@ -431,13 +496,14 @@
   border-radius: 5px;
   font-size: 0.9rem;
   font-weight: bold;
+  font-family: "Do Hyeon", serif;
   cursor: pointer;
   z-index: 100;
   transition: background-color 0.2s ease;
 }
 
 .toggle-hand-button.expand-button {
-  background-color: #4a90e2; /* 파란색 계열 */
+  background:linear-gradient(to right, #8e9eab,#eef2f3); /* 파란색 계열 */
   color: white;
 }
 
@@ -526,6 +592,7 @@
   flex-direction: column-reverse;
   align-items: center;
   padding: 10px 0;
+  border-left: solid 2px white;
 }
 
 .enemy-cost-zone {
@@ -542,31 +609,36 @@
   flex-direction: column;
   align-items: center;
   padding: 10px 0;
+  border-left: solid 2px white;
 }
 
   .player-grave{
     position: absolute;
-    top: 50.1vh;
+    top: 50.3vh;
     width: 9vw;
     height:30.4vh;
     left: 0;
     clip-path: polygon(0 0, 100% 0% ,100% 100%,0 74%);
-    /* background:url(../../assets/images/grave.png); */
-    background-color: red;
+     background:url(../../assets/images/grave1.png); 
+    /* background-color: red; */
     background-size: cover;
+    background-position: center;
     z-index: 1000;
+    border-right: solid 3px rgb(196, 191, 191);
   }
 .enemy-grave{
   position: absolute;
-  top:19.4vh;
+  top:19.31vh;
   width: 9vw;
   height: 30.4vh;
   left: 0;
   clip-path: polygon(0 26%, 100% 0%,100% 100%,0 100%);
-  /* background:url(../../assets/images/grave.png); */
-  background-color: red;
+  background:url(../../assets/images/grave1.png); 
+  /* background-color: red; */
   background-size: cover;
+  background-position: center;
   z-index: 1000;
+  border-right: solid 3px rgb(196, 191, 191);
 }
 
 .cost-icon {

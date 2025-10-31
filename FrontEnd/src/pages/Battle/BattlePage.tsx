@@ -668,6 +668,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       {/* === 전장 === */}
       <div className="field-container">
+        <div className="Top-Line"/>
+        <div className="TopLeft-Dia"/>
+        <div className="TopRight-Dia"/>
+        <div className="Bottom-Line"/>
+        <div className="BottomLeft-Dia"/>
+        <div className="BottomRight-Dia"/>
         <div className="enemy-card-bg" />
         <div className="enemy-field" />
         <div className="player-card-bg" />

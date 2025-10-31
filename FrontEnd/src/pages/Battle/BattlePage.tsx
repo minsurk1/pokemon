@@ -1,3 +1,4 @@
+// BattlePage.tsx 전체 코드
 "use client";
 
 import type React from "react";
@@ -12,6 +13,7 @@ import GameOverScreen from "../../components/battle/GameOverScreen";
 import CircularTimer from "../../components/battle/CircularTimer"; // ✅ 경로에 맞게 조정
 import BurnLineComponent from "../../components/battle/BurnLineComponent";
 import { Card } from "../../types/Card";
+import { CiFlag1 } from "react-icons/ci";
 
 // ===================== 상수 =====================
 const INITIAL_TIME = 30;
@@ -126,6 +128,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [currentTurnId, setCurrentTurnId] = useState<string | null>(null);
   const [isMyTurn, setIsMyTurn] = useState(false);
   const [turn, setTurn] = useState(1);
+  
+  // 🔥 손패 펼침/접힘 상태 추가
+  const [showHand, setShowHand] = useState(false);
 
   const [playerHP, setPlayerHP] = useState(2000);
   const [enemyHP, setEnemyHP] = useState(2000);
@@ -517,7 +522,21 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("timeUpdate", onTimeUpdate);
       socket.off("turnTimeout", onTurnTimeout);
     };
-  }, [socket, roomCode]);
+  }, [isMyTurn, socket, roomCode]);
+  
+  // 🔥 손패 펼침/접힘 토글 핸들러 추가
+  const handleHandClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    // 카드가 없으면 동작하지 않음
+    if (handCards.length === 0) return;
+    setShowHand(!showHand);
+  };
+  
+  // 🔥 손패 펼침/접힘 토글 버튼 핸들러
+  const handleToggleHand = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation(); // 래퍼 클릭 이벤트 전파 방지
+    setShowHand(!showHand);
+  };
 
   // ===== 카드 클릭 =====
   const handleCardClick = (cardId: string, fromZone: boolean, e: React.MouseEvent<HTMLDivElement>) => {
@@ -562,6 +581,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     // ✅ 코스트 차감 + 손패에서 제거
     setHandCards((prev) => prev.filter((c) => c.id !== cardId));
     setPlayerCostIcons((prevCost) => Math.max(0, prevCost - cardCost));
+    
+    // 🔥 카드 소환 시 손패를 다시 접음
+    setShowHand(false);
 
     console.log("🎯 소환 시 전송되는 카드:", normalizedCard);
 
@@ -747,6 +769,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       {/* === 전장 === */}
       <div className="field-container">
+        <div className="Top-Line"/>
+        <div className="TopLeft-Dia"/>
+        <div className="TopRight-Dia"/>
+        <div className="Bottom-Line"/>
+        <div className="BottomLeft-Dia"/>
+        <div className="BottomRight-Dia"/>
         <div className="enemy-card-bg" />
         <div className="enemy-field" />
         <div className="player-card-bg" />
@@ -783,14 +811,17 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   </div>
                 </div>
               </div>
+              
             ))
           ) : (
             <div className="empty-zone">상대 필드가 비어있습니다</div>
+            
           )}
         </div>
 
         {/* ▼ 중앙 타이머 라인 */}
         <BurnLineComponent timeLeft={turnTime} isMyTurn={isMyTurn} />
+        
 
         {/* ▼ 내 카드 존 */}
         <div className="player-card-zone">
@@ -832,17 +863,61 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             <div className="deck-count">{deckCards.length}</div>
           </button>
 
-          <div className="hand-cards">
-            {handCards.map((card) => (
-              <div key={card.id} className="card-slot">
-                <div className="my-card" onClick={(e) => handleCardClick(card.id, false, e)}>
+          {/* 🔥 수정된 손패 영역: showHand 상태에 따라 클래스 변경 */}
+          <div 
+            className={`hand-cards-wrapper ${showHand ? 'expanded' : 'collapsed'}`}
+            onClick={handleHandClick}
+          >
+            {/* 🔥 펼침/접힘 버튼 (카드가 2장 이상일 때만 표시) */}
+            {handCards.length >= 2 && showHand && (
+              <button 
+                className="toggle-hand-button collapse-button" 
+                onClick={handleToggleHand}
+              >
+                접기
+              </button>
+            )}
+             {handCards.length >= 2 && !showHand && (
+              <button 
+                className="toggle-hand-button expand-button" 
+                onClick={handleToggleHand}
+              >
+                펼치기
+              </button>
+            )}
+
+            {handCards.map((card, index) => (
+              <div 
+                key={card.id} 
+                className={`card-slot hand-card-position-${index}`}
+                style={{ zIndex: handCards.length - index }} // 겹침 순서
+              >
+                <div 
+                  className="my-card hand-card" 
+                  onClick={(e) => {
+                    // 펼쳐진 상태에서만 소환 클릭 작동
+                    if (showHand) {
+                      e.stopPropagation(); // 래퍼 클릭 방지
+                      handleCardClick(card.id, false, e);
+                    }
+                  }}
+                >
                   <img src={getImageUrl(card.image)} alt={card.name} />
                 </div>
               </div>
             ))}
+            {/* 🔥 접힌 상태일 때만 보이는 텍스트 */}
+            {!showHand && handCards.length > 0 && (
+              <div className="hand-count-overlay">{handCards.length} 장</div>
+            )}
+            {/* 🔥 카드가 없을 때만 보이는 텍스트 */}
+            {handCards.length === 0 && (
+              <div className="hand-count-overlay no-cards">손패 없음</div>
+            )}
           </div>
+          {/* 이전의 hand-cards는 삭제하거나 아래처럼 수정됨 */}
         </div>
-
+        <div className="enemy-grave"/>
         {/* ▼ 코스트 영역 */}
         <div className="enemy-cost-zone">
           {Array.from({
@@ -859,6 +934,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             <div key={i} className="cost-icon" />
           ))}
         </div>
+        <div className="player-grave"/>
       </div>
 
       {/* === 오른쪽 사이드 영역 === */}
@@ -883,6 +959,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             <div className="hp-bar-inner" style={{ width: `${(playerHP / 2000) * 100}%` }} />
             <div className="hp-text">{playerHP}/2000</div>
           </div>
+          <div className="surrender-button" onClick={() => setShowGameOver(true)}>항복 <CiFlag1 /></div>
         </div>
       </div>
 

@@ -32,9 +32,38 @@
   height: 12.5vh;
 }
 
+.deck-new-button{
+  font-family: "Do Hyeon", serif;
+  background-color: transparent;
+  color: #ffd803;
+  border: none;
+  border-radius: 14px;
+  padding: 1rem 2rem;
+  font-size: 1.18rem;
+  font-weight: bold;
+  box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
+  text-shadow: 0 0 8px #ffd803;
+  transition: box-shadow 0.2s, color 0.2s;
+  margin-bottom: 40px
+}
+
+.deck-save-button{
+  font-family: "Do Hyeon", serif;
+  background-color: transparent;
+  color: #ffd803;
+  border: none;
+  border-radius: 14px;
+  padding: 1rem 2rem;
+  font-size: 1.18rem;
+  font-weight: bold;
+  box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
+  text-shadow: 0 0 8px #ffd803;
+  transition: box-shadow 0.2s, color 0.2s;
+}
+
 .nav-button {
   font-family: "Do Hyeon", serif;
-  background: #000000;
+  background: transparent;
   color: #ffd803;
   border: none;
   border-radius: 14px;
@@ -51,10 +80,29 @@
   box-shadow: 0 0 28px #ffd803, 0 0 60px #232946 inset;
 }
 
+.sticky-deck-row {
+  display: flex; /* 자식 요소들을 가로로 나란히 배치 */
+  position: sticky; 
+  top: 12vh; /* 자식 요소의 top 값과 동일하게 설정하여 고정 */
+  z-index: 100;
+}
+
+.button-deck-sidebar {
+  position: sticky;
+  top: 12vh; /* 동일한 top 값 */
+  width: 8vw; /* 유지 */
+  height: 28vh; /* 유지 */
+  z-index: 101; /* 유지 */
+  background-color: #000000; 
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+  border-top: 4px solid #1f3a4c;
+}
+
 .selected-cards-container {
   position: sticky;
   font-family: "Do Hyeon", serif;
-  top: 12vh;
+  top: 12vh; 
+  width: calc(100% - 8vw); /* 유지 */ 
   z-index: 100;
   background-color: rgb(0, 0, 0);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -82,7 +130,7 @@
 .selected-card {
   flex: 0 0 auto;
   width: 9.5vw;
-  height: 23vh;
+  height: 25vh;
   border-radius: 5px;
   cursor: pointer;
   overflow: hidden;
@@ -122,6 +170,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   position: relative;
+  margin-left: 1vw
 }
 
 /* hover 효과 (살짝 위로 + 확대 + 그림자 강화 + glow) */

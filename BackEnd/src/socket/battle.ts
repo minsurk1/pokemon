@@ -2,6 +2,7 @@ import { Server, Socket } from "socket.io";
 import { rooms } from "./room"; // ✅ room.ts의 rooms 공유
 import { CardData, GameState, RoomInfo } from "../types/gameTypes"; // ✅ 공통 타입 사용
 import Card from "../models/Card"; // ✅ 추가
+import crypto from "crypto";
 
 // ======================= 🔁 공유 타이머 설정 =======================
 const TURN_TIME = 30; // 한 턴당 제한 시간 (초 단위)
@@ -12,11 +13,13 @@ function stopSharedTimer(room: RoomInfo) {
     clearInterval(room.timer);
     room.timer = null;
   }
+  room.timeLeft = undefined;
 }
 
 // ✅ 타이머 시작 (모든 유저와 동기화)
 function startSharedTimer(io: Server, roomCode: string, room: RoomInfo) {
   stopSharedTimer(room); // 혹시 이전 타이머가 있으면 정리
+  if (room.timer) return; // ✅ 이미 타이머가 있으면 중복 방지
   room.timeLeft = TURN_TIME; // 타이머 리셋
   io.to(roomCode).emit("timeUpdate", room.timeLeft); // 즉시 한번 전송 (UI 초기화용)
 
@@ -26,13 +29,9 @@ function startSharedTimer(io: Server, roomCode: string, room: RoomInfo) {
       return;
     }
 
-    if (room.timeLeft === undefined) room.timeLeft = TURN_TIME;
     room.timeLeft = Math.max(0, (room.timeLeft ?? TURN_TIME) - 1);
-
-    // 모든 플레이어에게 남은 시간 브로드캐스트
     io.to(roomCode).emit("timeUpdate", room.timeLeft);
 
-    // 0초 도달 → 자동 턴 종료 처리
     if (room.timeLeft <= 0) {
       stopSharedTimer(room);
       io.to(roomCode).emit("turnTimeout");
@@ -51,19 +50,25 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
   const nextTurn = room.players[nextIndex];
 
   game.currentTurn = nextTurn;
+  game.turnCount = (game.turnCount ?? 0) + 1;
   game.cardsPlayed = {};
 
   // ✅ 다음 턴 유저 코스트 1 증가 (최대 8)
   if (!game.cost[nextTurn]) game.cost[nextTurn] = 0;
   game.cost[nextTurn] = Math.min(game.cost[nextTurn] + 1, 8);
 
+  // ✅ 턴이 바뀌면 새 턴 유저의 모든 카드를 다시 공격 가능 상태로 리셋
+  if (game.cardsInZone[nextTurn]) {
+    game.cardsInZone[nextTurn].forEach((card) => (card.canAttack = true));
+  }
+
   // ✅ 변경 사항 모든 플레이어에 브로드캐스트
   io.to(roomCode).emit("turnChanged", {
     currentTurn: nextTurn,
     cost: game.cost,
     hp: game.hp,
+    turnCount: game.turnCount,
   });
-
   console.log(`🔁 자동 턴 전환: ${nextTurn} (타이머 리셋됨)`);
 
   // ✅ 새 타이머 시작
@@ -72,36 +77,71 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
 
 // ======================= 배틀 초기화 =======================
 export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
+  if (room.players.length < 2) {
+    console.error(`❌ 전투 초기화 실패: ${roomCode} 방에 플레이어가 2명 미만`);
+    return;
+  }
   const [player1, player2] = room.players;
+
   const initialHP = 2000;
 
   room.gameState = {
     currentTurn: player1,
+
+    // ✅ 체력
     hp: {
       [player1]: initialHP,
       [player2]: initialHP,
     },
+
+    // ✅ 필드 및 사용된 카드
     cardsPlayed: {},
     cardsInZone: {
       [player1]: [],
       [player2]: [],
     },
+
+    // ✅ 코스트
     cost: {
       [player1]: 1,
       [player2]: 1,
     },
+
+    // ✅ 새로 추가된 필드들
+    decks: {
+      [player1]: [], // 나중에 실제 덱 데이터를 주입할 예정
+      [player2]: [],
+    },
+    hands: {
+      [player1]: [],
+      [player2]: [],
+    },
+    graveyards: {
+      [player1]: [],
+      [player2]: [],
+    },
+    turnCount: 1, // 첫 턴은 1로 시작
   };
 
   io.to(roomCode).emit("gameStart", {
     roomCode,
     currentTurn: player1,
-    hp: room.gameState.hp,
+    hp: { ...room.gameState.hp },
+    cost: { ...room.gameState.cost },
+    turnCount: 1,
   });
+
+  if (!room.gameState) return;
 
   room.players.forEach((pid) => {
     io.to(pid).emit("updateGameState", {
       currentTurn: room.gameState!.currentTurn,
       hp: room.gameState!.hp,
+      decks: room.gameState!.decks,
+      hands: room.gameState!.hands,
+      graveyards: room.gameState!.graveyards,
+      cost: room.gameState!.cost,
+      turnCount: room.gameState!.turnCount,
     });
     console.log(`📤 초기 턴 상태 전송 → ${pid}`);
   });
@@ -109,6 +149,7 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
   console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
 
   // ✅ 전투 시작과 동시에 타이머 시작
+  room.timeLeft = TURN_TIME;
   startSharedTimer(io, roomCode, room);
 }
 
@@ -119,35 +160,64 @@ export default function battleHandler(io: Server, socket: Socket) {
   // === 재접속 시 동기화 ===
   for (const [code, room] of Object.entries(rooms)) {
     if (room.players.includes(socket.id) && room.gameState) {
+      const g = room.gameState;
       socket.emit("updateGameState", {
-        currentTurn: room.gameState.currentTurn,
-        hp: room.gameState.hp,
+        currentTurn: g.currentTurn,
+        hp: g.hp,
+        decks: g.decks,
+        hands: g.hands,
+        graveyards: g.graveyards,
+        cost: g.cost,
+        turnCount: g.turnCount,
+        cardsInZone: g.cardsInZone,
       });
-      // ✅ 재접속 시 타이머 시간도 동기화
+
+      // ✅ 타이머 시간도 정확히 동기화 (0초도 전송)
       if (room.timeLeft !== undefined) {
         socket.emit("timeUpdate", room.timeLeft);
       }
+
       console.log(`♻️ ${socket.id} 재연결 감지 → 방 ${code}`);
       break;
     }
   }
 
-  // === 현재 상태 요청 ===
-  socket.on("getGameState", ({ roomCode }: { roomCode: string }) => {
+  // ==================== 재접속 후 상태 복구 ====================
+  socket.on("getGameState", ({ roomCode, userId }: { roomCode: string; userId: string }) => {
     const room = rooms[roomCode];
-    if (!room?.gameState) return;
+    if (!room) return;
 
-    socket.emit("updateGameState", {
-      currentTurn: room.gameState.currentTurn,
-      hp: room.gameState.hp,
-    });
+    // ✅ 유저 교체 (F5로 socket.id 교체)
+    socket.join(roomCode);
 
-    // ✅ 요청 시 타이머 동기화
+    const oldIndex = room.players.indexOf(userId);
+    if (oldIndex !== -1) {
+      room.players[oldIndex] = socket.id;
+    } else if (!room.players.includes(socket.id)) {
+      room.players.push(socket.id);
+    }
+
+    // ✅ 전체 상태 전송
+    if (room.gameState) {
+      const g = room.gameState;
+      socket.emit("updateGameState", {
+        currentTurn: g.currentTurn,
+        hp: g.hp,
+        decks: g.decks,
+        hands: g.hands,
+        graveyards: g.graveyards,
+        cost: g.cost,
+        turnCount: g.turnCount,
+        cardsInZone: g.cardsInZone,
+      });
+    }
+
+    // ✅ 타이머 즉시 동기화 (0초도 포함)
     if (room.timeLeft !== undefined) {
       socket.emit("timeUpdate", room.timeLeft);
     }
 
-    console.log(`📨 ${socket.id} → ${roomCode} 상태 요청`);
+    console.log(`♻️ ${userId || socket.id} 재접속 → ${roomCode}`);
   });
 
   // ==================== 🃏 카드 소환 ====================
@@ -190,6 +260,11 @@ export default function battleHandler(io: Server, socket: Socket) {
 
     // ✅ 6. DB에서 카드 세부정보 보강
     let dbCardData = null;
+    if (!card || (!card.name && !card.cardName)) {
+      socket.emit("error", "잘못된 카드 데이터입니다.");
+      return;
+    }
+
     try {
       dbCardData = await Card.findOne({ cardName: card.name || card.cardName });
     } catch (err) {
@@ -198,9 +273,11 @@ export default function battleHandler(io: Server, socket: Socket) {
 
     const summonedCard = {
       ...card,
+      id: card.id ?? crypto.randomUUID(), // ✅ 서버에서 id 보장
       cost: costValue,
       cardType: dbCardData?.cardType ?? card.cardType ?? "normal",
       image2D: dbCardData?.image2D ?? card.image2D ?? "default.png",
+      canAttack: true, // ✅ 기본값 추가
     };
 
     game.cardsInZone[playerId].push(summonedCard);
@@ -258,13 +335,13 @@ export default function battleHandler(io: Server, socket: Socket) {
         loserId: opponentId,
       });
       console.log(`🏁 게임 종료: ${socket.id} 승리`);
-      stopSharedTimer(room); // ✅ 타이머 정지
-      delete room.gameState;
+      stopSharedTimer(room);
+      room.gameState = null; // ✅ 안전하고 TypeScript에 완벽히 호환하게 게임 상태 초기화
     }
   });
 
-  // ==================== ⚔️ 카드 간 공격 ====================
-  socket.on("attackCard", ({ roomCode, attackerId, targetId }: { roomCode: string; attackerId: string; targetId: string }) => {
+  // ==================== ⚔️ 카드 간 공격 (또는 직접 공격) ====================
+  socket.on("attackCard", ({ roomCode, attackerId, targetId }: { roomCode: string; attackerId: string; targetId?: string }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
@@ -280,71 +357,131 @@ export default function battleHandler(io: Server, socket: Socket) {
     }
 
     const attacker = game.cardsInZone[playerId]?.find((c) => c.id === attackerId);
-    const target = game.cardsInZone[opponentId]?.find((c) => c.id === targetId);
-
-    if (!attacker || !target) {
-      socket.emit("error", "공격자 또는 대상 카드를 찾을 수 없습니다.");
+    if (!attacker) {
+      socket.emit("error", "공격할 카드 정보를 찾을 수 없습니다.");
       return;
     }
 
-    // ✅ 체력 감소 처리
-    const prevHP = target.hp ?? 0;
-    const newHP = Math.max(0, prevHP - attacker.attack);
+    // ✅ 이미 공격한 카드면 다시 공격 불가
+    if (!attacker.canAttack) {
+      socket.emit("error", `${attacker.name}은(는) 이미 이번 턴에 공격했습니다.`);
+      return;
+    }
+
+    // ✅ 상대 필드 확인
+    const opponentField = game.cardsInZone[opponentId] ?? [];
+    if (opponentField.length === 0) {
+      socket.emit("error", "상대 필드가 비어 있습니다. 직접 공격을 시도하세요.");
+      return; // 아직 공격권 소모하지 않음
+    }
+
+    // ✅ 공격 대상 찾기
+    const target = opponentField.find((c) => c.id === targetId);
+    if (!target) {
+      socket.emit("error", "공격 대상 카드를 찾을 수 없습니다.");
+      return;
+    }
+
+    // ✅ 공격 계산
+    const atk = Math.max(0, Number(attacker.attack ?? 0));
+    const prevHP = Number(target.hp ?? 0);
+    const newHP = Math.max(0, prevHP - atk);
     target.hp = newHP;
 
-    // ✅ 브로드캐스트: 카드 체력 업데이트
-    io.to(roomCode).emit("updateCardHP", {
-      targetId,
-      newHP,
-    });
+    // ✅ 공격 성공 → 공격권 소모
+    attacker.canAttack = false;
 
-    console.log(`⚔️ ${attacker.name}(${attacker.attack}) → ${target.name} | HP ${prevHP} → ${newHP}`);
+    io.to(roomCode).emit("updateCardHP", { targetId, newHP });
+    console.log(`⚔️ ${attacker.name}(${atk}) → ${target.name} | HP ${prevHP} → ${newHP}`);
 
     // ✅ 카드 사망 처리
     if (newHP <= 0) {
+      if (!game.graveyards[opponentId]) game.graveyards[opponentId] = [];
+      game.graveyards[opponentId].push(target);
       game.cardsInZone[opponentId] = game.cardsInZone[opponentId].filter((c) => c.id !== targetId);
 
-      io.to(roomCode).emit("cardDestroyed", {
-        targetId,
-        ownerId: opponentId,
-      });
+      io.to(roomCode).emit("cardDestroyed", { targetId, ownerId: opponentId });
+      console.log(`💀 ${target.name}이(가) 쓰러져 묘지로 이동했습니다.`);
+    }
 
-      console.log(`💀 ${target.name}이(가) 쓰러졌습니다.`);
+    // ✅ 상대 필드가 전부 사라졌다면 — 다음 공격부터 직접 공격 가능
+    if (game.cardsInZone[opponentId].length === 0) {
+      io.to(roomCode).emit("opponentFieldEmpty", { opponentId });
+      console.log(`⚠️ ${opponentId}의 필드가 비었습니다. 다음 공격부터 직접 공격 가능`);
+    }
+
+    // ✅ 승패 조건 확인 (플레이어 HP가 0 이하인 경우)
+    const remainingHP = game.hp[opponentId] ?? 2000;
+    if (remainingHP <= 0) {
+      io.to(roomCode).emit("gameOver", { winnerId: playerId, loserId: opponentId });
+      stopSharedTimer(room);
+      room.gameState = null;
+      console.log(`🏁 ${playerId} 승리 (상대 카드 전멸 후 게임 종료)`);
     }
   });
 
-  // ==================== 🔁 턴 종료 ====================
-  socket.on("endTurn", ({ roomCode }: { roomCode: string }) => {
+  // ==================== ⚔️ 직접 공격 ====================
+  socket.on("directAttack", ({ roomCode, attackerId }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
     const game = room.gameState;
-    const currentIndex = room.players.indexOf(socket.id);
+    const playerId = socket.id;
+    const opponentId = room.players.find((id) => id !== playerId);
+    if (!opponentId) return;
 
-    if (socket.id !== game.currentTurn) {
+    if (playerId !== game.currentTurn) {
       socket.emit("error", "당신의 턴이 아닙니다.");
       return;
     }
 
-    // ✅ 수동 턴 종료 시에도 타이머 재시작
-    const nextIndex = (currentIndex + 1) % room.players.length;
-    const nextTurn = room.players[nextIndex];
-    game.currentTurn = nextTurn;
-    game.cardsPlayed = {};
+    const attacker = game.cardsInZone[playerId]?.find((c) => c.id === attackerId);
+    if (!attacker) {
+      socket.emit("error", "공격할 카드를 찾을 수 없습니다.");
+      return;
+    }
 
-    if (!game.cost[nextTurn]) game.cost[nextTurn] = 0;
-    game.cost[nextTurn] = Math.min(game.cost[nextTurn] + 1, 8);
+    // ✅ 공격 여부 확인
+    if (!attacker.canAttack) {
+      socket.emit("error", `${attacker.name}은(는) 이미 이번 턴에 공격했습니다.`);
+      return;
+    }
 
-    io.to(roomCode).emit("turnChanged", {
-      currentTurn: nextTurn,
-      cost: game.cost,
-      hp: game.hp,
+    // ✅ 공격 후 공격 불가로 변경
+    attacker.canAttack = false;
+
+    const damage = Math.max(0, Number(attacker.attack ?? 0));
+    const prevHP = game.hp[opponentId] ?? 2000;
+    const newHP = Math.max(0, prevHP - damage);
+    game.hp[opponentId] = newHP;
+
+    io.to(roomCode).emit("directAttack", {
+      attackerName: attacker.name,
+      damage,
+      newHP,
     });
 
-    console.log(`🔄 턴 변경: ${socket.id} → ${nextTurn} | 코스트 갱신: ${JSON.stringify(game.cost)}`);
+    if (newHP <= 0) {
+      io.to(roomCode).emit("gameOver", { winnerId: playerId, loserId: opponentId });
+      stopSharedTimer(room);
+      room.gameState = null;
+      console.log(`🏁 ${playerId} 승리 (직접 공격으로 게임 종료)`);
+    }
 
-    // ✅ 타이머 리셋 후 재시작
-    startSharedTimer(io, roomCode, room);
+    console.log(`⚡ ${attacker.name} → 직접 공격 (${damage} 피해)`);
+  });
+
+  // ==================== 🔁 턴 종료 ====================
+  socket.on("endTurn", ({ roomCode }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+
+    if (socket.id !== room.gameState.currentTurn) {
+      socket.emit("error", "당신의 턴이 아닙니다.");
+      return;
+    }
+
+    switchTurnAndRestartTimer(io, roomCode, room); // ✅ turnCount 증가, canAttack 리셋, 코스트 증가, 타이머 재시작 모두 포함
   });
 
   // ==================== 📡 현재 턴 요청 ====================
@@ -368,18 +505,24 @@ export default function battleHandler(io: Server, socket: Socket) {
       const room = rooms[roomCode];
       if (!room.players.includes(socket.id)) continue;
 
+      // ✅ 권장: 게임 진행 중이면 타이머 정지
       if (room.gameState) {
-        socket.to(roomCode).emit("opponentLeft");
-        stopSharedTimer(room); // ✅ 타이머 정지
-        delete room.gameState;
-        console.log(`🚪 ${socket.id} 퇴장 → ${roomCode} 게임 종료`);
+        stopSharedTimer(room);
       }
 
       room.players = room.players.filter((id) => id !== socket.id);
+      socket.to(roomCode).emit("opponentLeft");
+
       if (room.players.length === 0) {
-        stopSharedTimer(room); // ✅ 방 삭제 전 타이머 정리
-        delete rooms[roomCode];
-        console.log(`🧹 빈 방 삭제: ${roomCode}`);
+        setTimeout(() => {
+          if (room.players.length === 0) {
+            stopSharedTimer(room);
+            delete rooms[roomCode];
+            console.log(`🧹 빈 방 삭제: ${roomCode}`);
+          }
+        }, 5000);
+      } else {
+        console.log(`⚠️ ${socket.id} 나감 → 남은 인원: ${room.players.length}`);
       }
     }
   });

@@ -220,9 +220,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setMySocketId(socket.id);
 
       // ✅ 방 참여 이벤트 추가
-      socket.emit("joinRoom", { roomCode });
+      socket.emit("joinRoom", roomCode);
       // ✅ 초기 상태 요청
-      socket.emit("getGameState", { roomCode });
+      socket.emit("getGameState", { roomCode, userId: socket.id });
 
       console.log("🎮 BattlePage 연결됨:", socket.id);
     }
@@ -310,6 +310,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         setHasDrawnThisTurn(false); // ✅ 턴 교체 시 드로우 초기화
         setPlayerCostIcons((p) => Math.min(p + (mine ? 1 : 0), 8));
         setOpponentCostIcons((p) => Math.min(p + (!mine ? 1 : 0), 8));
+
+        // ✅ 내 턴이 시작되면 모든 내 카드 공격 가능하도록 리셋
+        if (mine) {
+          setMyCardsInZone((prev) => prev.map((c) => ({ ...c, canAttack: true })));
+        }
+
         setMessage(mine ? "🟢 내 턴입니다!" : "🔴 상대 턴입니다.");
         setShowMessage(true);
         return;
@@ -334,19 +340,59 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         if (oppId) setEnemyHP(hp[oppId] ?? 2000);
       }
 
+      // ✅ 객체형 payload일 때도 동일하게 처리
+      if (mine) {
+        setMyCardsInZone((prev) => prev.map((c) => ({ ...c, canAttack: true })));
+      }
+
       setMessage(mine ? "🟢 내 턴입니다!" : "🔴 상대 턴입니다.");
       setShowMessage(true);
     };
 
-    const onUpdateGameState = ({ currentTurn, hp }: any) => {
-      const myId = socket.id ?? null;
+    const onUpdateGameState = (data: any) => {
+      const { currentTurn, hp, cost, decks, hands, graveyards, turnCount } = data;
+      const myId = socket.id ?? "";
+      if (!myId) return;
+
       setCurrentTurnId(currentTurn);
       setIsMyTurn(currentTurn === myId);
-      if (myId) {
-        setPlayerHP(hp[myId] ?? 2000);
+      setTurn(turnCount ?? 1);
+
+      if (hp && typeof hp === "object" && myId in hp) {
+        setPlayerHP(Number(hp[myId] ?? 2000));
         const opponent = Object.keys(hp).find((id) => id !== myId);
-        if (opponent) setEnemyHP(hp[opponent] ?? 2000);
+        if (opponent && hp[opponent] !== undefined) {
+          setEnemyHP(Number(hp[opponent]));
+        }
       }
+
+      if (cost && typeof cost === "object") {
+        setPlayerCostIcons(Math.max(0, Number(cost[myId]) || 0));
+        const oppId = Object.keys(cost).find((id) => id !== myId);
+        if (oppId) setOpponentCostIcons(Math.max(0, Number(cost[oppId]) || 0));
+      }
+
+      if (hands && typeof hands === "object" && hands[myId]) {
+        setHandCards(Array.isArray(hands[myId]) ? hands[myId].map(keepCardShape) : []);
+      }
+
+      if (decks && typeof decks === "object" && decks[myId]) {
+        setDeckCards(Array.isArray(decks[myId]) ? decks[myId].map(keepCardShape) : []);
+      }
+
+      if (data.cardsInZone) {
+        const myId = socket.id;
+        const opponentId = Object.keys(data.cardsInZone).find((id) => id !== myId);
+
+        if (myId && data.cardsInZone[myId]) {
+          setMyCardsInZone(data.cardsInZone[myId].map(keepCardShape));
+        }
+        if (opponentId && data.cardsInZone[opponentId]) {
+          setEnemyCardsInZone(data.cardsInZone[opponentId].map(keepCardShape));
+        }
+      }
+
+      console.log("📥 게임 상태 복원:", data);
     };
 
     // ✅ 카드 소환 이벤트 (수신)
@@ -361,11 +407,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       fixedCard.maxhp = Number(fixedCard.maxhp ?? card.maxhp ?? card.hp ?? 0);
       fixedCard.cost = Number(fixedCard.cost ?? card.cost ?? card.tier ?? 1);
 
+      const newCard = { ...fixedCard, canAttack: true };
+
       if (playerId === socket.id) {
         // ✅ 내 카드 → 내 필드에 추가
         setMyCardsInZone((prev) => {
           if (prev.find((c) => c.id === fixedCard.id)) return prev;
-          return [...prev, fixedCard];
+          return [...prev, newCard];
         });
         setLastPlayedCardId(fixedCard.id);
         setTimeout(() => setLastPlayedCardId(null), 1000);
@@ -401,6 +449,28 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
     };
 
+    // ✅ 카드 HP 갱신 수신
+    const onUpdateCardHP = ({ targetId, newHP }: { targetId: string; newHP: number }) => {
+      // 내 필드 / 상대 필드 모두 갱신
+      setMyCardsInZone((prev) => prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c)));
+      setEnemyCardsInZone((prev) => prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c)));
+    };
+
+    // ✅ 카드 파괴 수신
+    const onCardDestroyed = ({ targetId, ownerId }: { targetId: string; ownerId: string }) => {
+      const destroyedCard = [...myCardsInZone, ...enemyCardsInZone].find((c) => c.id === targetId);
+      const name = destroyedCard?.name ?? "카드";
+
+      if (ownerId === socket.id) {
+        setMyCardsInZone((prev) => prev.filter((c) => c.id !== targetId));
+        setMessage(`💀 내 ${name}이(가) 쓰러졌습니다...`);
+      } else {
+        setEnemyCardsInZone((prev) => prev.filter((c) => c.id !== targetId));
+        setMessage(`🔥 상대의 ${name}이(가) 쓰러졌습니다!`);
+      }
+      setShowMessage(true);
+    };
+
     const onGameOver = ({ winnerId }: any) => {
       const myId = socket.id ?? null;
       setShowGameOver(true);
@@ -423,6 +493,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.on("turnChanged", onTurnChanged);
     socket.on("updateGameState", onUpdateGameState);
     socket.on("cardSummoned", onCardSummoned);
+    socket.on("updateCardHP", onUpdateCardHP);
+    socket.on("cardDestroyed", onCardDestroyed);
+    // ✅ 직접 공격 수신
+    socket.on("directAttack", ({ attackerName, damage, newHP }) => {
+      setEnemyHP(newHP);
+      setMessage(`💥 ${attackerName}이(가) 상대에게 ${damage} 피해를 입혔습니다!`);
+      setShowMessage(true);
+    });
     socket.on("gameOver", onGameOver);
     socket.on("timeUpdate", onTimeUpdate);
     socket.on("turnTimeout", onTurnTimeout);
@@ -433,6 +511,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("turnChanged", onTurnChanged);
       socket.off("updateGameState", onUpdateGameState);
       socket.off("cardSummoned", onCardSummoned);
+      socket.off("updateCardHP", onUpdateCardHP);
+      socket.off("cardDestroyed", onCardDestroyed);
       socket.off("gameOver", onGameOver);
       socket.off("timeUpdate", onTimeUpdate);
       socket.off("turnTimeout", onTurnTimeout);
@@ -493,6 +573,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   // === 카드 드래그 시 보이는 고스트 프리뷰 이펙트 핸들러 ===
   const handleDragStart = (attackerId: string, e: React.DragEvent<HTMLDivElement>) => {
+    e.stopPropagation(); // 클릭 이벤트와 동시 발동 방지
     // 🧩 클릭형 프리뷰 강제 종료 (드래그 시작 시 중복 방지)
     setIsHoldingCard(false);
     setHeldCard(null);
@@ -556,36 +637,56 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   };
 
   // ===== 공격 로직 =====
-  const handleAttack = (targetId: string, attackerIdParam?: string) => {
+  const handleAttack = (targetId?: string, attackerIdParam?: string) => {
     const attackerId = attackerIdParam || selectedAttacker;
     if (!attackerId) return;
 
     const attacker = myCardsInZone.find((c) => c.id === attackerId);
-    const target = enemyCardsInZone.find((c) => c.id === targetId);
-    if (!attacker || !target) return;
+    if (!attacker) return;
 
-    const attackPower = Number(attacker.attack ?? 0);
-    const newHP = Math.max(0, target.hp - attackPower);
-    const updatedEnemy = enemyCardsInZone.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c));
-    setEnemyCardsInZone(updatedEnemy);
-
-    setMessage(`🔥 ${attacker.name} ➤ ${target.name}에게 ${attackPower} 피해!`);
-    setShowMessage(true);
-
-    if (newHP <= 0) {
-      setTimeout(() => {
-        setEnemyCardsInZone((prev) => prev.filter((c) => c.id !== targetId));
-        setMessage(`💥 ${target.name}이(가) 쓰러졌습니다!`);
-        setShowMessage(true);
-      }, 600);
+    // ✅ 공격 가능 여부 검사
+    if (attacker.canAttack === false) {
+      setMessage(`${attacker.name}은(는) 이미 이번 턴에 공격했습니다!`);
+      setShowMessage(true);
+      return;
     }
 
-    socket.emit("attackCard", { roomCode, attackerId: attacker.id, targetId });
+    // ✅ 상대 필드에 카드가 없는 경우 → 직접 공격
+    if (enemyCardsInZone.length === 0) {
+      socket.emit("directAttack", { roomCode, attackerId: attacker.id });
+      setMessage(`💥 ${attacker.name}이(가) 상대 플레이어를 직접 공격합니다!`);
+      setShowMessage(true);
 
-    // ✅ 한 턴에 한 번만 공격하도록 canAttack 비활성화
-    setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
+      setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
+      setSelectedAttacker(null);
+      return;
+    }
 
-    setSelectedAttacker(null);
+    // ✅ targetId가 있을 경우 → 카드 간 전투
+    if (targetId) {
+      const target = enemyCardsInZone.find((c) => c.id === targetId);
+      if (!target) return;
+
+      const attackPower = Number(attacker.attack ?? 0);
+      const newHP = Math.max(0, target.hp - attackPower);
+
+      setMessage(`🔥 ${attacker.name} ➤ ${target.name}에게 ${attackPower} 피해!`);
+      setShowMessage(true);
+
+      if (newHP <= 0) {
+        setTimeout(() => {
+          setEnemyCardsInZone((prev) => prev.filter((c) => c.id !== targetId));
+          setMessage(`💥 ${target.name}이(가) 쓰러졌습니다!`);
+          setShowMessage(true);
+        }, 600);
+      }
+
+      socket.emit("attackCard", { roomCode, attackerId: attacker.id, targetId });
+
+      setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
+
+      setSelectedAttacker(null);
+    }
   };
 
   // ===== 상대 카드 클릭(공격 대상 선택) =====

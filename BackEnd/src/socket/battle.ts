@@ -209,6 +209,18 @@ export default function battleHandler(io: Server, socket: Socket) {
       socket.emit("timeUpdate", room.timeLeft);
     }
 
+    // ✅ 현재 턴 재전송 (초기 turnChanged 놓쳤을 때)
+    if (room.gameState?.currentTurn) {
+      socket.emit("turnChanged", {
+        currentTurn: room.gameState.currentTurn,
+        cost: room.gameState.cost,
+        hp: room.gameState.hp,
+        turnCount: room.gameState.turnCount,
+        timeLeft: room.timeLeft ?? TURN_TIME,
+      });
+      console.log("📨 joinRoom → 기존 턴 재전송:", room.gameState.currentTurn);
+    }
+
     console.log(`✅ BattlePage 상태 동기화 완료 → ${socket.id}`);
   });
 

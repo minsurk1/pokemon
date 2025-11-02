@@ -28,10 +28,13 @@ router.get("/:userId/cards", isAuthenticated, async (req, res: Response) => {
       return {
         cardId: card?._id?.toString() ?? "",
         name: card?.cardName ?? "이름 없음",
-        damage: card?.attack ?? 0,
+        cardType: card?.cardType ?? "normal", // ✅ 타입 추가
+        attack: card?.attack ?? 0,
         hp: card?.hp ?? 0,
         tier: card?.tier ?? 0,
+        cost: card?.cost ?? card?.tier ?? 1, // ✅ cost 추가 (없을 때 tier)
         image: card?.image2D ?? "default.png",
+        image2D: card?.image2D ?? "default.png", // ✅ 2D 이미지 통일
         count: uc.count ?? 0,
         owned: uc.owned ?? false,
       };
@@ -69,10 +72,13 @@ router.get("/my-cards", isAuthenticated, async (req, res: Response) => {
       return {
         cardId: card?._id?.toString() ?? "",
         name: card?.cardName ?? "이름 없음",
-        damage: card?.attack ?? 0,
+        cardType: card?.cardType ?? "normal", // ✅ 타입 추가
+        attack: card?.attack ?? 0,
         hp: card?.hp ?? 0,
         tier: card?.tier ?? 0,
+        cost: card?.cost ?? card?.tier ?? 1, // ✅ cost 추가 (없을 때 tier)
         image: card?.image2D ?? "default.png",
+        image2D: card?.image2D ?? "default.png", // ✅ 2D 이미지 통일
         count: uc.count ?? 0,
         owned: uc.owned ?? false,
       };

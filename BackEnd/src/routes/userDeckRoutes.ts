@@ -34,21 +34,24 @@ router.get("/single", isAuthenticated, async (req, res) => {
     const formattedDeck = {
       _id: deck._id,
       cards: (deck.cards || []).map((entry: any) => {
-        const card = entry.card || entry;
+        // ✅ populate 여부에 따라 분기
+        const c =
+          typeof entry.card === "object" && entry.card !== null
+            ? entry.card // populate 된 경우
+            : entry; // populate 안 됨 → entry 자체 사용
 
-        const imageFile = card.image2D || entry.image2D || "default.png";
-        const imageUrl = `${BASE_URL}/images/${imageFile.split("/").pop()}`;
+        const imageFile = c.image2D ?? entry.image2D ?? "default.png";
 
         return {
-          id: String(card._id ?? entry._id),
-          name: card.cardName ?? entry.name ?? "Unknown",
-          cardType: card.cardType ?? entry.cardType ?? "normal",
-          attack: Number(card.attack ?? entry.attack ?? 0),
-          hp: Number(card.hp ?? entry.hp ?? 0),
-          maxhp: Number(card.hp ?? entry.hp ?? 0),
-          cost: Number(card.cost ?? entry.cost ?? card.tier ?? entry.tier ?? 1),
-          tier: Number(card.tier ?? entry.tier ?? 1),
-          image: imageUrl,
+          id: String(c._id ?? entry._id ?? entry.card ?? entry.id),
+          name: c.cardName ?? c.name ?? "Unknown",
+          cardType: c.cardType ?? entry.cardType ?? "normal",
+          attack: Number(c.attack ?? entry.attack ?? 0),
+          hp: Number(c.hp ?? entry.hp ?? 0),
+          maxhp: Number(c.hp ?? entry.hp ?? 0),
+          cost: Number(c.cost ?? entry.cost ?? c.tier ?? entry.tier ?? 1),
+          tier: Number(c.tier ?? entry.tier ?? 1),
+          image: `${BASE_URL}/images/${imageFile.split("/").pop()}`,
         };
       }),
     };

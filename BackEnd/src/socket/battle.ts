@@ -62,17 +62,20 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
     game.cardsInZone[nextTurn].forEach((card) => (card.canAttack = true));
   }
 
+  // ✅ 여기서 먼저 리셋
+  room.timeLeft = TURN_TIME;
+
   // ✅ 변경 사항 모든 플레이어에 브로드캐스트
   io.to(roomCode).emit("turnChanged", {
     currentTurn: nextTurn,
     cost: game.cost,
     hp: game.hp,
     turnCount: game.turnCount,
-    timeLeft: room.timeLeft ?? TURN_TIME,
+    timeLeft: room.timeLeft, // ← 30초 보장
   });
   console.log(`🔁 자동 턴 전환: ${nextTurn} (타이머 리셋됨)`);
 
-  // ✅ 새 타이머 시작
+  // ✅ 타이머 시작(내부에서 또 timeUpdate 쏴줌)
   startSharedTimer(io, roomCode, room);
 }
 
@@ -124,27 +127,19 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     turnCount: 1, // 첫 턴은 1로 시작
   };
 
+  // ✅ 전투 시작과 동시에 타이머용 잔여 시간 먼저 세팅
+  room.timeLeft = TURN_TIME;
+
+  // 1) 게임 시작 알림 (UI용 배너/사운드 등)
   io.to(roomCode).emit("gameStart", {
     roomCode,
     currentTurn: player1,
-    hp: { ...room.gameState.hp },
-    cost: { ...room.gameState.cost },
+    hp: { ...room.gameState!.hp },
+    cost: { ...room.gameState!.cost },
     turnCount: 1,
   });
 
-  if (!room.gameState) return;
-
-  console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
-
-  // ✅ 배틀 시작 직후 즉시 턴 정보 전송 (중요!)
-  io.to(roomCode).emit("turnChanged", {
-    currentTurn: player1,
-    cost: room.gameState.cost,
-    hp: room.gameState.hp,
-    turnCount: 1,
-    timeLeft: TURN_TIME,
-  });
-
+  // 2) 각 플레이어에게 전체 스냅샷(복구용 정답 상태)
   room.players.forEach((pid) => {
     io.to(pid).emit("updateGameState", {
       currentTurn: room.gameState!.currentTurn,
@@ -154,15 +149,21 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
       graveyards: room.gameState!.graveyards,
       cost: room.gameState!.cost,
       turnCount: room.gameState!.turnCount,
-      cardsInZone: room.gameState!.cardsInZone, // 이미 있는 데이터 포함
-      timeLeft: room.timeLeft ?? TURN_TIME, // ✅ 타이머 포함
+      cardsInZone: room.gameState!.cardsInZone,
+      timeLeft: room.timeLeft, // ← 이미 세팅된 값
     });
-    console.log(`📤 초기 턴 상태 전송 → ${pid}`);
   });
 
-  // ✅ 전투 시작과 동시에 타이머 시작
-  room.timeLeft = TURN_TIME;
+  // ❌ (처음엔) turnChanged 내보내지 않음
+  // io.to(roomCode).emit("turnChanged", { ... })  ← 제거
+
+  // 3) 원하는 경우, 타이머 숫자만 한 번 더 푸시(선택)
+  io.to(roomCode).emit("timeUpdate", room.timeLeft);
+
+  // 4) 공유 타이머 시작 (tick마다 timeUpdate, 시간만료 시 turnChanged 발생)
   startSharedTimer(io, roomCode, room);
+
+  console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
 }
 
 // ======================= 배틀 이벤트 핸들러 =======================

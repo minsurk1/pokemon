@@ -170,6 +170,21 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 export default function battleHandler(io: Server, socket: Socket) {
   console.log(`⚔️ 배틀 소켓 연결됨: ${socket.id}`);
 
+  // ==================== 📡 현재 턴 요청 ====================
+  socket.on("getCurrentTurn", ({ roomCode }: { roomCode: string }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+
+    socket.emit("currentTurnSync", {
+      currentTurn: room.gameState.currentTurn,
+      hp: room.gameState.hp,
+    });
+
+    if (room.timeLeft !== undefined) {
+      socket.emit("timeUpdate", room.timeLeft);
+    }
+  });
+
   // === 재접속 시 동기화 ===
   for (const [code, room] of Object.entries(rooms)) {
     if (room.players.includes(socket.id) && room.gameState) {
@@ -515,21 +530,6 @@ export default function battleHandler(io: Server, socket: Socket) {
     }
 
     switchTurnAndRestartTimer(io, roomCode, room); // ✅ turnCount 증가, canAttack 리셋, 코스트 증가, 타이머 재시작 모두 포함
-  });
-
-  // ==================== 📡 현재 턴 요청 ====================
-  socket.on("getCurrentTurn", ({ roomCode }: { roomCode: string }) => {
-    const room = rooms[roomCode];
-    if (!room?.gameState) return;
-
-    socket.emit("currentTurnSync", {
-      currentTurn: room.gameState.currentTurn,
-      hp: room.gameState.hp,
-    });
-
-    if (room.timeLeft !== undefined) {
-      socket.emit("timeUpdate", room.timeLeft);
-    }
   });
 
   // ==================== 🚪 연결 해제 ====================

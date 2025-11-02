@@ -151,6 +151,15 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 
   console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
 
+  // ✅ 배틀 시작 직후 즉시 턴 정보 전송 (중요!)
+  io.to(roomCode).emit("turnChanged", {
+    currentTurn: player1,
+    cost: room.gameState.cost,
+    hp: room.gameState.hp,
+    turnCount: 1,
+    timeLeft: TURN_TIME,
+  });
+
   // ✅ 전투 시작과 동시에 타이머 시작
   room.timeLeft = TURN_TIME;
   startSharedTimer(io, roomCode, room);

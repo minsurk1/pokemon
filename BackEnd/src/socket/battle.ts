@@ -71,7 +71,7 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
     cost: game.cost,
     hp: game.hp,
     turnCount: game.turnCount,
-    timeLeft: room.timeLeft, // ← 30초 보장
+    timeLeft: TURN_TIME, // ← 30초 보장
   });
   console.log(`🔁 자동 턴 전환: ${nextTurn} (타이머 리셋됨)`);
 

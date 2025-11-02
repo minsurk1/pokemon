@@ -134,6 +134,17 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 
   if (!room.gameState) return;
 
+  console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
+
+  // ✅ 배틀 시작 직후 즉시 턴 정보 전송 (중요!)
+  io.to(roomCode).emit("turnChanged", {
+    currentTurn: player1,
+    cost: room.gameState.cost,
+    hp: room.gameState.hp,
+    turnCount: 1,
+    timeLeft: TURN_TIME,
+  });
+
   room.players.forEach((pid) => {
     io.to(pid).emit("updateGameState", {
       currentTurn: room.gameState!.currentTurn,
@@ -147,17 +158,6 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
       timeLeft: room.timeLeft ?? TURN_TIME, // ✅ 타이머 포함
     });
     console.log(`📤 초기 턴 상태 전송 → ${pid}`);
-  });
-
-  console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
-
-  // ✅ 배틀 시작 직후 즉시 턴 정보 전송 (중요!)
-  io.to(roomCode).emit("turnChanged", {
-    currentTurn: player1,
-    cost: room.gameState.cost,
-    hp: room.gameState.hp,
-    turnCount: 1,
-    timeLeft: TURN_TIME,
   });
 
   // ✅ 전투 시작과 동시에 타이머 시작

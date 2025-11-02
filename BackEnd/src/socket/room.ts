@@ -151,4 +151,35 @@ export default function roomHandler(io: Server, socket: Socket) {
 
     console.log(`🎮 게임 시작 명령 수신 (방: ${roomCode})`);
   });
+
+  /**
+   * 📦 덱 전달 받기
+   */
+  socket.on("sendDeck", ({ roomCode, deck }) => {
+    const room = rooms[roomCode];
+    if (!room || !deck || !Array.isArray(deck)) return;
+
+    // gameState가 없으면 초기 골격 생성
+    if (!room.gameState) {
+      room.gameState = {
+        currentTurn: room.players[0],
+        hp: {},
+        cost: {},
+        decks: {},
+        hands: {},
+        graveyards: {},
+        cardsInZone: {},
+        turnCount: 1,
+        cardsPlayed: {},
+      };
+    }
+
+    // ✅ 덱을 그대로 저장 (id 배열이 아님)
+    room.gameState.decks[socket.id] = deck;
+
+    console.log(
+      `📥 덱 수신 from ${socket.id}:`,
+      deck.map((c) => ({ id: c.id, name: c.name, atk: c.attack }))
+    );
+  });
 }

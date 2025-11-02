@@ -48,6 +48,53 @@ export default function roomHandler(io: Server, socket: Socket) {
       console.log(`❌ 존재하지 않는 방: ${roomCode}`);
       return;
     }
+    // ✅ 재접속 처리 (게임 진행 중 + room.players에 oldId 있으면 교체)
+    if (room.gameState !== null && !room.players.includes(socket.id)) {
+      for (const oldId of room.players) {
+        // oldId가 아직 room.ready에 존재 = 이전 플레이어
+        if (room.ready[oldId] !== undefined) {
+          console.log(`♻️ 재접속 감지: ${oldId} → ${socket.id}`);
+
+          // ▼ 상태 이어붙이기
+          room.players = room.players.map((id) => (id === oldId ? socket.id : id));
+          room.ready[socket.id] = room.ready[oldId];
+          delete room.ready[oldId];
+
+          socket.join(roomCode);
+          console.log(`✅ 새 소켓으로 방 재합류: ${socket.id}`);
+
+          if (room.gameState) {
+            room.gameState.hp[socket.id] = room.gameState.hp[oldId];
+            delete room.gameState.hp[oldId];
+
+            room.gameState.cost[socket.id] = room.gameState.cost[oldId];
+            delete room.gameState.cost[oldId];
+
+            room.gameState.decks[socket.id] = room.gameState.decks[oldId];
+            delete room.gameState.decks[oldId];
+
+            room.gameState.hands[socket.id] = room.gameState.hands[oldId];
+            delete room.gameState.hands[oldId];
+
+            room.gameState.cardsInZone[socket.id] = room.gameState.cardsInZone[oldId];
+            delete room.gameState.cardsInZone[oldId];
+
+            room.gameState.graveyards[socket.id] = room.gameState.graveyards[oldId];
+            delete room.gameState.graveyards[oldId];
+          }
+
+          socket.emit("roomJoined", { roomCode, isHost: room.hostId === socket.id });
+
+          // ✅ 현재 게임 상태 즉시 보내기
+          socket.emit("updateGameState", {
+            ...room.gameState,
+            timeLeft: room.timeLeft,
+          });
+
+          return;
+        }
+      }
+    }
 
     // ✅ 이미 들어와 있는 경우
     if (room.players.includes(socket.id)) {

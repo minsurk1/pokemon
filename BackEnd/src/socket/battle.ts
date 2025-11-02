@@ -186,21 +186,14 @@ export default function battleHandler(io: Server, socket: Socket) {
   }
 
   // ==================== 재접속 후 상태 복구 ====================
-  socket.on("getGameState", ({ roomCode, userId }: { roomCode: string; userId: string }) => {
+  socket.on("getGameState", ({ roomCode }) => {
     const room = rooms[roomCode];
     if (!room) return;
 
-    // ✅ 유저 교체 (F5로 socket.id 교체)
+    // ✅ 방 소켓 다시 join만 (ID 교체는 room.ts에서 함)
     socket.join(roomCode);
 
-    const oldIndex = room.players.indexOf(userId);
-    if (oldIndex !== -1) {
-      room.players[oldIndex] = socket.id;
-    } else if (!room.players.includes(socket.id)) {
-      room.players.push(socket.id);
-    }
-
-    // ✅ 전체 상태 전송
+    // ✅ 상태만 전송 (ID 교체 X)
     if (room.gameState) {
       const g = room.gameState;
       socket.emit("updateGameState", {
@@ -215,12 +208,25 @@ export default function battleHandler(io: Server, socket: Socket) {
       });
     }
 
-    // ✅ 타이머 즉시 동기화 (0초도 포함)
     if (room.timeLeft !== undefined) {
       socket.emit("timeUpdate", room.timeLeft);
     }
 
-    console.log(`♻️ ${userId || socket.id} 재접속 → ${roomCode}`);
+    console.log(`♻️ 재접속 상태 동기화 완료 → ${roomCode}`);
+  });
+
+  // ==================== (재접속 후) 덱 전송 ====================
+  socket.on("sendDeck", ({ roomCode, deck }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+
+    // 이미 덱 있는 플레이어가 재전송하면 무시
+    if (room.gameState.decks[socket.id]?.length > 0) {
+      return;
+    }
+
+    room.gameState.decks[socket.id] = deck;
+    console.log(`📥 덱 저장: ${socket.id}`, deck.length);
   });
 
   // ==================== 🃏 카드 소환 ====================
@@ -522,12 +528,8 @@ export default function battleHandler(io: Server, socket: Socket) {
       const room = rooms[roomCode];
       if (!room.players.includes(socket.id)) continue;
 
-      // ✅ 권장: 게임 진행 중이면 타이머 정지
-      if (room.gameState) {
-        stopSharedTimer(room);
-      }
+      if (room.gameState) stopSharedTimer(room);
 
-      room.players = room.players.filter((id) => id !== socket.id);
       socket.to(roomCode).emit("opponentLeft");
 
       if (room.players.length === 0) {
@@ -535,11 +537,8 @@ export default function battleHandler(io: Server, socket: Socket) {
           if (room.players.length === 0) {
             stopSharedTimer(room);
             delete rooms[roomCode];
-            console.log(`🧹 빈 방 삭제: ${roomCode}`);
           }
         }, 5000);
-      } else {
-        console.log(`⚠️ ${socket.id} 나감 → 남은 인원: ${room.players.length}`);
       }
     }
   });

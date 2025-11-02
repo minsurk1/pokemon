@@ -224,6 +224,28 @@ export default function battleHandler(io: Server, socket: Socket) {
     console.log(`✅ BattlePage 상태 동기화 완료 → ${socket.id}`);
   });
 
+  // ✅ 클라이언트가 재접속했을 때 현재 상태 요청
+  socket.on("getGameState", ({ roomCode }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+
+    const g = room.gameState;
+
+    socket.emit("updateGameState", {
+      currentTurn: g.currentTurn,
+      hp: g.hp,
+      decks: g.decks,
+      hands: g.hands,
+      graveyards: g.graveyards,
+      cost: g.cost,
+      turnCount: g.turnCount,
+      cardsInZone: g.cardsInZone,
+      timeLeft: room.timeLeft,
+    });
+
+    console.log(`🔁 ${socket.id} 요청 → 현재 게임 상태 재전송 완료`);
+  });
+
   // ==================== (재접속 후) 덱 전송 ====================
   socket.on("sendDeck", ({ roomCode, deck }) => {
     const room = rooms[roomCode];

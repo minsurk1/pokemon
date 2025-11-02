@@ -164,6 +164,15 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
   startSharedTimer(io, roomCode, room);
 
   console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
+
+  // ✅ 첫 턴을 즉시 클라이언트에 알림
+  io.to(roomCode).emit("turnChanged", {
+    currentTurn: player1,
+    cost: room.gameState.cost,
+    hp: room.gameState.hp,
+    turnCount: 1,
+    timeLeft: TURN_TIME,
+  });
 }
 
 // ======================= 배틀 이벤트 핸들러 =======================

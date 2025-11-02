@@ -11,6 +11,9 @@ export const rooms: Record<string, RoomInfo> = {};
 export default function roomHandler(io: Server, socket: Socket) {
   console.log(`🔵 새로운 클라이언트 연결: ${socket.id}`);
 
+  const INITIAL_HP = 2000;
+  const TURN_TIME = 30;
+
   /**
    * 🏗️ 방 생성 (방장 전용)
    */
@@ -18,10 +21,13 @@ export default function roomHandler(io: Server, socket: Socket) {
     const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
     rooms[roomCode] = {
-      players: [socket.id],
-      ready: {},
-      hp: {},
-      turnIndex: 0,
+      hostId: socket.id, // 방장
+      players: [socket.id], // 현재 방 인원
+      ready: { [socket.id]: false }, // 각 플레이어 준비 상태
+      hp: { [socket.id]: INITIAL_HP }, // 대기 중 체력 초기값 (전투용과는 별개)
+      turnIndex: 0, // 턴 순서 인덱스
+      timeLeft: TURN_TIME, // 기본 타이머 설정
+      gameState: null, // 전투 시작 전까지 null
     };
 
     socket.join(roomCode);
@@ -41,6 +47,53 @@ export default function roomHandler(io: Server, socket: Socket) {
       socket.emit("roomNotFound");
       console.log(`❌ 존재하지 않는 방: ${roomCode}`);
       return;
+    }
+    // ✅ 재접속 처리 (게임 진행 중 + room.players에 oldId 있으면 교체)
+    if (room.gameState !== null && !room.players.includes(socket.id)) {
+      for (const oldId of room.players) {
+        // oldId가 아직 room.ready에 존재 = 이전 플레이어
+        if (room.ready[oldId] !== undefined) {
+          console.log(`♻️ 재접속 감지: ${oldId} → ${socket.id}`);
+
+          // ▼ 상태 이어붙이기
+          room.players = room.players.map((id) => (id === oldId ? socket.id : id));
+          room.ready[socket.id] = room.ready[oldId];
+          delete room.ready[oldId];
+
+          socket.join(roomCode);
+          console.log(`✅ 새 소켓으로 방 재합류: ${socket.id}`);
+
+          if (room.gameState) {
+            room.gameState.hp[socket.id] = room.gameState.hp[oldId];
+            delete room.gameState.hp[oldId];
+
+            room.gameState.cost[socket.id] = room.gameState.cost[oldId];
+            delete room.gameState.cost[oldId];
+
+            room.gameState.decks[socket.id] = room.gameState.decks[oldId];
+            delete room.gameState.decks[oldId];
+
+            room.gameState.hands[socket.id] = room.gameState.hands[oldId];
+            delete room.gameState.hands[oldId];
+
+            room.gameState.cardsInZone[socket.id] = room.gameState.cardsInZone[oldId];
+            delete room.gameState.cardsInZone[oldId];
+
+            room.gameState.graveyards[socket.id] = room.gameState.graveyards[oldId];
+            delete room.gameState.graveyards[oldId];
+          }
+
+          socket.emit("roomJoined", { roomCode, isHost: room.hostId === socket.id });
+
+          // ✅ 현재 게임 상태 즉시 보내기
+          socket.emit("updateGameState", {
+            ...room.gameState,
+            timeLeft: room.timeLeft,
+          });
+
+          return;
+        }
+      }
     }
 
     // ✅ 이미 들어와 있는 경우
@@ -64,12 +117,32 @@ export default function roomHandler(io: Server, socket: Socket) {
     room.players.push(socket.id);
     socket.join(roomCode);
 
-    const isHost = room.players[0] === socket.id;
-    socket.emit("roomJoined", { roomCode, isHost });
-    socket.to(roomCode).emit("opponentJoined");
+    // === 추가: 새 플레이어 상태 초기화 ===
+    const INITIAL_COST = 1;
 
-    console.log(`👥 ${socket.id} → 방 ${roomCode} 입장`);
-    console.log(`📊 방 상태: ${room.players.length}명 (${room.players.join(", ")})`);
+    room.ready[socket.id] = false;
+    room.hp[socket.id] = INITIAL_HP;
+
+    // 만약 gameState가 이미 존재한다면(방장이 생성 시 초기화했다면) → player2 필드 추가
+    if (room.gameState) {
+      room.gameState.hp[socket.id] = INITIAL_HP;
+      room.gameState.cost[socket.id] = INITIAL_COST;
+      room.gameState.cardsInZone[socket.id] = [];
+      room.gameState.decks[socket.id] = [];
+      room.gameState.hands[socket.id] = [];
+      room.gameState.graveyards[socket.id] = [];
+    }
+
+    const isHost = room.hostId === socket.id;
+
+    // ✅ 본인에게 방 참여 성공 알림
+    socket.emit("roomJoined", { roomCode, isHost });
+
+    // ✅ 상대방에게 알림
+    socket.to(roomCode).emit("opponentJoined", { opponentId: socket.id });
+
+    console.log(`👥 ${socket.id} → 방 ${roomCode} 입장 완료`);
+    console.log(`📊 현재 방 상태: ${room.players.length}명 (${room.players.join(", ")})`);
   });
 
   /**
@@ -107,20 +180,53 @@ export default function roomHandler(io: Server, socket: Socket) {
       return;
     }
 
-    if (room.gameState) {
+    // ✅ gameState가 null일 때만 초기화 가능
+    if (room.gameState !== null) {
       socket.emit("error", "이미 게임이 시작되었습니다.");
       return;
     }
 
-    // ✅ 현재 실제 연결된 socket.id로 갱신 (핵심)
+    // ✅ 실제 방에 남아있는 socket.id 갱신
     const socketsInRoom = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
     room.players = socketsInRoom;
 
     console.log(`🔄 현재 방 ${roomCode}의 소켓 갱신:`, room.players);
+    console.log(`🎯 ${roomCode} - 전투 시작! 플레이어 목록: ${room.players.join(", ")}`);
 
-    // ✅ battle.ts로 전투 초기화 위임
+    // ✅ 전투 초기화 호출
     initializeBattle(io, roomCode, room);
 
     console.log(`🎮 게임 시작 명령 수신 (방: ${roomCode})`);
+  });
+
+  /**
+   * 📦 덱 전달 받기
+   */
+  socket.on("sendDeck", ({ roomCode, deck }) => {
+    const room = rooms[roomCode];
+    if (!room || !deck || !Array.isArray(deck)) return;
+
+    // gameState가 없으면 초기 골격 생성
+    if (!room.gameState) {
+      room.gameState = {
+        currentTurn: room.players[0],
+        hp: {},
+        cost: {},
+        decks: {},
+        hands: {},
+        graveyards: {},
+        cardsInZone: {},
+        turnCount: 1,
+        cardsPlayed: {},
+      };
+    }
+
+    // ✅ 덱을 그대로 저장 (id 배열이 아님)
+    room.gameState.decks[socket.id] = deck;
+
+    console.log(
+      `📥 덱 수신 from ${socket.id}:`,
+      deck.map((c) => ({ id: c.id, name: c.name, atk: c.attack }))
+    );
   });
 }

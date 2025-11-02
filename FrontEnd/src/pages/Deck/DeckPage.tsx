@@ -11,15 +11,18 @@ interface DeckPageProps {
 }
 
 interface UserCardDTO {
-  id?: string;
+  _id?: string; // ✅ DB에서 온 카드 ObjectId
+  id?: string; // ✅ 안전용
   cardId: string;
   name: string;
-  damage: number;
+  cardType?: string; // ✅ 타입 추가
+  attack: number;
   hp: number;
   tier: number;
   image: string;
+  image2D?: string; // ✅ 서버 이미지 필드
   count: number;
-  cost?: number; // ✅ 추가
+  cost?: number;
 }
 
 const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
@@ -50,9 +53,19 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const normalized = res.data.userCards.map((c: any) => ({
-          ...c,
-          image: c.image2D || c.image || `${c.cardType ?? "fire"}Tier${c.tier ?? 1}.png`,
+          _id: c._id ?? c.cardId, // ✅ DB ID 보존
+          cardId: c.cardId ?? c._id, // ✅ fallback
+          name: c.cardName ?? c.name,
+          cardType: c.cardType ?? "normal",
+          attack: c.attack ?? 0,
+          hp: c.hp ?? 0,
+          tier: c.tier ?? 1,
+          cost: c.cost ?? c.tier ?? 1,
+          image: c.image2D ?? c.image,
+          image2D: c.image2D ?? c.image,
+          count: c.count ?? 1,
         }));
+        console.log("💾 userCards loaded:", normalized);
         setUserCards(normalized);
         setAllUserCards(normalized);
         return normalized;
@@ -138,14 +151,20 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
       .map((cardId) => {
         const card = allUserCards.find((c) => c.cardId === cardId);
         if (!card) return null;
+
         return {
-          id: card.cardId,
+          id: card._id,
           name: card.name,
-          attack: card.damage ?? 0,
+          cardType: card.cardType,
+          attack: card.attack ?? 0,
           hp: card.hp ?? 0,
           maxhp: card.hp ?? 0,
-          cost: card.cost ?? card.tier ?? 1, // 🔥 cost가 없으면 tier를 기본값으로 사용
+          cost: card.cost ?? card.tier ?? 1,
           tier: card.tier ?? 1,
+          // ✅ image2D 필드 유지
+          image2D: card.image2D || card.image,
+
+          // ✅ 백업용 image (optional)
           image: card.image,
         };
       })
@@ -157,6 +176,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
         { cards: formattedDeck }, // ✅ 카드 전체 데이터로 전송
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      console.log("🔥 formattedDeck before save:", formattedDeck);
       setMessage("덱 저장 완료!");
       setShowMessage(true);
     } catch (err) {
@@ -188,49 +208,49 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
           덱 저장
         </button>
       </div> */}
-      
-      <div className="sticky-deck-row">
-      <div className="button-deck-sidebar">
-         {/* 버튼 영역 */}
-      <div style={{ margin: "1rem" }}>
-        <button className="deck-new-button" onClick={createNewDeck} style={{ marginRight: "1rem" }}>
-          new
-        </button>
-        <button className="deck-save-button" onClick={saveDeck}>
-          save
-        </button>
-      </div> 
-      </div>
-      <div className="selected-cards-container">
-        <div className="selected-cards">
-          {Array.from({ length: maxSelectedCards }).map((_, index) => {
-            const cardId = selectedCards[index];
-            const card = userCards.find((c) => c.cardId === cardId);
 
-            return (
-              <div key={index} className="selected-card" onClick={() => cardId && removeCard(index)}>
-                <img
-                  src={
-                    card
-                      ? card.image.startsWith("http")
-                        ? card.image
-                        : `${IMAGE_URL}/images/${card.image}`
-                      : `${IMAGE_URL}/images/default.png`
-                  }
-                  alt={card?.name || `카드 ${index + 1}`}
-                />
-              </div>
-            );
-          })}
+      <div className="sticky-deck-row">
+        <div className="button-deck-sidebar">
+          {/* 버튼 영역 */}
+          <div style={{ margin: "1rem" }}>
+            <button className="deck-new-button" onClick={createNewDeck} style={{ marginRight: "1rem" }}>
+              new
+            </button>
+            <button className="deck-save-button" onClick={saveDeck}>
+              save
+            </button>
+          </div>
+        </div>
+        <div className="selected-cards-container">
+          <div className="selected-cards">
+            {Array.from({ length: maxSelectedCards }).map((_, index) => {
+              const cardId = selectedCards[index];
+              const card = userCards.find((c) => c.cardId === cardId);
+
+              return (
+                <div key={index} className="selected-card" onClick={() => cardId && removeCard(index)}>
+                  <img
+                    src={
+                      card
+                        ? card.image.startsWith("http")
+                          ? card.image
+                          : `${IMAGE_URL}/images/${card.image}`
+                        : `${IMAGE_URL}/images/default.png`
+                    }
+                    alt={card?.name || `카드 ${index + 1}`}
+                  />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
-      </div>
-       {showMessage && (
-              <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1" onClose={() => setShowMessage(false)}>
-                {message}
-              </MessageBox>
-            )}
-      
+      {showMessage && (
+        <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1" onClose={() => setShowMessage(false)}>
+          {message}
+        </MessageBox>
+      )}
+
       {/* 보유 카드 목록 */}
       <div className="card-list">
         {userCards.map((card) => (
@@ -242,7 +262,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
             />
             <div className="card-info">
               <p className="card-name">{card.name}</p>
-              <p>공격력: {card.damage}</p>
+              <p>공격력: {card.attack}</p>
               <p>HP: {card.hp}</p>
               <p>등급: {card.tier}</p>
               <p>보유 수량: {card.count}</p>

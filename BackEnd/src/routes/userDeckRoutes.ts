@@ -28,32 +28,30 @@ router.get("/single", isAuthenticated, async (req, res) => {
       return res.status(200).json({ deck: { _id: null, cards: [] } });
     }
 
-    const BASE_URL =
-      process.env.BASE_URL ||
-      "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
+    const BASE_URL = process.env.BASE_URL || "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
     // ✅ populate + 직접 저장된 필드 둘 다 읽기
     const formattedDeck = {
       _id: deck._id,
       cards: (deck.cards || []).map((entry: any) => {
-        const card = entry.card || entry;
+        // ✅ populate 여부에 따라 분기
+        const c =
+          typeof entry.card === "object" && entry.card !== null
+            ? entry.card // populate 된 경우
+            : entry; // populate 안 됨 → entry 자체 사용
 
-        const imageFile =
-          card.image2D ||
-          entry.image2D ||
-          "default.png";
-        const imageUrl = `${BASE_URL}/images/${imageFile.split("/").pop()}`;
+        const imageFile = c.image2D ?? entry.image2D ?? "default.png";
 
         return {
-          id: String(card._id ?? entry._id),
-          name: card.cardName ?? entry.name ?? "Unknown",
-          cardType: card.cardType ?? entry.cardType ?? "normal",
-          attack: Number(card.attack ?? entry.attack ?? 0),
-          hp: Number(card.hp ?? entry.hp ?? 0),
-          maxhp: Number(card.hp ?? entry.hp ?? 0),
-          cost: Number(card.cost ?? entry.cost ?? card.tier ?? entry.tier ?? 1),
-          tier: Number(card.tier ?? entry.tier ?? 1),
-          image: imageUrl,
+          id: String(c._id ?? entry._id ?? entry.card ?? entry.id),
+          name: c.cardName ?? c.name ?? "Unknown",
+          cardType: c.cardType ?? entry.cardType ?? "normal",
+          attack: Number(c.attack ?? entry.attack ?? 0),
+          hp: Number(c.hp ?? entry.hp ?? 0),
+          maxhp: Number(c.hp ?? entry.hp ?? 0),
+          cost: Number(c.cost ?? entry.cost ?? c.tier ?? entry.tier ?? 1),
+          tier: Number(c.tier ?? entry.tier ?? 1),
+          image: `${BASE_URL}/images/${imageFile.split("/").pop()}`,
         };
       }),
     };
@@ -77,15 +75,13 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
     const { cards } = req.body;
 
     if (!Array.isArray(cards)) {
-      return res
-        .status(400)
-        .json({ message: "잘못된 카드 데이터 형식입니다." });
+      return res.status(400).json({ message: "잘못된 카드 데이터 형식입니다." });
     }
 
     const formattedCards = cards.map((c: any) => ({
-      card: new mongoose.Types.ObjectId(c.id),
+      card: new mongoose.Types.ObjectId(String(c.id || c.cardId)),
       name: c.name,
-      cardType: c.cardType ?? "fire",
+      cardType: c.cardType ?? "normal",
       attack: c.attack ?? 0,
       hp: c.hp ?? 0,
       maxhp: c.maxhp ?? c.hp ?? 0,

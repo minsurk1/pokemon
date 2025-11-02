@@ -234,9 +234,9 @@
   }
   /*상점으로 돌아가기 버튼*/
   .back-button {
-    position: fixed;
+    position: absolute;
     bottom: 33px;
-    left: 50%;
+    left: 45%;
     transform: translateX(-50%);
     padding: 15px 30px;
     background: linear-gradient(45deg, #7c4dff, #448aff);
@@ -253,6 +253,26 @@
     background: linear-gradient(45deg, #651fff, #2979ff);
     transform: translate(-50%, -5px);
   }
+  .inv-main-button {
+    position: absolute;
+    bottom: 33px;
+    left: 55%;
+    transform: translateX(-50%);
+    padding: 15px 30px;
+    background: linear-gradient(45deg, #7c4dff, #448aff);
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+  /*상점버튼 호버*/
+  .inv-main-button:hover {
+    background: linear-gradient(45deg, #651fff, #2979ff);
+    transform: translate(-50%, -5px);
+  }
   /*카드팩 없을때*/
   .inventory-empty {
     text-align: center;
@@ -264,6 +284,45 @@
     border-radius: 15px;
     backdrop-filter: blur(10px);
   }
+
+  /* --- ▼ [수정됨] '계속 뽑기' 버튼 스타일 추가 ▼ --- */
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 25px;
+    margin-bottom: 10px;
+  }
+  
+  .continue-open-button {
+    font-family: "Do hyeon", serif;
+    padding: 12px 30px;
+    background: linear-gradient(45deg, #00BCD4, #00E5FF);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 188, 212, 0.4);
+  }
+  
+  .continue-open-button:hover {
+    background: linear-gradient(45deg, #0097A7, #00BCD4);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 188, 212, 0.5);
+  }
+  
+  .continue-open-button:disabled {
+    background: linear-gradient(45deg, #9e9e9e, #757575);
+    color: #e0e0e0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  /* --- ▲ [수정됨] '계속 뽑기' 버튼 스타일 추가 ▲ --- */
+
+
   /*여기부터 밑에는 창크기에 따라 카드팩 레이아웃 배치 변경*/
   @keyframes modalFadeIn {
     from {

@@ -9,16 +9,19 @@ import axios from "axios";
 function Inventory() {
   const { userInfo, setUserInfo } = useUser();
   const [showModal, setShowModal] = useState(false);
-  // openedCards 타입에 tier 정보가 포함되도록 가정하고 any로 처리
-  const [openedCards, setOpenedCards] = useState<any[]>([]); 
+  const [openedCards, setOpenedCards] = useState<any[]>([]);
+  // --- ▼ [수정됨] null(null) -> null>(null) ---
+  const [lastOpenedPack, setLastOpenedPack] = useState<{ id: string; type: string } | null>(null);
+  // --- ▲ [수정됨] ---
 
   if (!userInfo) return <div>로딩 중...</div>;
 
   const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api";
   const IMAGE_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app";
 
-  // 카드팩 개봉 핸들러
   const openCardPack = async (packId: string, packType: string) => {
+    setLastOpenedPack({ id: packId, type: packType });
+
     try {
       const res = await axios.post(
         `${API_URL}/inventory/open-pack`,
@@ -33,24 +36,21 @@ function Inventory() {
       const drawnCards = res.data.drawnCards || [];
       const userPacks = res.data.userPacks || [];
 
-      // 1) 개봉된 카드 저장 (CSS 구조에 맞게, tier 정보 포함)
+      // [정상] 누적이 아닌 '교체' 방식
       setOpenedCards(
         drawnCards.map((c: any) => ({
           id: c.id,
-          name: c.name,          // 서버 필드명 그대로
+          name: c.name, 
           type: packType as CardPack["type"],
           quantity: 1,
           isOpened: true,
-          packImage: c.image,    // 서버 필드명 그대로
-          tier: c.tier,          // 👈 서버 응답에서 tier를 가져온다고 가정
+          packImage: c.image, 
+          tier: c.tier, 
         }))
       );
 
-
-      // 2) 유저 인벤토리 업데이트
       setUserInfo((prev) => {
         if (!prev) return prev;
-
         const updatedInventory: CardPack[] = userPacks.map((p: any) => ({
           id: p.packId,
           name: p.name || "",
@@ -59,14 +59,18 @@ function Inventory() {
           isOpened: false,
           quantity: p.quantity,
         }));
-
         return { ...prev, inventory: updatedInventory };
       });
 
       setShowModal(true);
     } catch (err: any) {
       console.error("카드팩 개봉 실패:", err);
-      alert(err.response?.data?.message || "카드팩 개봉 실패");
+      if (err.response?.status === 400) {
+        alert(err.response?.data?.message || "재고가 없습니다.");
+        setShowModal(false); 
+      } else {
+        alert(err.response?.data?.message || "카드팩 개봉 실패");
+      }
     }
   };
 
@@ -98,18 +102,16 @@ function Inventory() {
                     ) : (
                       <div className="placeholder-image">No Image</div>
                     )}
-                    {/* 👇 수량 및 이름 표시 개선 */}
                     <div className="pack-info">
                       <p className="pack-name">{pack.name}</p>
                       <span className="pack-quantity">재고: {pack.quantity}개</span>
                     </div>
-                    {/* 👆 수량 및 이름 표시 개선 */}
                     <button
                       className="open-button"
                       onClick={() => openCardPack(pack.id, pack.type)}
                       disabled={pack.quantity <= 0}
                     >
-                      카드팩 개봉
+                      {pack.quantity <= 0 ? "재고 없음" : "카드팩 개봉"}
                     </button>
                   </div>
                 </div>
@@ -124,8 +126,10 @@ function Inventory() {
           <div className="modal-content">
             <div className="modal-card-message">카드팩을 개봉했습니다!</div>
             <div className="modal-cards">
-              {openedCards.map((card) => (
-                <div key={card.id} className="modal-card">
+              {/* --- ▼ [수정됨] key에 index를 추가하여 '이어뽑기' 버그 해결 --- */}
+              {openedCards.map((card, index) => (
+                <div key={`${card.id}-${index}`} className="modal-card">
+              {/* --- ▲ [수정됨] --- */}
                   {card.packImage ? (
                     <img
                       src={`${IMAGE_URL}/images/${card.packImage}`}
@@ -140,23 +144,51 @@ function Inventory() {
                   ) : (
                     <div className="placeholder-image">No Image</div>
                   )}
-                  {/* 👇 등급 표시 추가 */}
                   <p className="card-tier">⭐ {card.tier} 등급</p>
-                  {/* 👆 등급 표시 추가 */}
                   <p>{card.name}</p>
                 </div>
               ))}
             </div>
+
+            {(() => {
+              const currentPack = userInfo.inventory.find(
+                (p) => p.type === lastOpenedPack?.type
+              );
+              const hasMorePacks = currentPack && currentPack.quantity > 0;
+
+              return (
+                <div className="modal-actions">
+                  <button
+                    className="continue-open-button"
+                    onClick={() => {
+                      if (lastOpenedPack) {
+                        openCardPack(lastOpenedPack.id, lastOpenedPack.type);
+                      }
+                    }}
+                    disabled={!hasMorePacks}
+                  >
+                    {hasMorePacks
+                      ? `계속 뽑기 (남은 재고: ${currentPack.quantity}개)`
+                      : "재고 없음"}
+                  </button>
+                </div>
+              );
+            })()}
+
             <button className="close-modal" onClick={() => setShowModal(false)}>
               X
             </button>
           </div>
         </div>
       )}
-
-      <Link to="/store" className="back-button">
-        상점페이지
-      </Link>
+      <div>
+        <Link to="/store" className="back-button">
+          상점페이지
+        </Link>
+        <Link to="/main" className="inv-main-button">
+          메인 페이지
+        </Link>
+      </div>
     </div>
   );
 }

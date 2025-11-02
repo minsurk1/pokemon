@@ -170,6 +170,39 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 export default function battleHandler(io: Server, socket: Socket) {
   console.log(`⚔️ 배틀 소켓 연결됨: ${socket.id}`);
 
+  // ✅ 방에 이미 속해있는 유저가 battle 페이지 재입장 시 자동 동기화
+  // ✅ BattlePage 진입 시 현재 상태 즉시 동기화
+  socket.on("joinRoom", ({ roomCode }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+
+    console.log(`📥 BattlePage joinRoom → ${socket.id}`);
+
+    // 소켓을 다시 방에 넣어준다 (새 탭 / 새 페이지 고려)
+    socket.join(roomCode);
+
+    const g = room.gameState;
+
+    // ✅ 전체 상태 즉시 전달
+    socket.emit("updateGameState", {
+      currentTurn: g.currentTurn,
+      hp: g.hp,
+      decks: g.decks,
+      hands: g.hands,
+      graveyards: g.graveyards,
+      cost: g.cost,
+      turnCount: g.turnCount,
+      cardsInZone: g.cardsInZone,
+    });
+
+    // ✅ 타이머 동기화
+    if (room.timeLeft !== undefined) {
+      socket.emit("timeUpdate", room.timeLeft);
+    }
+
+    console.log(`✅ BattlePage 상태 동기화 완료 → ${socket.id}`);
+  });
+
   // ==================== 📡 현재 턴 요청 ====================
   socket.on("getCurrentTurn", ({ roomCode }) => {
     const room = rooms[roomCode];
@@ -225,6 +258,7 @@ export default function battleHandler(io: Server, socket: Socket) {
 
   // ==================== 재접속 후 상태 복구 ====================
   socket.on("getGameState", ({ roomCode }) => {
+    console.log("📨 getGameState 요청:", socket.id, roomCode);
     const room = rooms[roomCode];
     if (!room) return;
 
@@ -245,6 +279,7 @@ export default function battleHandler(io: Server, socket: Socket) {
         cardsInZone: g.cardsInZone,
       });
     }
+    console.log("📤 updateGameState 전송:", socket.id);
 
     if (room.timeLeft !== undefined) {
       socket.emit("timeUpdate", room.timeLeft);

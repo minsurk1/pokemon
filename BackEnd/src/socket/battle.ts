@@ -171,18 +171,31 @@ export default function battleHandler(io: Server, socket: Socket) {
   console.log(`⚔️ 배틀 소켓 연결됨: ${socket.id}`);
 
   // ==================== 📡 현재 턴 요청 ====================
-  socket.on("getCurrentTurn", ({ roomCode }: { roomCode: string }) => {
+  socket.on("getCurrentTurn", ({ roomCode }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
-    socket.emit("currentTurnSync", {
-      currentTurn: room.gameState.currentTurn,
-      hp: room.gameState.hp,
+    const currentTurn = room.gameState.currentTurn;
+    const hp = room.gameState.hp;
+    const cost = room.gameState.cost;
+    const turnCount = room.gameState.turnCount;
+    const timeLeft = room.timeLeft ?? TURN_TIME;
+
+    console.log(`🔁 currentTurnSync → ${socket.id}`, {
+      currentTurn,
+      hp,
+      cost,
+      turnCount,
+      timeLeft,
     });
 
-    if (room.timeLeft !== undefined) {
-      socket.emit("timeUpdate", room.timeLeft);
-    }
+    socket.emit("turnChanged", {
+      currentTurn,
+      hp,
+      cost,
+      turnCount,
+      timeLeft,
+    });
   });
 
   // === 재접속 시 동기화 ===

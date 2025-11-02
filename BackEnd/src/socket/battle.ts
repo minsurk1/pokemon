@@ -165,11 +165,11 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 
   console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
 
-  // ✅ 첫 턴을 즉시 클라이언트에 알림
+  // ✅ 첫 턴 즉시 전송 (가장 중요)
   io.to(roomCode).emit("turnChanged", {
     currentTurn: player1,
-    cost: room.gameState.cost,
-    hp: room.gameState.hp,
+    cost: { ...room.gameState.cost },
+    hp: { ...room.gameState.hp },
     turnCount: 1,
     timeLeft: TURN_TIME,
   });

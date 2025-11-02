@@ -41,7 +41,11 @@ function startSharedTimer(io: Server, roomCode: string, room: RoomInfo) {
 }
 
 // ✅ 턴 교체 + 타이머 재시작
-function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo) {
+function switchTurnAndRestartTimer(
+  io: Server,
+  roomCode: string,
+  room: RoomInfo
+) {
   if (!room?.gameState) return;
   const game = room.gameState;
 
@@ -68,6 +72,7 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
     cost: game.cost,
     hp: game.hp,
     turnCount: game.turnCount,
+    timeLeft: room.timeLeft ?? TURN_TIME,
   });
   console.log(`🔁 자동 턴 전환: ${nextTurn} (타이머 리셋됨)`);
 
@@ -142,6 +147,8 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
       graveyards: room.gameState!.graveyards,
       cost: room.gameState!.cost,
       turnCount: room.gameState!.turnCount,
+      cardsInZone: room.gameState!.cardsInZone, // 이미 있는 데이터 포함
+      timeLeft: room.timeLeft ?? TURN_TIME, // ✅ 타이머 포함
     });
     console.log(`📤 초기 턴 상태 전송 → ${pid}`);
   });
@@ -183,242 +190,287 @@ export default function battleHandler(io: Server, socket: Socket) {
   }
 
   // ==================== 재접속 후 상태 복구 ====================
-  socket.on("getGameState", ({ roomCode, userId }: { roomCode: string; userId: string }) => {
-    const room = rooms[roomCode];
-    if (!room) return;
+  socket.on(
+    "getGameState",
+    ({ roomCode, userId }: { roomCode: string; userId: string }) => {
+      const room = rooms[roomCode];
+      if (!room) return;
 
-    // ✅ 유저 교체 (F5로 socket.id 교체)
-    socket.join(roomCode);
+      // ✅ 유저 교체 (F5로 socket.id 교체)
+      socket.join(roomCode);
 
-    const oldIndex = room.players.indexOf(userId);
-    if (oldIndex !== -1) {
-      room.players[oldIndex] = socket.id;
-    } else if (!room.players.includes(socket.id)) {
-      room.players.push(socket.id);
+      const oldIndex = room.players.indexOf(userId);
+      if (oldIndex !== -1) {
+        room.players[oldIndex] = socket.id;
+      } else if (!room.players.includes(socket.id)) {
+        room.players.push(socket.id);
+      }
+
+      // ✅ 전체 상태 전송
+      if (room.gameState) {
+        const g = room.gameState;
+        socket.emit("updateGameState", {
+          currentTurn: g.currentTurn,
+          hp: g.hp,
+          decks: g.decks,
+          hands: g.hands,
+          graveyards: g.graveyards,
+          cost: g.cost,
+          turnCount: g.turnCount,
+          cardsInZone: g.cardsInZone,
+        });
+      }
+
+      // ✅ 타이머 즉시 동기화 (0초도 포함)
+      if (room.timeLeft !== undefined) {
+        socket.emit("timeUpdate", room.timeLeft);
+      }
+
+      console.log(`♻️ ${userId || socket.id} 재접속 → ${roomCode}`);
     }
-
-    // ✅ 전체 상태 전송
-    if (room.gameState) {
-      const g = room.gameState;
-      socket.emit("updateGameState", {
-        currentTurn: g.currentTurn,
-        hp: g.hp,
-        decks: g.decks,
-        hands: g.hands,
-        graveyards: g.graveyards,
-        cost: g.cost,
-        turnCount: g.turnCount,
-        cardsInZone: g.cardsInZone,
-      });
-    }
-
-    // ✅ 타이머 즉시 동기화 (0초도 포함)
-    if (room.timeLeft !== undefined) {
-      socket.emit("timeUpdate", room.timeLeft);
-    }
-
-    console.log(`♻️ ${userId || socket.id} 재접속 → ${roomCode}`);
-  });
+  );
 
   // ==================== 🃏 카드 소환 ====================
-  socket.on("summonCard", async ({ roomCode, card }: { roomCode: string; card: any }) => {
-    const room = rooms[roomCode];
-    if (!room?.gameState) return;
+  socket.on(
+    "summonCard",
+    async ({ roomCode, card }: { roomCode: string; card: any }) => {
+      const room = rooms[roomCode];
+      if (!room?.gameState) return;
 
-    const game = room.gameState;
-    const playerId = socket.id;
+      const game = room.gameState;
+      const playerId = socket.id;
 
-    // ✅ 1. cost 안전 변환
-    let costValue = 0;
-    if (card && card.cost !== undefined) {
-      costValue = parseInt(card.cost, 10);
-      if (isNaN(costValue)) costValue = 0;
+      // ✅ 1. cost 안전 변환
+      let costValue = 0;
+      if (card && card.cost !== undefined) {
+        costValue = parseInt(card.cost, 10);
+        if (isNaN(costValue)) costValue = 0;
+      }
+
+      // ✅ 2. 턴 검사
+      if (playerId !== game.currentTurn) {
+        socket.emit("error", "지금은 당신의 턴이 아닙니다.");
+        return;
+      }
+
+      // ✅ 3. 코스트 검사
+      const playerCost = game.cost[playerId] ?? 0;
+      if (playerCost < costValue) {
+        socket.emit("error", "코스트가 부족합니다!");
+        return;
+      }
+
+      // ✅ 4. 카드존 검사
+      if (!game.cardsInZone[playerId]) game.cardsInZone[playerId] = [];
+      if (game.cardsInZone[playerId].length >= 5) {
+        socket.emit("error", "필드가 가득 찼습니다! (최대 5장)");
+        return;
+      }
+
+      // ✅ 5. 코스트 차감
+      game.cost[playerId] = Math.max(0, playerCost - costValue);
+
+      // ✅ 6. DB에서 카드 세부정보 보강
+      let dbCardData = null;
+      if (!card || (!card.name && !card.cardName)) {
+        socket.emit("error", "잘못된 카드 데이터입니다.");
+        return;
+      }
+
+      try {
+        dbCardData = await Card.findOne({
+          cardName: card.name || card.cardName,
+        });
+      } catch (err) {
+        console.error("❌ DB 카드 조회 실패:", err);
+      }
+
+      const summonedCard = {
+        ...card,
+        id: card.id ?? crypto.randomUUID(), // ✅ 서버에서 id 보장
+        cost: costValue,
+        cardType: dbCardData?.cardType ?? card.cardType ?? "normal",
+        image2D: dbCardData?.image2D ?? card.image2D ?? "default.png",
+        canAttack: true, // ✅ 기본값 추가
+      };
+
+      game.cardsInZone[playerId].push(summonedCard);
+
+      // ✅ 7. 모든 플레이어에게 최신 상태 전송
+      io.to(roomCode).emit("cardSummoned", {
+        playerId,
+        card: summonedCard,
+        updatedCost: game.cost[playerId],
+        cost: { ...game.cost },
+      });
+
+      // 타이머 상태 즉시 다시 전송 (UX 부드럽게)
+      io.to(roomCode).emit("timeUpdate", room.timeLeft);
+
+      console.log(
+        `🃏 ${playerId} → ${roomCode}에 ${
+          summonedCard.name || summonedCard.cardName || "Unknown"
+        } 소환 (코스트 ${costValue}), 남은 코스트: ${game.cost[playerId]}`
+      );
     }
-
-    // ✅ 2. 턴 검사
-    if (playerId !== game.currentTurn) {
-      socket.emit("error", "지금은 당신의 턴이 아닙니다.");
-      return;
-    }
-
-    // ✅ 3. 코스트 검사
-    const playerCost = game.cost[playerId] ?? 0;
-    if (playerCost < costValue) {
-      socket.emit("error", "코스트가 부족합니다!");
-      return;
-    }
-
-    // ✅ 4. 카드존 검사
-    if (!game.cardsInZone[playerId]) game.cardsInZone[playerId] = [];
-    if (game.cardsInZone[playerId].length >= 5) {
-      socket.emit("error", "필드가 가득 찼습니다! (최대 5장)");
-      return;
-    }
-
-    // ✅ 5. 코스트 차감
-    game.cost[playerId] = Math.max(0, playerCost - costValue);
-
-    // ✅ 6. DB에서 카드 세부정보 보강
-    let dbCardData = null;
-    if (!card || (!card.name && !card.cardName)) {
-      socket.emit("error", "잘못된 카드 데이터입니다.");
-      return;
-    }
-
-    try {
-      dbCardData = await Card.findOne({ cardName: card.name || card.cardName });
-    } catch (err) {
-      console.error("❌ DB 카드 조회 실패:", err);
-    }
-
-    const summonedCard = {
-      ...card,
-      id: card.id ?? crypto.randomUUID(), // ✅ 서버에서 id 보장
-      cost: costValue,
-      cardType: dbCardData?.cardType ?? card.cardType ?? "normal",
-      image2D: dbCardData?.image2D ?? card.image2D ?? "default.png",
-      canAttack: true, // ✅ 기본값 추가
-    };
-
-    game.cardsInZone[playerId].push(summonedCard);
-
-    // ✅ 7. 모든 플레이어에게 최신 상태 전송
-    io.to(roomCode).emit("cardSummoned", {
-      playerId,
-      card: summonedCard,
-      updatedCost: game.cost[playerId],
-      cost: { ...game.cost },
-    });
-
-    console.log(
-      `🃏 ${playerId} → ${roomCode}에 ${summonedCard.name || summonedCard.cardName || "Unknown"} 소환 (코스트 ${costValue}), 남은 코스트: ${
-        game.cost[playerId]
-      }`
-    );
-  });
+  );
 
   // ==================== 💥 공격 / 피해 ====================
-  socket.on("playCard", ({ roomCode, card }: { roomCode: string; card: CardData }) => {
-    const room = rooms[roomCode];
-    if (!room?.gameState) return;
+  socket.on(
+    "playCard",
+    ({ roomCode, card }: { roomCode: string; card: CardData }) => {
+      const room = rooms[roomCode];
+      if (!room?.gameState) return;
 
-    const game = room.gameState;
-    const currentTurn = game.currentTurn;
+      const game = room.gameState;
+      const currentTurn = game.currentTurn;
 
-    if (socket.id !== currentTurn) {
-      socket.emit("error", "당신의 턴이 아닙니다.");
-      return;
-    }
+      if (socket.id !== currentTurn) {
+        socket.emit("error", "당신의 턴이 아닙니다.");
+        return;
+      }
 
-    const opponentId = room.players.find((id) => id !== socket.id);
-    if (!opponentId) return;
+      const opponentId = room.players.find((id) => id !== socket.id);
+      if (!opponentId) return;
 
-    const damage = Math.max(0, Number(card.attack ?? 0));
-    const prevHP = game.hp[opponentId] ?? 2000;
-    const newHP = Math.max(0, prevHP - damage);
-    game.hp[opponentId] = newHP;
+      const damage = Math.max(0, Number(card.attack ?? 0));
+      const prevHP = game.hp[opponentId] ?? 2000;
+      const newHP = Math.max(0, prevHP - damage);
+      game.hp[opponentId] = newHP;
 
-    game.cardsPlayed[socket.id] = card;
+      game.cardsPlayed[socket.id] = card;
 
-    io.to(roomCode).emit("cardPlayed", {
-      playerId: socket.id,
-      card,
-      damage,
-      hp: game.hp,
-    });
-
-    console.log(`💥 ${socket.id} → ${opponentId}에게 ${damage} 피해`);
-
-    if (newHP <= 0) {
-      io.to(roomCode).emit("gameOver", {
-        winnerId: socket.id,
-        loserId: opponentId,
+      io.to(roomCode).emit("cardPlayed", {
+        playerId: socket.id,
+        card,
+        damage,
+        hp: game.hp,
       });
-      console.log(`🏁 게임 종료: ${socket.id} 승리`);
-      stopSharedTimer(room);
-      room.gameState = null; // ✅ 안전하고 TypeScript에 완벽히 호환하게 게임 상태 초기화
+
+      console.log(`💥 ${socket.id} → ${opponentId}에게 ${damage} 피해`);
+
+      if (newHP <= 0) {
+        io.to(roomCode).emit("gameOver", {
+          winnerId: socket.id,
+          loserId: opponentId,
+        });
+        console.log(`🏁 게임 종료: ${socket.id} 승리`);
+        stopSharedTimer(room);
+        room.gameState = null; // ✅ 안전하고 TypeScript에 완벽히 호환하게 게임 상태 초기화
+      }
     }
-  });
+  );
 
   // ==================== ⚔️ 카드 간 공격 (또는 직접 공격) ====================
-  socket.on("attackCard", ({ roomCode, attackerId, targetId }: { roomCode: string; attackerId: string; targetId?: string }) => {
-    const room = rooms[roomCode];
-    if (!room?.gameState) return;
+  socket.on(
+    "attackCard",
+    ({
+      roomCode,
+      attackerId,
+      targetId,
+    }: {
+      roomCode: string;
+      attackerId: string;
+      targetId?: string;
+    }) => {
+      const room = rooms[roomCode];
+      if (!room?.gameState) return;
 
-    const game = room.gameState;
-    const playerId = socket.id;
-    const opponentId = room.players.find((id) => id !== playerId);
-    if (!opponentId) return;
+      const game = room.gameState;
+      const playerId = socket.id;
+      const opponentId = room.players.find((id) => id !== playerId);
+      if (!opponentId) return;
 
-    // ✅ 턴 검사
-    if (playerId !== game.currentTurn) {
-      socket.emit("error", "당신의 턴이 아닙니다.");
-      return;
+      // ✅ 턴 검사
+      if (playerId !== game.currentTurn) {
+        socket.emit("error", "당신의 턴이 아닙니다.");
+        return;
+      }
+
+      const attacker = game.cardsInZone[playerId]?.find(
+        (c) => c.id === attackerId
+      );
+      if (!attacker) {
+        socket.emit("error", "공격할 카드 정보를 찾을 수 없습니다.");
+        return;
+      }
+
+      // ✅ 이미 공격한 카드면 다시 공격 불가
+      if (!attacker.canAttack) {
+        socket.emit(
+          "error",
+          `${attacker.name}은(는) 이미 이번 턴에 공격했습니다.`
+        );
+        return;
+      }
+
+      // ✅ 상대 필드 확인
+      const opponentField = game.cardsInZone[opponentId] ?? [];
+      if (opponentField.length === 0) {
+        socket.emit(
+          "error",
+          "상대 필드가 비어 있습니다. 직접 공격을 시도하세요."
+        );
+        return; // 아직 공격권 소모하지 않음
+      }
+
+      // ✅ 공격 대상 찾기
+      const target = opponentField.find((c) => c.id === targetId);
+      if (!target) {
+        socket.emit("error", "공격 대상 카드를 찾을 수 없습니다.");
+        return;
+      }
+
+      // ✅ 공격 계산
+      const atk = Math.max(0, Number(attacker.attack ?? 0));
+      const prevHP = Number(target.hp ?? 0);
+      const newHP = Math.max(0, prevHP - atk);
+      target.hp = newHP;
+
+      // ✅ 공격 성공 → 공격권 소모
+      attacker.canAttack = false;
+
+      io.to(roomCode).emit("updateCardHP", { targetId, newHP });
+      console.log(
+        `⚔️ ${attacker.name}(${atk}) → ${target.name} | HP ${prevHP} → ${newHP}`
+      );
+
+      // ✅ 카드 사망 처리
+      if (newHP <= 0) {
+        if (!game.graveyards[opponentId]) game.graveyards[opponentId] = [];
+        game.graveyards[opponentId].push(target);
+        game.cardsInZone[opponentId] = game.cardsInZone[opponentId].filter(
+          (c) => c.id !== targetId
+        );
+
+        io.to(roomCode).emit("cardDestroyed", {
+          targetId,
+          ownerId: opponentId,
+        });
+        console.log(`💀 ${target.name}이(가) 쓰러져 묘지로 이동했습니다.`);
+      }
+
+      // ✅ 상대 필드가 전부 사라졌다면 — 다음 공격부터 직접 공격 가능
+      if (game.cardsInZone[opponentId].length === 0) {
+        io.to(roomCode).emit("opponentFieldEmpty", { opponentId });
+        console.log(
+          `⚠️ ${opponentId}의 필드가 비었습니다. 다음 공격부터 직접 공격 가능`
+        );
+      }
+
+      // ✅ 승패 조건 확인 (플레이어 HP가 0 이하인 경우)
+      const remainingHP = game.hp[opponentId] ?? 2000;
+      if (remainingHP <= 0) {
+        io.to(roomCode).emit("gameOver", {
+          winnerId: playerId,
+          loserId: opponentId,
+        });
+        stopSharedTimer(room);
+        room.gameState = null;
+        console.log(`🏁 ${playerId} 승리 (상대 카드 전멸 후 게임 종료)`);
+      }
     }
-
-    const attacker = game.cardsInZone[playerId]?.find((c) => c.id === attackerId);
-    if (!attacker) {
-      socket.emit("error", "공격할 카드 정보를 찾을 수 없습니다.");
-      return;
-    }
-
-    // ✅ 이미 공격한 카드면 다시 공격 불가
-    if (!attacker.canAttack) {
-      socket.emit("error", `${attacker.name}은(는) 이미 이번 턴에 공격했습니다.`);
-      return;
-    }
-
-    // ✅ 상대 필드 확인
-    const opponentField = game.cardsInZone[opponentId] ?? [];
-    if (opponentField.length === 0) {
-      socket.emit("error", "상대 필드가 비어 있습니다. 직접 공격을 시도하세요.");
-      return; // 아직 공격권 소모하지 않음
-    }
-
-    // ✅ 공격 대상 찾기
-    const target = opponentField.find((c) => c.id === targetId);
-    if (!target) {
-      socket.emit("error", "공격 대상 카드를 찾을 수 없습니다.");
-      return;
-    }
-
-    // ✅ 공격 계산
-    const atk = Math.max(0, Number(attacker.attack ?? 0));
-    const prevHP = Number(target.hp ?? 0);
-    const newHP = Math.max(0, prevHP - atk);
-    target.hp = newHP;
-
-    // ✅ 공격 성공 → 공격권 소모
-    attacker.canAttack = false;
-
-    io.to(roomCode).emit("updateCardHP", { targetId, newHP });
-    console.log(`⚔️ ${attacker.name}(${atk}) → ${target.name} | HP ${prevHP} → ${newHP}`);
-
-    // ✅ 카드 사망 처리
-    if (newHP <= 0) {
-      if (!game.graveyards[opponentId]) game.graveyards[opponentId] = [];
-      game.graveyards[opponentId].push(target);
-      game.cardsInZone[opponentId] = game.cardsInZone[opponentId].filter((c) => c.id !== targetId);
-
-      io.to(roomCode).emit("cardDestroyed", { targetId, ownerId: opponentId });
-      console.log(`💀 ${target.name}이(가) 쓰러져 묘지로 이동했습니다.`);
-    }
-
-    // ✅ 상대 필드가 전부 사라졌다면 — 다음 공격부터 직접 공격 가능
-    if (game.cardsInZone[opponentId].length === 0) {
-      io.to(roomCode).emit("opponentFieldEmpty", { opponentId });
-      console.log(`⚠️ ${opponentId}의 필드가 비었습니다. 다음 공격부터 직접 공격 가능`);
-    }
-
-    // ✅ 승패 조건 확인 (플레이어 HP가 0 이하인 경우)
-    const remainingHP = game.hp[opponentId] ?? 2000;
-    if (remainingHP <= 0) {
-      io.to(roomCode).emit("gameOver", { winnerId: playerId, loserId: opponentId });
-      stopSharedTimer(room);
-      room.gameState = null;
-      console.log(`🏁 ${playerId} 승리 (상대 카드 전멸 후 게임 종료)`);
-    }
-  });
+  );
 
   // ==================== ⚔️ 직접 공격 ====================
   socket.on("directAttack", ({ roomCode, attackerId }) => {
@@ -435,7 +487,9 @@ export default function battleHandler(io: Server, socket: Socket) {
       return;
     }
 
-    const attacker = game.cardsInZone[playerId]?.find((c) => c.id === attackerId);
+    const attacker = game.cardsInZone[playerId]?.find(
+      (c) => c.id === attackerId
+    );
     if (!attacker) {
       socket.emit("error", "공격할 카드를 찾을 수 없습니다.");
       return;
@@ -443,7 +497,10 @@ export default function battleHandler(io: Server, socket: Socket) {
 
     // ✅ 공격 여부 확인
     if (!attacker.canAttack) {
-      socket.emit("error", `${attacker.name}은(는) 이미 이번 턴에 공격했습니다.`);
+      socket.emit(
+        "error",
+        `${attacker.name}은(는) 이미 이번 턴에 공격했습니다.`
+      );
       return;
     }
 
@@ -462,7 +519,10 @@ export default function battleHandler(io: Server, socket: Socket) {
     });
 
     if (newHP <= 0) {
-      io.to(roomCode).emit("gameOver", { winnerId: playerId, loserId: opponentId });
+      io.to(roomCode).emit("gameOver", {
+        winnerId: playerId,
+        loserId: opponentId,
+      });
       stopSharedTimer(room);
       room.gameState = null;
       console.log(`🏁 ${playerId} 승리 (직접 공격으로 게임 종료)`);

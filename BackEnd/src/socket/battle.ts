@@ -565,6 +565,20 @@ export default function battleHandler(io: Server, socket: Socket) {
     console.log(`⚡ ${attacker.name} → 직접 공격 (${damage} 피해)`);
   });
 
+  // ✅ 클라이언트가 턴 요청 시 즉시 재전송
+  socket.on("requestTurn", ({ roomCode }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+
+    const g = room.gameState;
+    socket.emit("turnChanged", {
+      currentTurn: g.currentTurn,
+      cost: g.cost,
+      hp: g.hp,
+      timeLeft: room.timeLeft ?? 30,
+    });
+  });
+
   // ==================== 🔁 턴 종료 ====================
   socket.on("endTurn", ({ roomCode }) => {
     const room = rooms[roomCode];

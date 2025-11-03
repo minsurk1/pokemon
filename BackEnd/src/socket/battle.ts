@@ -161,6 +161,14 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     turnCount: 1,
   });
 
+  // ✅ 바로 다음에 추가 — 첫 턴 즉시 배포
+  io.to(roomCode).emit("turnChanged", {
+    currentTurn: player1,
+    cost: room.gameState.cost,
+    hp: room.gameState.hp,
+    timeLeft: 30, // TURN_TIME
+  });
+
   // 2) 각 플레이어에게 전체 스냅샷(복구용 정답 상태)
   room.players.forEach((pid) => {
     io.to(pid).emit("updateGameState", {

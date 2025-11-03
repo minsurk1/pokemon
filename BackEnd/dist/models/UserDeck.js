@@ -34,14 +34,19 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const CardSchema = new mongoose_1.Schema({
-    cardName: { type: String, required: true, unique: true },
-    cardType: { type: String, required: true },
-    tier: { type: Number, required: true },
-    attack: { type: Number, required: true },
-    hp: { type: Number, required: true },
-    maxhp: { type: Number, required: true },
-    cost: { type: Number, required: true },
-    image2D: { type: String, required: true },
-});
-exports.default = mongoose_1.default.model("Card", CardSchema);
+const DeckCardSchema = new mongoose_1.Schema({
+    card: { type: mongoose_1.Schema.Types.ObjectId, ref: "Card", required: true },
+    name: String,
+    cardType: String, // ✅ 추가
+    attack: Number,
+    hp: Number,
+    maxhp: Number,
+    cost: Number,
+    tier: Number,
+    image2D: String, // ✅ 통일
+}, { _id: false });
+const UserDeckSchema = new mongoose_1.Schema({
+    user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
+    cards: [DeckCardSchema],
+}, { timestamps: true });
+exports.default = mongoose_1.default.model("UserDeck", UserDeckSchema);

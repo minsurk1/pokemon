@@ -111,8 +111,10 @@ const cardsSeed = [
   { cardName: "디아루가", cardType: "legend", tier: 8, attack: 400, hp: 1000, maxhp: 1000, cost: 8, image2D: "legendTier1.png" },
   { cardName: "펄기아", cardType: "legend", tier: 8, attack: 400, hp: 1000, maxhp: 1000, cost: 8, image2D: "legendTier2.png" },
   { cardName: "기라티나", cardType: "legend", tier: 8, attack: 400, hp: 1000, maxhp: 1000, cost: 8, image2D: "legendTier3.png" },
-  { cardName: "레쿠쟈", cardType: "legend", tier: 8, attack: 400, hp: 1000, maxhp: 1000, cost: 8, image2D: "legendTier4.png" },
-  { cardName: "아르세우스", cardType: "legend", tier: 8, attack: 400, hp: 1000, maxhp: 1000, cost: 8, image2D: "legendTier5.png" },
+  { cardName: "제크로무", cardType: "legend", tier: 8, attack: 400, hp: 1000, maxhp: 1000, cost: 8, image2D: "legendTier4.png" },
+  { cardName: "큐레무", cardType: "legend", tier: 8, attack: 400, hp: 1000, maxhp: 1000, cost: 8, image2D: "legendTier5.png" },
+  { cardName: "레쿠쟈", cardType: "legend", tier: 8, attack: 400, hp: 1000, maxhp: 1000, cost: 8, image2D: "legendTier6.png" },
+  { cardName: "아르세우스", cardType: "legend", tier: 8, attack: 400, hp: 1000, maxhp: 1000, cost: 8, image2D: "legendTier7.png" },
 ];
 
 async function seedCards() {

@@ -70,8 +70,13 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
     currentTurn: nextTurn,
     cost: game.cost,
     hp: game.hp,
-    turnCount: game.turnCount,
     timeLeft: TURN_TIME, // ← 30초 보장
+  });
+
+  // 턴카운트는 별도 전체상태 업데이트로만 전송
+  io.to(roomCode).emit("updateGameState", {
+    ...game,
+    timeLeft: TURN_TIME,
   });
   console.log(`🔁 자동 턴 전환: ${nextTurn} (타이머 리셋됨)`);
 
@@ -153,9 +158,6 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
       timeLeft: room.timeLeft, // ← 이미 세팅된 값
     });
   });
-
-  // ❌ (처음엔) turnChanged 내보내지 않음
-  // io.to(roomCode).emit("turnChanged", { ... })  ← 제거
 
   // 3) 원하는 경우, 타이머 숫자만 한 번 더 푸시(선택)
   io.to(roomCode).emit("timeUpdate", room.timeLeft);
@@ -336,9 +338,9 @@ export default function battleHandler(io: Server, socket: Socket) {
     io.to(roomCode).emit("timeUpdate", room.timeLeft);
 
     console.log(
-      `🃏 ${playerId} → ${roomCode}에 ${
-        summonedCard.name || summonedCard.cardName || "Unknown"
-      } 소환 (코스트 ${costValue}), 남은 코스트: ${game.cost[playerId]}`
+      `🃏 ${playerId} → ${roomCode}에 ${summonedCard.name || summonedCard.cardName || "Unknown"} 소환 (코스트 ${costValue}), 남은 코스트: ${
+        game.cost[playerId]
+      }`
     );
   });
 

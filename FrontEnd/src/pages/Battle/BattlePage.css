@@ -692,6 +692,7 @@
   align-items: center;
   padding: 10px;
   position: relative;
+  border-left: solid 2px white;
 }
 
 .player-info {
@@ -782,7 +783,10 @@
   border-radius: 20%;
   color: #ffffff;
   background: radial-gradient(#000000, #000000, #270834);
-  border: 2px solid rgb(255, 255, 255);
+  border-left: 2px solid rgb(255, 255, 255);
+  border-top: 2px solid rgb(255, 255, 255);
+  border-bottom: 2px solid rgb(255, 255, 255);
+  border-right: 0.5px solid rgb(255, 255, 255);
   font-weight: 900;
   cursor: pointer;
   position: absolute;

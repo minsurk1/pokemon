@@ -4,6 +4,7 @@ import type { CardData, GameState, RoomInfo, Event } from "../types/gameTypes"; 
 import Card from "../models/Card"; // ✅ 추가
 import crypto from "crypto";
 import UserDeck from "../models/UserDeck"; // ✅ 덱 로딩용 추가
+import { calcDamage } from "./battle/calcDamage";
 
 // ======================= 🔁 공유 타이머 설정 =======================
 const TURN_TIME = 30; // 한 턴당 제한 시간 (초 단위)
@@ -484,7 +485,7 @@ export default function battleHandler(io: Server, socket: Socket) {
     const opponentId = room.players.find((id) => id !== socket.id);
     if (!opponentId) return;
 
-    const damage = Math.max(0, Number(card.attack ?? 0));
+    const { damage, multiplier } = calcDamage(card, { cardType: "normal" });
     const prevHP = game.hp[opponentId] ?? 2000;
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;
@@ -495,10 +496,11 @@ export default function battleHandler(io: Server, socket: Socket) {
       playerId: socket.id,
       card,
       damage,
+      multiplier,
       hp: game.hp,
     });
 
-    console.log(`💥 ${socket.id} → ${opponentId}에게 ${damage} 피해`);
+    console.log(`💥 ${socket.id} → ${opponentId} | 배율 x${multiplier} | 피해 ${damage}`);
 
     if (newHP <= 0) {
       io.to(roomCode).emit("gameOver", {
@@ -554,16 +556,25 @@ export default function battleHandler(io: Server, socket: Socket) {
     }
 
     // ✅ 공격 계산
-    const atk = Math.max(0, Number(attacker.attack ?? 0));
+    const { damage, multiplier } = calcDamage(attacker, target);
+
     const prevHP = Number(target.hp ?? 0);
-    const newHP = Math.max(0, prevHP - atk);
+    const newHP = Math.max(0, prevHP - damage);
     target.hp = newHP;
+
+    // 효과 메시지 전달
+    io.to(roomCode).emit("effectMessage", {
+      attacker: attacker.name,
+      defender: target.name,
+      multiplier,
+      damage,
+    });
 
     // ✅ 공격 성공 → 공격권 소모
     attacker.canAttack = false;
 
     io.to(roomCode).emit("updateCardHP", { targetId, newHP });
-    console.log(`⚔️ ${attacker.name}(${atk}) → ${target.name} | HP ${prevHP} → ${newHP}`);
+    console.log(`⚔️ ${attacker.name} → ${target.name} | 배율 x${multiplier} | ${prevHP} → ${newHP} (-${damage})`);
 
     // ✅ 카드 사망 처리
     if (newHP <= 0) {
@@ -627,7 +638,7 @@ export default function battleHandler(io: Server, socket: Socket) {
     // ✅ 공격 후 공격 불가로 변경
     attacker.canAttack = false;
 
-    const damage = Math.max(0, Number(attacker.attack ?? 0));
+    const { damage, multiplier } = calcDamage(attacker, { cardType: "normal" });
     const prevHP = game.hp[opponentId] ?? 2000;
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;

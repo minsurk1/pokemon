@@ -390,7 +390,8 @@ export default function battleHandler(io: Server, socket: Socket) {
       return;
     }
 
-    room.gameState.decks[socket.id] = deck;
+    // ObjectId만 들어오도록 보장 (문자열이면 문자열로 유지)
+    room.gameState.decks[socket.id] = deck.map((c: any) => c.id ?? c);
     console.log(`📥 덱 저장: ${socket.id}`, deck.length);
   });
 
@@ -446,10 +447,15 @@ export default function battleHandler(io: Server, socket: Socket) {
     }
 
     const summonedCard = {
-      ...card,
-      id: card.id ?? crypto.randomUUID(),
-      cost: costValue,
+      id: card.id,
+      name: dbCardData?.cardName ?? card.name ?? "Unknown",
+      cardName: dbCardData?.cardName ?? card.name ?? "Unknown",
       cardType: dbCardData?.cardType ?? card.cardType ?? "normal",
+      attack: dbCardData?.attack ?? card.attack ?? 0,
+      hp: dbCardData?.hp ?? card.hp ?? 0,
+      maxhp: dbCardData?.hp ?? card.maxhp ?? 0,
+      cost: dbCardData?.cost ?? card.cost ?? 1,
+      tier: dbCardData?.tier ?? card.tier ?? 1,
       image2D: dbCardData?.image2D ?? card.image2D ?? "default.png",
       canAttack: true,
     };

@@ -8,6 +8,14 @@ import UserDeck from "../models/UserDeck"; // ✅ 덱 로딩용 추가
 // ======================= 🔁 공유 타이머 설정 =======================
 const TURN_TIME = 30; // 한 턴당 제한 시간 (초 단위)
 
+const MAX_HP = 2000;
+const MAX_COST = 8;
+const EVENT_REWARD = {
+  bomb: { dmg: 200 },
+  heal: { heal: 500 },
+  cost: { inc: 3 },
+};
+
 // ✅ 기존 타이머 정지
 function stopSharedTimer(room: RoomInfo) {
   if (room.timer) {
@@ -19,14 +27,12 @@ function stopSharedTimer(room: RoomInfo) {
 
 // ✅ 타이머 시작 (모든 유저와 동기화)
 function startSharedTimer(io: Server, roomCode: string, room: RoomInfo) {
-  if (room.timer) {
-    console.log(`⚠️ 타이머가 이미 실행 중입니다. 중복 생성 방지.`);
-    return;
-  }
+  if (room.timer) clearInterval(room.timer); // 가드
+  room.timer = null;
 
-  stopSharedTimer(room); // 혹시 모를 이전 타이머 정리
-  room.timeLeft = TURN_TIME; // 타이머 리셋
-  io.to(roomCode).emit("timeUpdate", room.timeLeft); // 즉시 한번 전송 (UI 초기화용)
+  // ✅ 새 타이머 시작
+  room.timeLeft = TURN_TIME;
+  io.to(roomCode).emit("timeUpdate", room.timeLeft);
 
   room.timer = setInterval(() => {
     if (!room.gameState) {
@@ -48,61 +54,86 @@ function startSharedTimer(io: Server, roomCode: string, room: RoomInfo) {
 // ✅ 턴 교체 + 타이머 재시작
 function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo) {
   if (!room?.gameState) return;
+  // ✅ 턴 바꾸기 전에 항상 기존 타이머 정지 (중복 방지)
+  stopSharedTimer(room);
+
   const game = room.gameState;
 
-  const currentIndex = room.players.indexOf(game.currentTurn);
+  let currentIndex = room.players.indexOf(game.currentTurn);
+
+  // ✅ 혹시 currentTurn 값이 플레이어 목록에 없을 때(예: 상대가 먼저 나간 경우)
+  if (currentIndex === -1) {
+    console.warn(`⚠️ currentTurn not in room.players. Defaulting to host.`);
+    currentIndex = 0; // 방장 기준으로 리셋
+    game.currentTurn = room.players[0];
+  }
+
   const nextIndex = (currentIndex + 1) % room.players.length;
   const nextTurn = room.players[nextIndex];
 
   game.currentTurn = nextTurn;
-  // 첫 번째 플레이어(호스트)가 턴을 끝내면 증가하지 않고, 두 번째 플레이어가 끝내면 증가
-  if (nextIndex === 0) {
-    // 다시 첫 번째 플레이어 차례 = 한 라운드 완료
-    game.turnCount = (game.turnCount ?? 1) + 1;
+
+  // ✅ 선공 기준으로만 turnCount 증가
+  const hostId = room.players[0];
+  if (nextTurn === hostId) {
+    game.turnCount = (game.turnCount ?? 0) + 1;
+    console.log(`📌 선공 턴 시작 → turnCount = ${game.turnCount}`);
   }
 
   game.cardsPlayed = {};
 
   // ✅ n턴이면 n 코스트 증가 (최대 8)
   if (!game.cost[nextTurn]) game.cost[nextTurn] = 0;
-
-  // 턴수만큼 증가
-  const costGain = game.turnCount; // 1턴=1, 2턴=2…
+  const costGain = game.turnCount; // n턴 = n 증가
   game.cost[nextTurn] = Math.min(game.cost[nextTurn] + costGain, 8);
 
-  // ✅ 턴이 바뀌면 새 턴 유저의 모든 카드를 다시 공격 가능 상태로 리셋
+  // ✅ 다음 턴 시작하면 해당 유저 카드 모두 공격 가능 복구
   if (game.cardsInZone[nextTurn]) {
-    game.cardsInZone[nextTurn].forEach((card) => (card.canAttack = true));
+    game.cardsInZone[nextTurn].forEach((c) => (c.canAttack = true));
   }
 
-  // ==================== 🔥 이벤트 발동 로직 (여기 추가) ====================
-  // 5턴마다 이벤트 발동
-  if (game.turnCount > 0 && game.turnCount % 5 === 0) {
-    // 🔔 참고: process.env.IMAGE_URL은 서버 환경변수에 설정된 이미지 서버 주소입니다.
+  // ✅ 이벤트: 선공의 턴이고, turnCount가 5의 배수일 때 & 현재 이벤트가 없을 때만 생성
+  // ✅ 5턴마다 이벤트 처리 (선공 턴 기준)
+  if (nextTurn === hostId && game.turnCount > 0 && game.turnCount % 5 === 0) {
     const imageServerUrl = process.env.IMAGE_URL || "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images";
 
+    // ✅ 기존 이벤트가 살아있다면 강제 제거
+    if (game.activeEvent) {
+      io.to(roomCode).emit("eventEnded", { eventId: game.activeEvent.id });
+      console.log(`⚠️ 기존 이벤트 제거됨 (턴 ${game.turnCount})`);
+      game.activeEvent = null;
+    }
+
+    // ✅ 이벤트 타입 랜덤 (1=bomb, 2=heal, 3=cost)
+    const eventType = Math.floor(Math.random() * 3) + 1;
+
+    const EVENT_MAP: Record<number, { img: string; msg: string; hp: number }> = {
+      1: { img: "bomb.png", msg: "폭발 몬스터 등장! 처치 시 상대 체력 감소!", hp: 400 },
+      2: { img: "heal.png", msg: "치유 몬스터 등장! 처치 시 체력 회복!", hp: 300 },
+      3: { img: "cost.png", msg: "에너지 몬스터 등장! 처치 시 코스트 +3!", hp: 350 },
+    };
+    const eventData = EVENT_MAP[eventType]; // ✅ TS가 이게 절대 undefined 아닐 걸 암
+
     const newEvent: Event = {
-      id: Date.now(), // number ID
-      type: 1,
-      image: `${imageServerUrl}/event_monster_default.png`, // ✅ 실제 이벤트 몬스터 이미지 경로
-      message: "중립 몬스터 등장! 처치하고 보상을 받으세요!",
-      hp: 400,
-      maxHp: 400,
-      effect: () => {}, // 서버에서는 이 함수를 직접 쓰진 않음
+      id: Date.now(),
+      type: eventType,
+      image: `${imageServerUrl}/${eventData.img}`,
+      message: eventData.msg,
+      hp: eventData.hp,
+      maxHp: eventData.hp,
+      effect: () => {},
     };
 
-    game.activeEvent = newEvent; // 게임 상태에 이벤트 저장
+    game.activeEvent = newEvent;
+    io.to(roomCode).emit("eventTriggered", newEvent);
 
-    // ✅ 모든 클라이언트에게 이벤트가 생겼다고 알림
-    io.to(roomCode).emit("eventTriggered", game.activeEvent);
-    console.log(`🔥 ${roomCode} 방에 이벤트 발동! (턴 ${game.turnCount})`);
+    console.log(`🔥 새 이벤트 생성! type=${eventType}, turn=${game.turnCount}`);
   }
-  // ===================================================================
 
-  // ✅ 여기서 먼저 리셋
+  // ✅ 타이머 리셋
   room.timeLeft = TURN_TIME;
 
-  // ✅ 변경 사항 모든 플레이어에 브로드캐스트
+  // ✅ 턴 정보 브로드캐스트
   io.to(roomCode).emit("turnChanged", {
     currentTurn: nextTurn,
     cost: game.cost,
@@ -110,7 +141,7 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
     timeLeft: TURN_TIME,
   });
 
-  // 턴카운트는 별도 전체상태 업데이트로만 전송
+  // ✅ 전체 상태 브로드캐스트
   io.to(roomCode).emit("updateGameState", {
     hp: game.hp,
     decks: game.decks,
@@ -119,12 +150,13 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
     cost: game.cost,
     turnCount: game.turnCount,
     cardsInZone: game.cardsInZone,
+    activeEvent: game.activeEvent,
     timeLeft: TURN_TIME,
   });
 
-  console.log(`🔁 턴 전환: ${nextTurn} | 턴 카운트: ${game.turnCount}`);
+  console.log(`🔁 턴 전환 → ${nextTurn}, 턴: ${game.turnCount}`);
 
-  // ✅ 타이머 시작
+  // ✅ 타이머 다시 시작
   startSharedTimer(io, roomCode, room);
 }
 
@@ -653,21 +685,66 @@ export default function battleHandler(io: Server, socket: Socket) {
 
     // ✅ 이벤트가 파괴되었는지 확인
     if (newHP <= 0) {
-      // 🎁 보상 로직 (예: 승리한 플레이어 500 힐)
-      // 힐 보상은 -500 데미지(힐)로 처리
-      const healAmount = 500;
-      game.hp[playerId] = Math.min(2000, (game.hp[playerId] ?? 0) + healAmount);
+      const eventType = event.type;
+      const opponentId = room.players.find((id) => id !== playerId);
+      if (!opponentId) return; // or throw error
 
-      // HP 갱신을 위해 HP 변경 이벤트를 사용 (directAttack 재활용)
-      io.to(roomCode).emit("directAttack", {
-        attackerName: "이벤트 보상",
-        damage: -healAmount, // 음수 데미지 = 힐
-        newHP: game.hp[playerId],
+      if (eventType === 1) {
+        // ✅ 폭발 몬스터 → 상대 체력 감소
+        const damage = 200;
+        game.hp[opponentId] = Math.max(0, (game.hp[opponentId] ?? 0) - damage);
+
+        io.to(roomCode).emit("directAttack", {
+          attackerName: "이벤트 피해",
+          damage,
+          newHP: game.hp[opponentId],
+        });
+      } else if (eventType === 2) {
+        // ✅ 치유 몬스터 → 내 체력 회복
+        const heal = 500;
+        game.hp[playerId] = Math.min(MAX_HP, (game.hp[playerId] ?? 0) + EVENT_REWARD.heal.heal);
+
+        io.to(roomCode).emit("directAttack", {
+          attackerName: "이벤트 회복",
+          damage: -heal,
+          newHP: game.hp[playerId],
+        });
+      } else if (eventType === 3) {
+        // ✅ 에너지 몬스터 → 코스트 +3 (최대 8)
+        game.cost[playerId] = Math.min(MAX_COST, (game.cost[playerId] ?? 0) + EVENT_REWARD.cost.inc);
+
+        io.to(roomCode).emit("updateGameState", {
+          hp: game.hp,
+          decks: game.decks,
+          hands: game.hands,
+          graveyards: game.graveyards,
+          cost: game.cost,
+          turnCount: game.turnCount,
+          cardsInZone: game.cardsInZone,
+          activeEvent: game.activeEvent, // null
+          timeLeft: room.timeLeft,
+        });
+      }
+
+      // ✅ 이벤트 제거 및 알림
+      const endedId = event.id;
+      game.activeEvent = null;
+      io.to(roomCode).emit("eventEnded", { eventId: endedId });
+
+      console.log(`🎁 이벤트 완료! 타입 ${eventType} 보상 적용`);
+
+      // ✅ 이벤트 종료 후 전체 상태 동기화
+      io.to(roomCode).emit("updateGameState", {
+        hp: game.hp,
+        decks: game.decks,
+        hands: game.hands,
+        graveyards: game.graveyards,
+        cost: game.cost,
+        turnCount: game.turnCount,
+        cardsInZone: game.cardsInZone,
+        activeEvent: game.activeEvent, // null
+        timeLeft: room.timeLeft,
       });
-
-      game.activeEvent = null; // 이벤트 제거
-      io.to(roomCode).emit("eventEnded", { eventId: event.id });
-      console.log(`💀 이벤트(${event.id})가 파괴되고, ${playerId}가 ${healAmount} HP를 회복했습니다.`);
     }
   });
   // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

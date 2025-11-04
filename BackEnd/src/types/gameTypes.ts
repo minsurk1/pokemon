@@ -13,6 +13,19 @@ export interface CardData {
   canAttack?: boolean; // 한 턴에 한 번만 공격 가능 여부
 }
 
+// ++++++++++++++++ [추가된 Event 타입] ++++++++++++++++
+// Eventitem.tsx 및 battle.ts에서 공용으로 사용할 타입
+export interface Event {
+  id: number;
+  type: number;
+  image: string;
+  message: string;
+  hp: number;
+  maxHp: number;
+  effect: () => void; // 클라이언트에서는 사용하지 않음
+}
+// +++++++++++++++++++++++++++++++++++++++++++++++++++
+
 export interface GameState {
   currentTurn: string; // 현재 턴의 플레이어 ID
   hp: Record<string, number>; // 플레이어별 체력
@@ -25,6 +38,7 @@ export interface GameState {
   hands: Record<string, CardData[]>; // 각 플레이어 손패
   graveyards: Record<string, CardData[]>; // 각 플레이어 묘지
   turnCount: number; // 현재 턴 수
+  activeEvent: Event | null; // ✅ [추가] 현재 활성화된 이벤트
 }
 
 export interface RoomInfo {

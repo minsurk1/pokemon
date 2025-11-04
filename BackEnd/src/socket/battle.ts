@@ -1,6 +1,6 @@
 import type { Server, Socket } from "socket.io";
 import { rooms } from "./room"; // ✅ room.ts의 rooms 공유
-import type { CardData, RoomInfo } from "../types/gameTypes"; // ✅ 공통 타입 사용
+import type { CardData, GameState, RoomInfo, Event } from "../types/gameTypes"; // ✅ 공통 타입 사용
 import Card from "../models/Card"; // ✅ 추가
 import crypto from "crypto";
 import UserDeck from "../models/UserDeck"; // ✅ 덱 로딩용 추가
@@ -71,6 +71,30 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
   if (game.cardsInZone[nextTurn]) {
     game.cardsInZone[nextTurn].forEach((card) => (card.canAttack = true));
   }
+
+  // ==================== 🔥 이벤트 발동 로직 (여기 추가) ====================
+  // 5턴마다 이벤트 발동
+  if (game.turnCount > 0 && game.turnCount % 5 === 0) {
+    // 🔔 참고: process.env.IMAGE_URL은 서버 환경변수에 설정된 이미지 서버 주소입니다.
+    const imageServerUrl = process.env.IMAGE_URL || "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images";
+
+    const newEvent: Event = {
+      id: Date.now(), // number ID
+      type: 1,
+      image: `${imageServerUrl}/event_monster_default.png`, // ✅ 실제 이벤트 몬스터 이미지 경로
+      message: "중립 몬스터 등장! 처치하고 보상을 받으세요!",
+      hp: 400,
+      maxHp: 400,
+      effect: () => {}, // 서버에서는 이 함수를 직접 쓰진 않음
+    };
+
+    game.activeEvent = newEvent; // 게임 상태에 이벤트 저장
+
+    // ✅ 모든 클라이언트에게 이벤트가 생겼다고 알림
+    io.to(roomCode).emit("eventTriggered", game.activeEvent);
+    console.log(`🔥 ${roomCode} 방에 이벤트 발동! (턴 ${game.turnCount})`);
+  }
+  // ===================================================================
 
   // ✅ 여기서 먼저 리셋
   room.timeLeft = TURN_TIME;
@@ -147,6 +171,7 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
       [player2]: [],
     },
     turnCount: 1, // 첫 턴은 1로 시작
+    activeEvent: null, // ✅ [추가] 이벤트 상태 초기화
   };
 
   // ✅ 전투 시작과 동시에 타이머용 잔여 시간 먼저 세팅
@@ -179,6 +204,7 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
       cost: room.gameState!.cost,
       turnCount: room.gameState!.turnCount,
       cardsInZone: room.gameState!.cardsInZone,
+      activeEvent: room.gameState!.activeEvent, // ✅ [추가] 이벤트 상태 전송
       timeLeft: room.timeLeft,
     });
   });
@@ -196,6 +222,7 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 export default function battleHandler(io: Server, socket: Socket) {
   console.log(`⚔️ 배틀 소켓 연결됨: ${socket.id}`);
 
+  // ✅ BattlePage 진입 시 현재 상태 즉시 동기화
   socket.on("joinRoom", async ({ roomCode }) => {
     const room = rooms[roomCode];
     if (!room) return;
@@ -250,6 +277,7 @@ export default function battleHandler(io: Server, socket: Socket) {
         cost: g.cost,
         turnCount: g.turnCount,
         cardsInZone: g.cardsInZone,
+        activeEvent: g.activeEvent, // ✅ [추가] 이벤트 상태 전송
         timeLeft: room.timeLeft,
       });
 
@@ -279,6 +307,7 @@ export default function battleHandler(io: Server, socket: Socket) {
       cost: g.cost,
       turnCount: g.turnCount,
       cardsInZone: g.cardsInZone,
+      activeEvent: g.activeEvent, // ✅ [추가] 이벤트 상태 전송
       timeLeft: room.timeLeft,
     });
 
@@ -421,7 +450,7 @@ export default function battleHandler(io: Server, socket: Socket) {
       });
       console.log(`🏁 게임 종료: ${socket.id} 승리`);
       stopSharedTimer(room);
-      room.gameState = null;
+      room.gameState = null; // ✅ 안전하고 TypeScript에 완벽히 호환하게 게임 상태 초기화
     }
   });
 
@@ -578,6 +607,64 @@ export default function battleHandler(io: Server, socket: Socket) {
       timeLeft: room.timeLeft ?? 30,
     });
   });
+
+  // ++++++++++++++++ [추가된 이벤트 공격 핸들러] ++++++++++++++++
+  socket.on("attackEvent", ({ roomCode, attackerId, eventId }: { roomCode: string; attackerId: string; eventId: number }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+    const game = room.gameState;
+    const playerId = socket.id;
+
+    if (playerId !== game.currentTurn) {
+      return socket.emit("error", "당신의 턴이 아닙니다.");
+    }
+
+    // ✅ 1. 공격자 확인
+    const attacker = game.cardsInZone[playerId]?.find((c) => c.id === attackerId);
+    if (!attacker) {
+      return socket.emit("error", "공격할 카드를 찾을 수 없습니다.");
+    }
+    if (!attacker.canAttack) {
+      return socket.emit("error", `${attacker.name}은(는) 이미 공격했습니다.`);
+    }
+
+    // ✅ 2. 이벤트 확인
+    if (!game.activeEvent || game.activeEvent.id !== eventId) {
+      return socket.emit("error", "존재하지 않거나 만료된 이벤트입니다.");
+    }
+
+    const event = game.activeEvent as Event; // 타입 단언
+    const atk = Math.max(0, Number(attacker.attack ?? 0));
+    const prevHP = event.hp;
+    const newHP = Math.max(0, prevHP - atk);
+
+    event.hp = newHP;
+    attacker.canAttack = false; // ✅ 공격권 소모
+
+    // ✅ 모든 클라이언트에 이벤트 HP 갱신 알림
+    io.to(roomCode).emit("eventHPUpdate", { eventId: event.id, newHP });
+    console.log(`⚔️ ${attacker.name}(${atk}) → 이벤트(${event.id}) | HP ${prevHP} → ${newHP}`);
+
+    // ✅ 이벤트가 파괴되었는지 확인
+    if (newHP <= 0) {
+      // 🎁 보상 로직 (예: 승리한 플레이어 500 힐)
+      // 힐 보상은 -500 데미지(힐)로 처리
+      const healAmount = 500;
+      game.hp[playerId] = Math.min(2000, (game.hp[playerId] ?? 0) + healAmount);
+
+      // HP 갱신을 위해 HP 변경 이벤트를 사용 (directAttack 재활용)
+      io.to(roomCode).emit("directAttack", {
+        attackerName: "이벤트 보상",
+        damage: -healAmount, // 음수 데미지 = 힐
+        newHP: game.hp[playerId],
+      });
+
+      game.activeEvent = null; // 이벤트 제거
+      io.to(roomCode).emit("eventEnded", { eventId: event.id });
+      console.log(`💀 이벤트(${event.id})가 파괴되고, ${playerId}가 ${healAmount} HP를 회복했습니다.`);
+    }
+  });
+  // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
   // ==================== 🔁 턴 종료 ====================
   socket.on("endTurn", ({ roomCode }) => {

@@ -292,8 +292,27 @@ export default function battleHandler(io: Server, socket: Socket) {
 
             // 덱 셔플
             const shuffled = [...deckCards].sort(() => Math.random() - 0.5);
-            room.gameState.decks[socket.id] = shuffled.slice(3); // 덱에 나머지 저장
-            room.gameState.hands[socket.id] = shuffled.slice(0, 3); // 손패에 3장
+
+            // 1코스트 카드 풀
+            const oneCostPool = shuffled.filter((c) => Number(c.cost) === 1);
+
+            let startingHand;
+            if (oneCostPool.length > 0) {
+              // 1코 카드 중 랜덤 1장
+              const guaranteed = oneCostPool[Math.floor(Math.random() * oneCostPool.length)];
+
+              // 나머지 덱에서 해당 카드 제외
+              const pool = shuffled.filter((c) => c.id !== guaranteed.id);
+
+              startingHand = [guaranteed, ...pool.slice(0, 2)];
+              room.gameState.hands[socket.id] = startingHand;
+              room.gameState.decks[socket.id] = pool.slice(2);
+            } else {
+              // 1코스트 없을 경우 일반 셔플
+              startingHand = shuffled.slice(0, 3);
+              room.gameState.hands[socket.id] = startingHand;
+              room.gameState.decks[socket.id] = shuffled.slice(3);
+            }
 
             console.log(`✅ ${socket.id} 덱 자동 로딩 완료: ${deckCards.length}장`);
           }

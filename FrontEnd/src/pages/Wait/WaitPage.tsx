@@ -209,12 +209,7 @@ function WaitPage() {
             {isReady ? "준비 완료" : "준비하기"}
           </button>
 
-          <button
-            className="start-button"
-            onClick={handleStart}
-            disabled={!isHost}
-            title={!isHost ? "방장만 게임을 시작할 수 있습니다." : ""}
-          >
+          <button className="start-button" onClick={handleStart} disabled={!isHost} title={!isHost ? "방장만 게임을 시작할 수 있습니다." : ""}>
             시작하기
           </button>
 

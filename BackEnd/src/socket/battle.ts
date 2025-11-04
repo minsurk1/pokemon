@@ -440,9 +440,7 @@ export default function battleHandler(io: Server, socket: Socket) {
     }
 
     try {
-      dbCardData = await Card.findOne({
-        cardName: card.name || card.cardName,
-      });
+      dbCardData = await Card.findById(card.id);
     } catch (err) {
       console.error("❌ DB 카드 조회 실패:", err);
     }

@@ -82,7 +82,7 @@ const normalizeCard = (card: any) => {
   const realType = card.cardType || card.type || detectTypeByName(card.cardName ?? card.name) || "normal";
 
   // ✅ 이미지 우선순위: image2D > image > fallback
-  const imagePath = card.image2D ?? card.image ?? `${card.cardType ?? "normal"}Tier${card.tier ?? 1}.png`;
+  const imagePath = card.image2D || card.image || `${card.cardType ?? "normal"}Tier${card.tier ?? 1}.png`;
 
   const fullImageUrl = imagePath.startsWith("http") ? imagePath : `${IMAGE_URL}/${imagePath}`;
 
@@ -289,10 +289,37 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // ✅ 덱 초기화
   const initializeDeckAndHand = useCallback(() => {
     if (!selectedDeck || selectedDeck.length === 0) return;
+
     const normalized = selectedDeck.map(keepCardShape);
-    const shuffled = [...normalized].sort(() => Math.random() - 0.5);
-    setHandCards(shuffled.slice(0, 3));
-    setDeckCards(shuffled.slice(3));
+
+    // 1코스트 카드 목록
+    const costOneCards = normalized.filter((c) => Number(c.cost) === 1);
+    // 그 외 카드
+    const otherCards = normalized.filter((c) => Number(c.cost) !== 1);
+
+    // 덱 셔플 함수
+    const shuffle = (arr: Card[]) => [...arr].sort(() => Math.random() - 0.5);
+
+    let firstHand: Card[] = [];
+
+    if (costOneCards.length > 0) {
+      // ✅ 1코스트 중 한 장 랜덤 선택
+      const oneCard = shuffle(costOneCards)[0];
+      // ✅ 나머지 2장은 전체에서 선택
+      const pool = normalized.filter((c) => c.id !== oneCard.id);
+      const rest = shuffle(pool).slice(0, 2);
+
+      firstHand = [oneCard, ...rest];
+    } else {
+      // ✅ 만약 1코스트가 없는 덱이라면 (안전장치)
+      firstHand = shuffle(normalized).slice(0, 3);
+    }
+
+    const remainingDeck = normalized.filter((c) => !firstHand.includes(c));
+    const shuffledDeck = shuffle(remainingDeck);
+
+    setHandCards(firstHand);
+    setDeckCards(shuffledDeck);
   }, [selectedDeck]);
 
   // ✅ 덱 초기화 useEffect
@@ -310,13 +337,37 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           const data = await res.json();
 
           if (data?.deck?.cards?.length) {
+            // 기존 shuffled → 그대로 유지
             const cards = data.deck.cards.map(keepCardShape);
-            console.log("✅ 유저 덱 불러오기 성공:", cards);
             const shuffled = [...cards].sort(() => Math.random() - 0.5);
-            setHandCards(shuffled.slice(0, 3));
-            setDeckCards(shuffled.slice(3));
 
-            setDeckLoaded(true); // ✅ 덱 로딩 완료
+            // ✅ 1코스트 카드 필터
+            const costOneCards = shuffled.filter((c) => Number(c.cost) === 1);
+
+            let startingHand: Card[] = [];
+            let restDeck: Card[] = [];
+
+            if (costOneCards.length > 0) {
+              // 1코스트 랜덤 1장 선택
+              const oneCost = costOneCards[Math.floor(Math.random() * costOneCards.length)];
+
+              // 나머지 카드 풀
+              const pool = shuffled.filter((c) => c.id !== oneCost.id);
+
+              // 나머지에서 2장
+              const rest = pool.slice(0, 2);
+
+              startingHand = [oneCost, ...rest];
+              restDeck = pool.slice(2);
+            } else {
+              // 1코스트가 없는 극단적인 예외 케이스
+              startingHand = shuffled.slice(0, 3);
+              restDeck = shuffled.slice(3);
+            }
+
+            setHandCards(startingHand);
+            setDeckCards(restDeck);
+            setDeckLoaded(true);
           } else {
             console.warn("⚠️ 덱 데이터가 없습니다.");
           }
@@ -328,9 +379,28 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       // selectedDeck이 이미 카드 객체면 그대로 사용
       const cards = selectedDeck.map(keepCardShape);
       console.log("✅ 전달받은 덱 사용:", cards);
-      const shuffled = [...cards].sort(() => Math.random() - 0.5);
-      setHandCards(shuffled.slice(0, 3));
-      setDeckCards(shuffled.slice(3));
+
+      const shuffle = (arr: Card[]) => [...arr].sort(() => Math.random() - 0.5);
+
+      const costOneCards = cards.filter((c) => Number(c.cost) === 1);
+      let startingHand: Card[] = [];
+      let restDeck: Card[] = [];
+
+      if (costOneCards.length > 0) {
+        const oneCard = shuffle(costOneCards)[0]; // 1코 랜덤 1장
+        const pool = cards.filter((c) => c.id !== oneCard.id);
+        const randomTwo = shuffle(pool).slice(0, 2);
+
+        startingHand = [oneCard, ...randomTwo];
+        restDeck = shuffle(pool.slice(2));
+      } else {
+        const shuffled = shuffle(cards);
+        startingHand = shuffled.slice(0, 3);
+        restDeck = shuffled.slice(3);
+      }
+
+      setHandCards(startingHand);
+      setDeckCards(restDeck);
       setDeckLoaded(true);
     }
   }, [selectedDeck]);

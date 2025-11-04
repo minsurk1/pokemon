@@ -81,7 +81,10 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
     console.log(`📌 선공 턴 시작 → turnCount = ${game.turnCount}`);
   }
 
-  game.cardsPlayed = {};
+  const p1 = room.players[0];
+  const p2 = room.players[1];
+  game.cardsPlayed[p1] = [];
+  game.cardsPlayed[p2] = [];
 
   // ✅ n턴이면 n 코스트 증가 (최대 8)
   if (!game.cost[nextTurn]) game.cost[nextTurn] = 0;
@@ -181,7 +184,11 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     },
 
     // ✅ 필드 및 사용된 카드
-    cardsPlayed: {},
+    cardsPlayed: {
+      // ✅ 두 플레이어 모두 배열로
+      [player1]: [],
+      [player2]: [],
+    },
     cardsInZone: {
       [player1]: [],
       [player2]: [],
@@ -490,7 +497,10 @@ export default function battleHandler(io: Server, socket: Socket) {
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;
 
-    game.cardsPlayed[socket.id] = card;
+    if (!Array.isArray(game.cardsPlayed[socket.id])) {
+      game.cardsPlayed[socket.id] = [];
+    }
+    game.cardsPlayed[socket.id].push(card);
 
     io.to(roomCode).emit("cardPlayed", {
       playerId: socket.id,

@@ -170,7 +170,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [lastEnemyCardId, setLastEnemyCardId] = useState<string | null>(null);
 
   const [turnTime, setTurnTime] = useState(INITIAL_TIME);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 상대 손에 들고 있는 패의 개수
   const [enemyHandCount, setEnemyHandCount] = useState<number>(8);
@@ -199,6 +198,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const isMyTurnRef = useRef(isMyTurn);
   const currentTurnIdRef = useRef(currentTurnId);
 
+  const lastTurnIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     isMyTurnRef.current = isMyTurn;
   }, [isMyTurn]);
@@ -208,12 +209,21 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   const applyTurnChange = useCallback(
     (payload: TurnPayload | string) => {
+      console.log("✅ applyTurnChange 실행:", payload);
+
       const myId = socket.id;
       if (!myId) return;
 
-      setHasDrawnThisTurn(false);
-      setTurnTime(INITIAL_TIME);
+      // ✅ 이미 처리한 턴이면 무시
+      const curr = typeof payload === "string" ? payload : payload.currentTurn ?? null;
+      // ✅ 동일 턴 중복 처리 방지
+      if (curr !== null && lastTurnIdRef.current === curr) {
+        console.log("⏩ 동일 턴 이벤트 무시:", curr);
+        return;
+      }
+      lastTurnIdRef.current = curr;
 
+      setHasDrawnThisTurn(false);
       // ✅ 서버가 payload를 socketId 문자열로 보낸 경우
       if (typeof payload === "string") {
         const mine = payload === myId;
@@ -227,7 +237,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           setMyCardsInZone((prev) => prev.map((c) => ({ ...c, canAttack: true })));
         }
 
-        setMessage(mine ? "🟢 내 턴입니다!" : "🔴 상대 턴입니다.");
+        setMessage(mine ? "🔵 내 턴입니다!" : "🔴 상대 턴입니다.");
         setShowMessage(true);
         return;
       }
@@ -256,7 +266,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         setMyCardsInZone((prev) => prev.map((c) => ({ ...c, canAttack: true })));
       }
 
-      setMessage(mine ? "🟢 내 턴입니다!" : "🔴 상대 턴입니다.");
+      setMessage(mine ? "🔵 내 턴입니다!" : "🔴 상대 턴입니다.");
       setShowMessage(true);
     },
     [socket.id]
@@ -323,7 +333,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     if (!socket.connected || !socket.id) return;
     socket.emit("joinRoom", { roomCode });
     socket.emit("getGameState", { roomCode }); // ✅ 상태 요청 추가
-  }, [socket.connected, socket.id, roomCode]);
+    socket.emit("requestTurn", { roomCode });
+  }, []);
 
   // ===== 덱이 준비되면 서버에 덱 전송 =====
   useEffect(() => {
@@ -401,6 +412,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   // ===== 서버 이벤트 처리 =====
   useEffect(() => {
+    console.log("🌐 socket listeners registered once");
+
     if (!socket.connected) return;
 
     const onError = (msg: string) => {
@@ -408,40 +421,30 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setShowMessage(true);
     };
 
-    const onGameStart = ({ currentTurn, hp }: any) => {
+    const onGameStart = ({ currentTurn, hp, cost }: any) => {
       const myId = socket.id;
       if (!myId) return;
 
-      // ✅ 초기 턴 강제 적용
+      // ✅ 초기 턴 반영
       setCurrentTurnId(currentTurn);
       setIsMyTurn(currentTurn === myId);
-      setTurn(1);
-      setTurnTime(INITIAL_TIME);
 
       setPlayerHP(hp[myId] ?? 2000);
-      const opponent = Object.keys(hp).find((id) => id !== myId);
-      if (opponent) setEnemyHP(hp[opponent] ?? 2000);
-
-      setPlayerCostIcons(1);
-      setOpponentCostIcons(1);
-
-      if (currentTurn === myId) {
-        setMyCardsInZone((prev) => prev.map((c) => ({ ...c, canAttack: true })));
-      }
+      const opp = Object.keys(hp).find((id) => id !== myId);
+      if (opp) setEnemyHP(hp[opp] ?? 2000);
 
       setHasDrawnThisTurn(false);
 
-      console.log("🌟 GAME START TURN 결정:", {
-        myId,
-        currentTurn,
-        isMyTurn: currentTurn === myId,
-      });
-
-      setMessage(currentTurn === myId ? "🟢 게임 시작! 내 턴입니다!" : "🔴 게임 시작! 상대 턴입니다!");
+      setMessage(currentTurn === myId ? "🔵 게임 시작!" : "🔴 상대 선공!");
       setShowMessage(true);
 
-      // ✅ 이 시점에서는 pending 처리 금지
-      pendingTurnPayload.current = null;
+      // ✅ 첫 턴 즉시 적용
+      applyTurnChange({
+        currentTurn,
+        hp,
+        cost,
+        timeLeft: 30, // 서버 기본값과 동일하게
+      });
     };
 
     // ✅ 호환형 턴 변경 핸들러
@@ -465,50 +468,50 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     const onUpdateGameState = (data: any) => {
-      const { hp, cost, decks, hands, graveyards, turnCount } = data;
-      const myId = socket.id ?? "";
+      const myId = socket.id;
       if (!myId) return;
 
+      // ✅ 디버그
       console.log("📥 updateGameState 수신:", data);
 
-      // ✅ currentTurn 갱신 (단, UI 초기화는 아래에서 applyTurnChange로 처리)
-      if (data.currentTurn) {
-        setCurrentTurnId(data.currentTurn);
-        setIsMyTurn(data.currentTurn === myId);
+      if (data.turnCount !== undefined) {
+        setTurn(data.turnCount);
       }
 
-      setTurn(turnCount ?? 1);
-
       // ✅ HP 반영
-      if (hp && typeof hp === "object" && myId in hp) {
-        setPlayerHP(Number(hp[myId] ?? 2000));
-        const opponent = Object.keys(hp).find((id) => id !== myId);
-        if (opponent && hp[opponent] !== undefined) {
-          setEnemyHP(Number(hp[opponent]));
+      if (data.hp) {
+        const hp = data.hp as Record<string, number>;
+        if (hp[myId] !== undefined) setPlayerHP(hp[myId]);
+
+        const enemyId = Object.keys(hp).find((id) => id !== myId);
+        if (enemyId && hp[enemyId] !== undefined) {
+          setEnemyHP(hp[enemyId]);
         }
       }
 
-      // ✅ Cost 반영
-      if (cost && typeof cost === "object") {
-        setPlayerCostIcons(Math.max(0, Number(cost[myId]) || 0));
-        const oppId = Object.keys(cost).find((id) => id !== myId);
-        if (oppId) setOpponentCostIcons(Math.max(0, Number(cost[oppId]) || 0));
+      // ✅ 코스트 반영
+      if (data.cost) {
+        setPlayerCostIcons(Number(data.cost[myId]) || 0);
+        const oppId = Object.keys(data.cost).find((id) => id !== myId);
+        if (oppId) setOpponentCostIcons(Number(data.cost[oppId]) || 0);
       }
 
-      // ✅ 손패 반영 (빈 배열이면 무시)
-      if (hands && Array.isArray(hands[myId]) && hands[myId].length > 0) {
-        setHandCards(hands[myId].map(keepCardShape));
+      // ✅ 손패
+      if (data.hands && data.hands[myId]) {
+        setHandCards(data.hands[myId].map(keepCardShape));
       }
 
-      // ✅ 덱 반영 (빈 배열이면 무시)
-      if (decks && Array.isArray(decks[myId]) && decks[myId].length > 0) {
-        setDeckCards(decks[myId].map(keepCardShape));
+      // ✅ 덱
+      // ✅ 서버가 deck을 보냈을 때만 덮어쓰기, 클라이언트가 이미 셔플했다면 유지
+      if (data.decks && data.decks[myId] && data.decks[myId].length > 0 && !deckLoaded) {
+        setDeckCards(data.decks[myId].map(keepCardShape));
+      }
+      if (!deckLoaded && data.decks && data.decks[myId] && data.decks[myId].length > 0) {
+        setDeckLoaded(true);
       }
 
-      // ✅ 필드 반영
+      // ✅ 카드존
       if (data.cardsInZone) {
-        const opponentId = Object.keys(data.cardsInZone).find((id) => id !== myId);
-
         if (data.cardsInZone[myId]) {
           setMyCardsInZone(
             data.cardsInZone[myId].map((c: any) => ({
@@ -518,9 +521,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           );
         }
 
-        if (opponentId && data.cardsInZone[opponentId]) {
+        const oppId = Object.keys(data.cardsInZone).find((id) => id !== myId);
+        if (oppId && data.cardsInZone[oppId]) {
           setEnemyCardsInZone(
-            data.cardsInZone[opponentId].map((c: any) => ({
+            data.cardsInZone[oppId].map((c: any) => ({
               ...keepCardShape(c),
               canAttack: c.canAttack ?? true,
             }))
@@ -528,20 +532,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         }
       }
 
-      if (data.timeLeft !== undefined) {
-        setTurnTime(data.timeLeft);
-      }
-
-      // ✅ 초기 턴이 아직 없는데 서버가 currentTurn 내려줬다면 즉시 적용
-      if (!currentTurnIdRef.current && data.currentTurn) {
-        console.log("⚡ 초기 턴 즉시 적용 (deckLoaded 무시)");
-        applyTurnChange({
-          currentTurn: data.currentTurn,
-          cost: data.cost,
-          hp: data.hp,
-          timeLeft: data.timeLeft,
-        });
-      }
+      // ❌ 여기서 턴 전환 UI로직 절대 하지 말 것
+      // ❌ setIsMyTurn() NO
+      // ❌ applyTurnChange() NO
     };
 
     // ✅ 카드 소환 이벤트 (수신)
@@ -642,8 +635,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
     socket.on("error", onError);
     socket.on("gameStart", onGameStart);
-    socket.on("updateGameState", onUpdateGameState);
     socket.on("turnChanged", onTurnChanged);
+    socket.on("updateGameState", onUpdateGameState);
     socket.on("cardSummoned", onCardSummoned);
     socket.on("updateCardHP", onUpdateCardHP);
     socket.on("cardDestroyed", onCardDestroyed);
@@ -678,7 +671,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("timeUpdate", onTimeUpdate);
       socket.off("turnTimeout", onTurnTimeout);
     };
-  }, [socket, roomCode]);
+  }, [roomCode]);
 
   // ✅ 초기 턴 동기화 로그
   useEffect(() => {
@@ -1152,11 +1145,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       </div>
 
       {showGameOver && (
-        <GameOverScreen
-          message={gameOverMessage}
-          onRestart={() => window.location.reload()}
-          onGoToMainMenu={() => navigate("/")}
-        />
+        <GameOverScreen message={gameOverMessage} onRestart={() => window.location.reload()} onGoToMainMenu={() => navigate("/")} />
       )}
 
       {dragPreview && (

@@ -63,9 +63,12 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
 
   game.cardsPlayed = {};
 
-  // ✅ 다음 턴 유저 코스트 1 증가 (최대 8)
+  // ✅ n턴이면 n 코스트 증가 (최대 8)
   if (!game.cost[nextTurn]) game.cost[nextTurn] = 0;
-  game.cost[nextTurn] = Math.min(game.cost[nextTurn] + 1, 8);
+
+  // 턴수만큼 증가
+  const costGain = game.turnCount; // 1턴=1, 2턴=2…
+  game.cost[nextTurn] = Math.min(game.cost[nextTurn] + costGain, 8);
 
   // ✅ 턴이 바뀌면 새 턴 유저의 모든 카드를 다시 공격 가능 상태로 리셋
   if (game.cardsInZone[nextTurn]) {
@@ -153,8 +156,8 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 
     // ✅ 코스트
     cost: {
-      [player1]: 1,
-      [player2]: 1,
+      [player1]: 0,
+      [player2]: 0,
     },
 
     // ✅ 새로 추가된 필드들
@@ -214,6 +217,9 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 
   // 4) 공유 타이머 시작 (tick마다 timeUpdate, 시간만료 시 turnChanged 발생)
   startSharedTimer(io, roomCode, room);
+
+  // ✅ 선공(방장) 첫 턴 시작 시 코스트 +1
+  room.gameState.cost[player1] = 1;
 
   console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
 }

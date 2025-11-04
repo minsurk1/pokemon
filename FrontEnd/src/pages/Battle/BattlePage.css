@@ -13,25 +13,25 @@
   background-position: center;
   position: relative;
 }
-.Top-Line{
+.Top-Line {
   position: relative;
-  width:76.5vw;
+  width: 76.5vw;
   height: 2px;
   background-color: rgb(255, 255, 255);
   z-index: 1001;
   top: 19.3vh;
-  left:9vw;
+  left: 9vw;
 }
-.Bottom-Line{
+.Bottom-Line {
   position: relative;
-  width: 76.5vw; 
+  width: 76.5vw;
   height: 2px;
   background-color: white;
   z-index: 1001;
   top: 79.8vh;
   left: 9vw;
 }
-.TopLeft-Dia{
+.TopLeft-Dia {
   position: relative;
   width: 10vw;
   height: 2px;
@@ -39,9 +39,9 @@
   z-index: 1001;
   top: 26.8vh;
   transform: rotate(-24deg);
-  transform-origin:0 0;
+  transform-origin: 0 0;
 }
-.BottomLeft-Dia{
+.BottomLeft-Dia {
   position: relative;
   width: 10vw;
   height: 2px;
@@ -51,18 +51,18 @@
   transform: rotate(24deg);
   transform-origin: 0 0;
 }
-.TopRight-Dia{
+.TopRight-Dia {
   position: relative;
   left: 85.5vw;
   width: 12vw;
   height: 2px;
   background-color: white;
   z-index: 1001;
-  top:18.8vh;
+  top: 18.8vh;
   transform: rotate(67.4deg);
   transform-origin: 0 0;
 }
-.BottomRight-Dia{
+.BottomRight-Dia {
   position: relative;
   left: 85.4vw;
   width: 11.6vw;
@@ -138,7 +138,7 @@
   background-repeat: no-repeat;
 
   /* 💡 추가/수정: 이 세 줄이 핵심 */
-  position: absolute; 
+  position: absolute;
   top: 50%;
   transform: translateY(-50%);
 
@@ -158,7 +158,7 @@
   align-items: center;
   position: relative;
   z-index: 10;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .player-field {
@@ -503,7 +503,7 @@
 }
 
 .toggle-hand-button.expand-button {
-  background:linear-gradient(to right, #8e9eab,#eef2f3); /* 파란색 계열 */
+  background: linear-gradient(to right, #8e9eab, #eef2f3); /* 파란색 계열 */
   color: white;
 }
 
@@ -612,28 +612,28 @@
   border-left: solid 2px white;
 }
 
-  .player-grave{
-    position: absolute;
-    top: 50.3vh;
-    width: 9vw;
-    height:30.4vh;
-    left: 0;
-    clip-path: polygon(0 0, 100% 0% ,100% 100%,0 74%);
-     background:url(../../assets/images/grave1.png); 
-    /* background-color: red; */
-    background-size: cover;
-    background-position: center;
-    z-index: 1000;
-    border-right: solid 3px rgb(196, 191, 191);
-  }
-.enemy-grave{
+.player-grave {
   position: absolute;
-  top:19.31vh;
+  top: 50.3vh;
   width: 9vw;
   height: 30.4vh;
   left: 0;
-  clip-path: polygon(0 26%, 100% 0%,100% 100%,0 100%);
-  background:url(../../assets/images/grave1.png); 
+  clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 74%);
+  background: url(../../assets/images/grave1.png);
+  /* background-color: red; */
+  background-size: cover;
+  background-position: center;
+  z-index: 1000;
+  border-right: solid 3px rgb(196, 191, 191);
+}
+.enemy-grave {
+  position: absolute;
+  top: 19.31vh;
+  width: 9vw;
+  height: 30.4vh;
+  left: 0;
+  clip-path: polygon(0 26%, 100% 0%, 100% 100%, 0 100%);
+  background: url(../../assets/images/grave1.png);
   /* background-color: red; */
   background-size: cover;
   background-position: center;
@@ -692,6 +692,7 @@
   align-items: center;
   padding: 10px;
   position: relative;
+  border-left: solid 2px white;
 }
 
 .player-info {
@@ -703,10 +704,10 @@
   align-items: center;
   padding: 20px;
   color: white;
-  overflow: hidden;   
+  overflow: hidden;
 }
 
-.surrender-button{
+.surrender-button {
   margin-top: 30px;
   padding: 15px 15px;
   background-color: rgb(0, 0, 0);
@@ -782,7 +783,10 @@
   border-radius: 20%;
   color: #ffffff;
   background: radial-gradient(#000000, #000000, #270834);
-  border: 2px solid rgb(255, 255, 255);
+  border-left: 2px solid rgb(255, 255, 255);
+  border-top: 2px solid rgb(255, 255, 255);
+  border-bottom: 2px solid rgb(255, 255, 255);
+  border-right: 0.5px solid rgb(255, 255, 255);
   font-weight: 900;
   cursor: pointer;
   position: absolute;
@@ -1094,7 +1098,7 @@
     width: 90%;
     bottom: 60px;
   }
-  
+
   /* 미디어 쿼리 안의 hand-cards는 삭제 */
   /* .hand-cards {
     max-width: 400px;

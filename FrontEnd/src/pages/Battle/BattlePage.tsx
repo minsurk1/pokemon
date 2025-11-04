@@ -15,6 +15,26 @@ import BurnLineComponent from "../../components/battle/BurnLineComponent";
 import { Card } from "../../types/Card";
 import { CiFlag1 } from "react-icons/ci";
 
+// ===================== 🔥 이벤트 시스템 추가 =====================
+import EventItem from "../../components/battle/Eventitem"; // ✅ EventItem 임포트
+
+interface TurnPayload {
+  currentTurn?: string | null;
+  cost?: Record<string, number>;
+  hp?: Record<string, number>;
+  timeLeft?: number;
+}
+
+// ✅ Event 인터페이스 (gameTypes.ts와 동일)
+interface Event {
+  id: number;
+  type: number;
+  image: string;
+  message: string;
+  hp: number;
+  maxHp: number;
+}
+
 // ===================== 상수 =====================
 const INITIAL_TIME = 30;
 const IMAGE_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images";
@@ -68,21 +88,16 @@ const normalizeCard = (card: any) => {
 
   return {
     id: String(card.id ?? card._id ?? card.cardId),
-
     // ✅ cardName을 우선 사용
     name: String(card.cardName ?? card.name ?? "Unknown"),
-
     cardType: realType,
     tier: Number(card.tier ?? 1),
-
     // ✅ 숫자로 강제 변환
     attack: Number(card.attack ?? card.damage ?? 0),
     hp: Number(card.hp ?? 0),
     maxhp: Number(card.maxhp ?? card.hp ?? 0),
     cost: Number(card.cost ?? card.tier ?? 1),
-
     image: fullImageUrl,
-
     // ✅ 공격 가능 여부를 기본 true로
     canAttack: card.canAttack ?? true,
   };
@@ -118,18 +133,6 @@ const keepCardShape = (c: any): Card => {
     canAttack: baseCard.canAttack ?? c.canAttack ?? true,
   };
 };
-
-interface TurnPayload {
-  currentTurn?: string | null;
-  cost?: Record<string, number>;
-  hp?: Record<string, number>;
-  timeLeft?: number;
-}
-
-interface TurnSyncPayload {
-  currentTurn: string | null;
-  hp?: Record<string, number>;
-}
 
 // ===================== BattlePage =====================
 function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
@@ -197,9 +200,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // 최신 턴/내턴 상태를 유지하는 ref
   const isMyTurnRef = useRef(isMyTurn);
   const currentTurnIdRef = useRef(currentTurnId);
-
   const lastTurnIdRef = useRef<string | null>(null);
 
+  // ++++++++++++++++ [추가된 Event 상태] ++++++++++++++++
+  const [activeEvents, setActiveEvents] = useState<Event[]>([]);
+  // +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  // (useEffect ref 동기화 - 변경 없음)
   useEffect(() => {
     isMyTurnRef.current = isMyTurn;
   }, [isMyTurn]);
@@ -207,6 +214,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     currentTurnIdRef.current = currentTurnId;
   }, [currentTurnId]);
 
+  // (applyTurnChange - 변경 없음)
   const applyTurnChange = useCallback(
     (payload: TurnPayload | string) => {
       console.log("✅ applyTurnChange 실행:", payload);
@@ -468,6 +476,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     const onUpdateGameState = (data: any) => {
+      const { hp, cost, decks, hands, graveyards, turnCount } = data;
       const myId = socket.id;
       if (!myId) return;
 
@@ -497,8 +506,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
 
       // ✅ 손패
-      if (data.hands && data.hands[myId]) {
-        setHandCards(data.hands[myId].map(keepCardShape));
+      if (data.hands && Array.isArray(data.hands[myId])) {
+        const serverHand = data.hands[myId];
+
+        // 서버가 빈 배열이면 무시 (수동 드로우 유지)
+        if (serverHand.length > 0) {
+          setHandCards(serverHand.map(keepCardShape));
+        }
       }
 
       // ✅ 덱
@@ -531,6 +545,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           );
         }
       }
+
+      // ++++++++++++++++ [추가] ++++++++++++++++
+      // ✅ GameState에 포함된 activeEvent 동기화
+      if (data.activeEvent) {
+        setActiveEvents([data.activeEvent]);
+      } else {
+        setActiveEvents([]); // 이벤트가 없으면 비움
+      }
+      // ++++++++++++++++++++++++++++++++++++++++
 
       // ❌ 여기서 턴 전환 UI로직 절대 하지 말 것
       // ❌ setIsMyTurn() NO
@@ -633,6 +656,53 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setIsMyTurn(false);
     };
 
+    // (directAttack - ✨ 힐 로직 추가됨)
+    const onDirectAttack = ({ attackerName, damage, newHP }: { attackerName: string; damage: number; newHP: number }) => {
+      // 현재 턴 주체가 나면 내가 공격자, 아니면 피격자
+      const iAmAttacker = currentTurnIdRef.current === socket.id;
+
+      // 힐(음수 데미지)을 받은 경우
+      if (damage < 0) {
+        if (!iAmAttacker) {
+          // 내가 공격자가 아닐 때 (즉, 힐 받은 대상일 때)
+          setPlayerHP(newHP);
+          setMessage(`✨ ${attackerName}으로 ${-damage} HP를 회복했습니다!`);
+        } else {
+          // 상대방이 힐 받은 경우 (필요 시)
+          // setEnemyHP(newHP);
+        }
+      } else {
+        // 일반 공격
+        if (iAmAttacker) {
+          setEnemyHP(newHP);
+        } else {
+          setPlayerHP(newHP);
+        }
+        setMessage(`💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`);
+      }
+      setShowMessage(true);
+    };
+
+    // ++++++++++++++++ [추가된 Event 리스너] ++++++++++++++++
+    const onEventTriggered = (eventData: Event) => {
+      console.log("🔥 이벤트 발동 수신:", eventData);
+      setActiveEvents([eventData]); // 새 이벤트로 상태 설정
+      setMessage(`🚨 ${eventData.message}`);
+      setShowMessage(true);
+    };
+
+    const onEventHPUpdate = ({ eventId, newHP }: { eventId: number; newHP: number }) => {
+      setActiveEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, hp: newHP } : e)));
+    };
+
+    const onEventEnded = ({ eventId }: { eventId: number }) => {
+      // 서버에서 보상(힐)을 받고 directAttack으로 HP가 갱신되므로, 여기선 메시지만 띄움
+      setActiveEvents((prev) => prev.filter((e) => e.id !== eventId));
+      setMessage(`🎉 이벤트가 종료되었습니다! (보상 획득)`);
+      setShowMessage(true);
+    };
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++
+
     socket.on("error", onError);
     socket.on("gameStart", onGameStart);
     socket.on("turnChanged", onTurnChanged);
@@ -640,24 +710,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.on("cardSummoned", onCardSummoned);
     socket.on("updateCardHP", onUpdateCardHP);
     socket.on("cardDestroyed", onCardDestroyed);
-    // ✅ 직접 공격 수신
-    socket.on("directAttack", ({ attackerName, damage, newHP }) => {
-      // 현재 턴 주체가 나면 내가 공격자, 아니면 피격자
-      const iAmAttacker = currentTurnIdRef.current === socket.id;
-
-      if (iAmAttacker) {
-        setEnemyHP(newHP);
-      } else {
-        setPlayerHP(newHP);
-      }
-
-      setMessage(`💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`);
-      setShowMessage(true);
-    });
-
+    socket.on("directAttack", onDirectAttack);
     socket.on("gameOver", onGameOver);
     socket.on("timeUpdate", onTimeUpdate);
     socket.on("turnTimeout", onTurnTimeout);
+    // ++++++++++++++++ [추가된 Event 리스너 등록] ++++++++++++++++
+    socket.on("eventTriggered", onEventTriggered);
+    socket.on("eventHPUpdate", onEventHPUpdate);
+    socket.on("eventEnded", onEventEnded);
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     return () => {
       socket.off("error", onError);
@@ -670,6 +731,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("gameOver", onGameOver);
       socket.off("timeUpdate", onTimeUpdate);
       socket.off("turnTimeout", onTurnTimeout);
+      // ++++++++++++++++ [추가된 Event 리스너 해제] ++++++++++++++++
+      socket.off("eventTriggered", onEventTriggered);
+      socket.off("eventHPUpdate", onEventHPUpdate);
+      socket.off("eventEnded", onEventEnded);
+      // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     };
   }, [roomCode]);
 
@@ -903,6 +969,45 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     handleAttack(targetId);
   };
 
+  // ++++++++++++++++ [추가된 Event 공격 함수] ++++++++++++++++
+  // (1번 파일의 공격 로직과 완벽히 호환됨)
+  const handleEventAttack = (eventId: number) => {
+    if (!isMyTurn) {
+      setMessage("상대방 턴입니다.");
+      setShowMessage(true);
+      return;
+    }
+    // 1번 파일의 'selectedAttacker' 상태를 그대로 활용
+    if (!selectedAttacker) {
+      setMessage("먼저 공격할 내 카드를 선택하세요!");
+      setShowMessage(true);
+      return;
+    }
+
+    const attacker = myCardsInZone.find((c) => c.id === selectedAttacker);
+    if (!attacker) return; // 로직 오류 방지
+
+    if (!attacker.canAttack) {
+      setMessage(`${attacker.name}은(는) 이미 공격했습니다!`);
+      setShowMessage(true);
+      return;
+    }
+
+    // ✅ 서버로 이벤트 공격 요청 (battle.ts에 추가한 핸들러 호출)
+    socket.emit("attackEvent", {
+      roomCode,
+      attackerId: attacker.id,
+      eventId,
+    });
+
+    // ✅ 공격권 즉시 소모 (UI 반응성)
+    setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
+    setSelectedAttacker(null); // 공격자 선택 해제
+    setMessage(`⚔️ ${attacker.name} (으)로 이벤트를 공격합니다!`);
+    setShowMessage(true);
+  };
+  // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
   // ===== 턴 종료 =====
   const handleEndTurn = () => {
     if (!isMyTurn) return;
@@ -1126,11 +1231,26 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           </div>
         </div>
 
+        {/* ==================== 🔥 event-zone 수정 ==================== */}
         <div className="event-zone">
+          {/* 2번 파일에서 가져온 렌더링 로직 */}
+          <div className="event-items-container">
+            {activeEvents.map((event) => (
+              <EventItem
+                key={event.id}
+                event={event}
+                // ✅ 클릭 시 1번 파일의 공격 로직과 연동
+                onClick={() => handleEventAttack(event.id)}
+              />
+            ))}
+          </div>
+
+          {/* 1번 파일의 기존 턴 종료 버튼 */}
           <button className="endturn-button" onClick={handleEndTurn}>
             턴 종료 <CiClock1 size={24} />
           </button>
         </div>
+        {/* ============================================================== */}
 
         <div className="player-info">
           <div className="player-avatar" />

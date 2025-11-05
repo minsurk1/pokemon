@@ -101,7 +101,7 @@ function App() {
               path="/deck"
               element={
                 <DeckPage
-                  selectedDeck={selectedDeck.map((c) => c.image)}
+                  selectedDeck={selectedDeck.map((c) => c.image ?? "").filter(Boolean)}
                   onDeckChange={(imgs) =>
                     setSelectedDeck((prev) =>
                       imgs.map((img, i) => ({

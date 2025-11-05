@@ -11,7 +11,8 @@ export interface Card {
   maxhp: number; // 최대 체력 (maxhp)
   cost: number; // 코스트
   tier: number; // 카드 등급 (B=1, A=2, S=3)
-  image: string; // 2D 카드 이미지 (image2D)
+  image?: string; // 2D 카드 이미지 (image2D)
+  image2D?: string;
   cardType?: string; // ✅ 추가 — 카드 속성(불, 물, 전기 등)
   canAttack?: boolean; // ✅ 추가
 }

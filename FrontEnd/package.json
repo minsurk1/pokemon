@@ -50,6 +50,7 @@
   "devDependencies": {
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
+    "@types/socket.io-client": "^1.4.36",
     "@types/styled-components": "^5.1.34"
   }
 }

@@ -331,6 +331,11 @@ export default function battleHandler(io: Server, socket: Socket) {
             }
 
             console.log(`✅ ${socket.id} 덱 자동 로딩 완료: ${deckCards.length}장`);
+            console.log("🎴 서버 덱 이미지 체크:", deckCards.map(c => ({
+  name: c.name,
+  image2D: c.image2D
+})));
+
           }
         }
       } catch (error) {

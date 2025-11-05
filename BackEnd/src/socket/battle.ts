@@ -283,20 +283,28 @@ export default function battleHandler(io: Server, socket: Socket) {
         // 소켓에 저장된 userId를 사용 (로그인 시 저장되어 있어야 함)
         const userId = (socket as any).userId;
         if (userId) {
-          const userDeck = await UserDeck.findOne({ userId }).populate("cards");
+          const userDeck = await UserDeck.findOne({ user: userId }).populate({
+            path: "cards.card",
+            select: "cardName cardType tier attack hp maxhp cost image2D",
+          });
+
           if (userDeck && userDeck.cards && userDeck.cards.length > 0) {
-            const deckCards = userDeck.cards.map((card: any) => ({
-              id: String(card._id),
-              name: card.cardName,
-              cardType: card.cardType,
-              tier: card.tier,
-              attack: card.attack,
-              hp: card.hp,
-              maxhp: card.hp,
-              cost: card.tier,
-              image: card.image2D || card.image,
-              canAttack: true,
-            }));
+            const deckCards = userDeck.cards.map((c: any) => {
+              const card = c.card; // ✅ populate된 실제 카드 데이터
+
+              return {
+                id: String(card._id),
+                name: card.cardName,
+                cardType: card.cardType,
+                tier: card.tier,
+                attack: card.attack,
+                hp: card.hp,
+                maxhp: card.hp,
+                cost: card.cost,
+                image2D: card.image2D, // ✅ DB의 원본 이미지 사용
+                canAttack: true,
+              };
+            });
 
             // 덱 셔플
             const shuffled = [...deckCards].sort(() => Math.random() - 0.5);

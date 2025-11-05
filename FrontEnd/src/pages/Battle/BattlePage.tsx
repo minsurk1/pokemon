@@ -1078,26 +1078,25 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   };
   // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-  // ===== 턴 종료 =====
-  const handleEndTurn = () => {
+  // ✅ 턴 종료 함수 고정
+  const handleEndTurn = useCallback(() => {
     if (!isMyTurn) return;
     socket.emit("endTurn", { roomCode });
-  };
+  }, [isMyTurn, roomCode, socket]);
 
-  // E 키로 턴 종료 트리거
+  // ✅ E키 감지: 최신 handleEndTurn 유지 + 중복 등록 방지
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // e 또는 E 눌렀을 때
+    const onKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "e") {
+        e.preventDefault();
         handleEndTurn();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [handleEndTurn]);
+    window.addEventListener("keydown", onKey);
+
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleEndTurn]); // ✅ 이건 맞다
 
   // ✅ socket이 없을 때 — return 직전에 배치
   if (!socket) {

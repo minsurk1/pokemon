@@ -15,9 +15,30 @@ import BurnLineComponent from "../../components/battle/BurnLineComponent";
 import { Card } from "../../types/Card";
 import { CiFlag1 } from "react-icons/ci";
 
+// ===================== 🔥 이벤트 시스템 추가 =====================
+import EventItem from "../../components/battle/Eventitem"; // ✅ EventItem 임포트
+
+interface TurnPayload {
+  currentTurn?: string | null;
+  cost?: Record<string, number>;
+  hp?: Record<string, number>;
+  timeLeft?: number;
+}
+
+// ✅ Event 인터페이스 (gameTypes.ts와 동일)
+interface Event {
+  id: number;
+  type: number;
+  image: string;
+  message: string;
+  hp: number;
+  maxHp: number;
+}
+
 // ===================== 상수 =====================
 const INITIAL_TIME = 30;
-const IMAGE_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images";
+const IMAGE_URL =
+  "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images";
 
 // ✅ 파일명 추출 함수
 const pickFileName = (p?: string) => {
@@ -34,10 +55,16 @@ const pickFileName = (p?: string) => {
 };
 
 // ✅ 이미지 URL 정리 함수
-const getImageUrl = (imagePath: string) => {
-  if (!imagePath) return `${IMAGE_URL}/default.png`;
-  if (imagePath.startsWith("http")) return imagePath;
-  const fname = pickFileName(imagePath);
+// ✅ 카드 이미지 우선순위: image2D > image > default
+const getImageUrl = (imagePath: any) => {
+  // card 객체가 직접 넘어오는 경우도 대비
+  const p = imagePath?.image2D ?? imagePath?.image ?? imagePath ?? "";
+
+  if (!p) return `${IMAGE_URL}/default.png`;
+
+  if (typeof p === "string" && p.startsWith("http")) return p;
+
+  const fname = pickFileName(p);
   return `${IMAGE_URL}/${fname || "default.png"}`;
 };
 
@@ -57,40 +84,46 @@ const detectTypeByName = (name: string) => {
   return "normal";
 };
 
-// ✅ 카드 표준화 함수 (서버로 보내는 카드 정리)
+// ✅ 카드 표준화 함수 (서버 → 프론트 카드 정리)
 const normalizeCard = (card: any) => {
-  const realType = card.cardType || card.type || detectTypeByName(card.cardName ?? card.name) || "normal";
+  const realType =
+    card.cardType ||
+    card.type ||
+    detectTypeByName(card.cardName ?? card.name) ||
+    "normal";
 
-  // ✅ 이미지 우선순위: image2D > image > fallback
-  const imagePath = card.image2D ?? card.image ?? `${card.cardType ?? "normal"}Tier${card.tier ?? 1}.png`;
+  // ✅ 이미지 파일 우선순위: image2D > image > fallback
+  const img =
+    card.image2D || card.image || `${realType}Tier${card.tier ?? 1}.png`;
 
-  const fullImageUrl = imagePath.startsWith("http") ? imagePath : `${IMAGE_URL}/${imagePath}`;
+  // ✅ URL로 변환
+  const finalImg = img.startsWith("http") ? img : `${IMAGE_URL}/${img}`;
 
   return {
     id: String(card.id ?? card._id ?? card.cardId),
-
-    // ✅ cardName을 우선 사용
     name: String(card.cardName ?? card.name ?? "Unknown"),
-
     cardType: realType,
     tier: Number(card.tier ?? 1),
 
-    // ✅ 숫자로 강제 변환
     attack: Number(card.attack ?? card.damage ?? 0),
     hp: Number(card.hp ?? 0),
     maxhp: Number(card.maxhp ?? card.hp ?? 0),
     cost: Number(card.cost ?? card.tier ?? 1),
 
-    image: fullImageUrl,
+    // ✅ 원본 필드 유지
+    image2D: card.image2D ?? null,
 
-    // ✅ 공격 가능 여부를 기본 true로
+    // ✅ 프론트에서 직접 쓰는 통합 이미지 필드 (URL 포함)
+    image: finalImg,
+
     canAttack: card.canAttack ?? true,
   };
 };
 
 // ✅ 카드 형태 통일 함수 (서버·클라이언트 혼합 대응)
 const keepCardShape = (c: any): Card => {
-  const baseCard = c.card && typeof c.card === "object" && !Array.isArray(c.card) ? c.card : c;
+  const baseCard =
+    c.card && typeof c.card === "object" && !Array.isArray(c.card) ? c.card : c;
 
   // ✅ 이미지 결정 (image2D > image > fallback)
   const imgSource =
@@ -98,14 +131,20 @@ const keepCardShape = (c: any): Card => {
     baseCard.image ??
     c.image2D ??
     c.image ??
-    `${baseCard.cardType ?? c.cardType ?? "normal"}Tier${baseCard.tier ?? c.tier ?? 1}.png`;
+    `${baseCard.cardType ?? c.cardType ?? "normal"}Tier${
+      baseCard.tier ?? c.tier ?? 1
+    }.png`;
 
   // ✅ 절대 URL 변환
-  const image = imgSource.includes("http") ? imgSource : `${IMAGE_URL}/${imgSource.split("/").pop()}`;
+  const image = imgSource.includes("http")
+    ? imgSource
+    : `${IMAGE_URL}/${imgSource.split("/").pop()}`;
 
   return {
     id: String(baseCard._id ?? baseCard.id ?? c.id),
-    name: String(baseCard.cardName ?? baseCard.name ?? c.cardName ?? c.name ?? "Unknown"),
+    name: String(
+      baseCard.cardName ?? baseCard.name ?? c.cardName ?? c.name ?? "Unknown"
+    ),
     cardType: baseCard.cardType ?? c.cardType ?? "normal",
     tier: Number(baseCard.tier ?? c.tier ?? 1),
     attack: Number(baseCard.attack ?? c.attack ?? 0),
@@ -118,18 +157,6 @@ const keepCardShape = (c: any): Card => {
     canAttack: baseCard.canAttack ?? c.canAttack ?? true,
   };
 };
-
-interface TurnPayload {
-  currentTurn?: string | null;
-  cost?: Record<string, number>;
-  hp?: Record<string, number>;
-  timeLeft?: number;
-}
-
-interface TurnSyncPayload {
-  currentTurn: string | null;
-  hp?: Record<string, number>;
-}
 
 // ===================== BattlePage =====================
 function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
@@ -197,9 +224,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // 최신 턴/내턴 상태를 유지하는 ref
   const isMyTurnRef = useRef(isMyTurn);
   const currentTurnIdRef = useRef(currentTurnId);
-
   const lastTurnIdRef = useRef<string | null>(null);
 
+  // ++++++++++++++++ [추가된 Event 상태] ++++++++++++++++
+  const [activeEvents, setActiveEvents] = useState<Event[]>([]);
+  // +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  // (useEffect ref 동기화 - 변경 없음)
   useEffect(() => {
     isMyTurnRef.current = isMyTurn;
   }, [isMyTurn]);
@@ -207,6 +238,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     currentTurnIdRef.current = currentTurnId;
   }, [currentTurnId]);
 
+  // (applyTurnChange - 변경 없음)
   const applyTurnChange = useCallback(
     (payload: TurnPayload | string) => {
       console.log("✅ applyTurnChange 실행:", payload);
@@ -215,7 +247,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       if (!myId) return;
 
       // ✅ 이미 처리한 턴이면 무시
-      const curr = typeof payload === "string" ? payload : payload.currentTurn ?? null;
+      const curr =
+        typeof payload === "string" ? payload : payload.currentTurn ?? null;
       // ✅ 동일 턴 중복 처리 방지
       if (curr !== null && lastTurnIdRef.current === curr) {
         console.log("⏩ 동일 턴 이벤트 무시:", curr);
@@ -234,7 +267,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         // ❌ setTurn((t) => t + 1); 제거!
 
         if (mine) {
-          setMyCardsInZone((prev) => prev.map((c) => ({ ...c, canAttack: true })));
+          setMyCardsInZone((prev) =>
+            prev.map((c) => ({ ...c, canAttack: true }))
+          );
         }
 
         setMessage(mine ? "🔵 내 턴입니다!" : "🔴 상대 턴입니다.");
@@ -263,7 +298,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
 
       if (mine) {
-        setMyCardsInZone((prev) => prev.map((c) => ({ ...c, canAttack: true })));
+        setMyCardsInZone((prev) =>
+          prev.map((c) => ({ ...c, canAttack: true }))
+        );
       }
 
       setMessage(mine ? "🔵 내 턴입니다!" : "🔴 상대 턴입니다.");
@@ -281,34 +318,92 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // ✅ 덱 초기화
   const initializeDeckAndHand = useCallback(() => {
     if (!selectedDeck || selectedDeck.length === 0) return;
+
     const normalized = selectedDeck.map(keepCardShape);
-    const shuffled = [...normalized].sort(() => Math.random() - 0.5);
-    setHandCards(shuffled.slice(0, 3));
-    setDeckCards(shuffled.slice(3));
+
+    // 1코스트 카드 목록
+    const costOneCards = normalized.filter((c) => Number(c.cost) === 1);
+    // 그 외 카드
+    const otherCards = normalized.filter((c) => Number(c.cost) !== 1);
+
+    // 덱 셔플 함수
+    const shuffle = (arr: Card[]) => [...arr].sort(() => Math.random() - 0.5);
+
+    let firstHand: Card[] = [];
+
+    if (costOneCards.length > 0) {
+      // ✅ 1코스트 중 한 장 랜덤 선택
+      const oneCard = shuffle(costOneCards)[0];
+      // ✅ 나머지 2장은 전체에서 선택
+      const pool = normalized.filter((c) => c.id !== oneCard.id);
+      const rest = shuffle(pool).slice(0, 2);
+
+      firstHand = [oneCard, ...rest];
+    } else {
+      // ✅ 만약 1코스트가 없는 덱이라면 (안전장치)
+      firstHand = shuffle(normalized).slice(0, 3);
+    }
+
+    const remainingDeck = normalized.filter((c) => !firstHand.includes(c));
+    const shuffledDeck = shuffle(remainingDeck);
+
+    setHandCards(firstHand);
+    setDeckCards(shuffledDeck);
   }, [selectedDeck]);
 
   // ✅ 덱 초기화 useEffect
   useEffect(() => {
-    const looksLikeIds = Array.isArray(selectedDeck) && selectedDeck.length > 0 && typeof selectedDeck[0] === "string";
+    const looksLikeIds =
+      Array.isArray(selectedDeck) &&
+      selectedDeck.length > 0 &&
+      typeof selectedDeck[0] === "string";
 
     // selectedDeck이 비어있거나, string[]이면 서버에서 가져옴
     if (!selectedDeck || selectedDeck.length === 0 || looksLikeIds) {
       (async () => {
         try {
           const token = localStorage.getItem("token");
-          const res = await fetch("https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/userdeck/single", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
+          const res = await fetch(
+            "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/userdeck/single",
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
           const data = await res.json();
 
           if (data?.deck?.cards?.length) {
+            // 기존 shuffled → 그대로 유지
             const cards = data.deck.cards.map(keepCardShape);
-            console.log("✅ 유저 덱 불러오기 성공:", cards);
             const shuffled = [...cards].sort(() => Math.random() - 0.5);
-            setHandCards(shuffled.slice(0, 3));
-            setDeckCards(shuffled.slice(3));
 
-            setDeckLoaded(true); // ✅ 덱 로딩 완료
+            // ✅ 1코스트 카드 필터
+            const costOneCards = shuffled.filter((c) => Number(c.cost) === 1);
+
+            let startingHand: Card[] = [];
+            let restDeck: Card[] = [];
+
+            if (costOneCards.length > 0) {
+              // 1코스트 랜덤 1장 선택
+              const oneCost =
+                costOneCards[Math.floor(Math.random() * costOneCards.length)];
+
+              // 나머지 카드 풀
+              const pool = shuffled.filter((c) => c.id !== oneCost.id);
+
+              // 나머지에서 2장
+              const rest = pool.slice(0, 2);
+
+              startingHand = [oneCost, ...rest];
+              restDeck = pool.slice(2);
+            } else {
+              // 1코스트가 없는 극단적인 예외 케이스
+              startingHand = shuffled.slice(0, 3);
+              restDeck = shuffled.slice(3);
+            }
+
+            setHandCards(startingHand);
+            setDeckCards(restDeck);
+            setDeckLoaded(true);
           } else {
             console.warn("⚠️ 덱 데이터가 없습니다.");
           }
@@ -320,9 +415,28 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       // selectedDeck이 이미 카드 객체면 그대로 사용
       const cards = selectedDeck.map(keepCardShape);
       console.log("✅ 전달받은 덱 사용:", cards);
-      const shuffled = [...cards].sort(() => Math.random() - 0.5);
-      setHandCards(shuffled.slice(0, 3));
-      setDeckCards(shuffled.slice(3));
+
+      const shuffle = (arr: Card[]) => [...arr].sort(() => Math.random() - 0.5);
+
+      const costOneCards = cards.filter((c) => Number(c.cost) === 1);
+      let startingHand: Card[] = [];
+      let restDeck: Card[] = [];
+
+      if (costOneCards.length > 0) {
+        const oneCard = shuffle(costOneCards)[0]; // 1코 랜덤 1장
+        const pool = cards.filter((c) => c.id !== oneCard.id);
+        const randomTwo = shuffle(pool).slice(0, 2);
+
+        startingHand = [oneCard, ...randomTwo];
+        restDeck = shuffle(pool.slice(2));
+      } else {
+        const shuffled = shuffle(cards);
+        startingHand = shuffled.slice(0, 3);
+        restDeck = shuffled.slice(3);
+      }
+
+      setHandCards(startingHand);
+      setDeckCards(restDeck);
       setDeckLoaded(true);
     }
   }, [selectedDeck]);
@@ -341,7 +455,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     if (!socket.connected) return;
     if (!selectedDeck || selectedDeck.length === 0) return;
 
-    const isIdArray = Array.isArray(selectedDeck) && selectedDeck.length > 0 && typeof selectedDeck[0] === "string";
+    const isIdArray =
+      Array.isArray(selectedDeck) &&
+      selectedDeck.length > 0 &&
+      typeof selectedDeck[0] === "string";
     if (isIdArray) return; // 서버가 알아서 로드하는 케이스면 전송 X
 
     if ((window as any)._deckSent) return; // 중복 전송 방지
@@ -468,11 +585,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     const onUpdateGameState = (data: any) => {
+      const { hp, cost, decks, hands, graveyards, turnCount } = data;
       const myId = socket.id;
       if (!myId) return;
 
       // ✅ 디버그
       console.log("📥 updateGameState 수신:", data);
+      console.log("🔥 받은 덱 데이터:", data.decks?.[myId]);
+      console.log("🔥 받은 카드 손패:", data.hands?.[myId]);
 
       if (data.turnCount !== undefined) {
         setTurn(data.turnCount);
@@ -497,16 +617,31 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
 
       // ✅ 손패
-      if (data.hands && data.hands[myId]) {
-        setHandCards(data.hands[myId].map(keepCardShape));
+      if (data.hands && Array.isArray(data.hands[myId])) {
+        const serverHand = data.hands[myId];
+
+        // 서버가 빈 배열이면 무시 (수동 드로우 유지)
+        if (serverHand.length > 0) {
+          setHandCards(serverHand.map(keepCardShape));
+        }
       }
 
       // ✅ 덱
       // ✅ 서버가 deck을 보냈을 때만 덮어쓰기, 클라이언트가 이미 셔플했다면 유지
-      if (data.decks && data.decks[myId] && data.decks[myId].length > 0 && !deckLoaded) {
+      if (
+        data.decks &&
+        data.decks[myId] &&
+        data.decks[myId].length > 0 &&
+        !deckLoaded
+      ) {
         setDeckCards(data.decks[myId].map(keepCardShape));
       }
-      if (!deckLoaded && data.decks && data.decks[myId] && data.decks[myId].length > 0) {
+      if (
+        !deckLoaded &&
+        data.decks &&
+        data.decks[myId] &&
+        data.decks[myId].length > 0
+      ) {
         setDeckLoaded(true);
       }
 
@@ -532,6 +667,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         }
       }
 
+      // ++++++++++++++++ [추가] ++++++++++++++++
+      // ✅ GameState에 포함된 activeEvent 동기화
+      if (data.activeEvent) {
+        setActiveEvents([data.activeEvent]);
+      } else {
+        setActiveEvents([]); // 이벤트가 없으면 비움
+      }
+      // ++++++++++++++++++++++++++++++++++++++++
+
       // ❌ 여기서 턴 전환 UI로직 절대 하지 말 것
       // ❌ setIsMyTurn() NO
       // ❌ applyTurnChange() NO
@@ -544,7 +688,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       const fixedCard = normalizeCard(card);
 
       // ✅ 공격력, 체력, 코스트 값이 숫자로 확실히 들어오게 보정
-      fixedCard.attack = Number(fixedCard.attack ?? card.attack ?? card.damage ?? 0);
+      fixedCard.attack = Number(
+        fixedCard.attack ?? card.attack ?? card.damage ?? 0
+      );
       fixedCard.hp = Number(fixedCard.hp ?? card.hp ?? 0);
       fixedCard.maxhp = Number(fixedCard.maxhp ?? card.maxhp ?? card.hp ?? 0);
       fixedCard.cost = Number(fixedCard.cost ?? card.cost ?? card.tier ?? 1);
@@ -592,15 +738,33 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     // ✅ 카드 HP 갱신 수신
-    const onUpdateCardHP = ({ targetId, newHP }: { targetId: string; newHP: number }) => {
+    const onUpdateCardHP = ({
+      targetId,
+      newHP,
+    }: {
+      targetId: string;
+      newHP: number;
+    }) => {
       // 내 필드 / 상대 필드 모두 갱신
-      setMyCardsInZone((prev) => prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c)));
-      setEnemyCardsInZone((prev) => prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c)));
+      setMyCardsInZone((prev) =>
+        prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c))
+      );
+      setEnemyCardsInZone((prev) =>
+        prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c))
+      );
     };
 
     // ✅ 카드 파괴 수신
-    const onCardDestroyed = ({ targetId, ownerId }: { targetId: string; ownerId: string }) => {
-      const destroyedCard = [...myCardsInZone, ...enemyCardsInZone].find((c) => c.id === targetId);
+    const onCardDestroyed = ({
+      targetId,
+      ownerId,
+    }: {
+      targetId: string;
+      ownerId: string;
+    }) => {
+      const destroyedCard = [...myCardsInZone, ...enemyCardsInZone].find(
+        (c) => c.id === targetId
+      );
       const name = destroyedCard?.name ?? "카드";
 
       if (ownerId === socket.id) {
@@ -616,7 +780,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const onGameOver = ({ winnerId }: any) => {
       const myId = socket.id ?? null;
       setShowGameOver(true);
-      setGameOverMessage(myId === winnerId ? "🎉 승리했습니다!" : "💀 패배했습니다...");
+      setGameOverMessage(
+        myId === winnerId ? "🎉 승리했습니다!" : "💀 패배했습니다..."
+      );
     };
 
     // ✅ 서버에서 타이머 공유값 수신
@@ -633,6 +799,69 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setIsMyTurn(false);
     };
 
+    // (directAttack - ✨ 힐 로직 추가됨)
+    const onDirectAttack = ({
+      attackerName,
+      damage,
+      newHP,
+    }: {
+      attackerName: string;
+      damage: number;
+      newHP: number;
+    }) => {
+      // 현재 턴 주체가 나면 내가 공격자, 아니면 피격자
+      const iAmAttacker = currentTurnIdRef.current === socket.id;
+
+      // 힐(음수 데미지)을 받은 경우
+      if (damage < 0) {
+        if (!iAmAttacker) {
+          // 내가 공격자가 아닐 때 (즉, 힐 받은 대상일 때)
+          setPlayerHP(newHP);
+          setMessage(`✨ ${attackerName}으로 ${-damage} HP를 회복했습니다!`);
+        } else {
+          // 상대방이 힐 받은 경우 (필요 시)
+          // setEnemyHP(newHP);
+        }
+      } else {
+        // 일반 공격
+        if (iAmAttacker) {
+          setEnemyHP(newHP);
+        } else {
+          setPlayerHP(newHP);
+        }
+        setMessage(`💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`);
+      }
+      setShowMessage(true);
+    };
+
+    // ++++++++++++++++ [추가된 Event 리스너] ++++++++++++++++
+    const onEventTriggered = (eventData: Event) => {
+      console.log("🔥 이벤트 발동 수신:", eventData);
+      setActiveEvents([eventData]); // 새 이벤트로 상태 설정
+      setMessage(`🚨 ${eventData.message}`);
+      setShowMessage(true);
+    };
+
+    const onEventHPUpdate = ({
+      eventId,
+      newHP,
+    }: {
+      eventId: number;
+      newHP: number;
+    }) => {
+      setActiveEvents((prev) =>
+        prev.map((e) => (e.id === eventId ? { ...e, hp: newHP } : e))
+      );
+    };
+
+    const onEventEnded = ({ eventId }: { eventId: number }) => {
+      // 서버에서 보상(힐)을 받고 directAttack으로 HP가 갱신되므로, 여기선 메시지만 띄움
+      setActiveEvents((prev) => prev.filter((e) => e.id !== eventId));
+      setMessage(`🎉 이벤트가 종료되었습니다! (보상 획득)`);
+      setShowMessage(true);
+    };
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++
+
     socket.on("error", onError);
     socket.on("gameStart", onGameStart);
     socket.on("turnChanged", onTurnChanged);
@@ -640,24 +869,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.on("cardSummoned", onCardSummoned);
     socket.on("updateCardHP", onUpdateCardHP);
     socket.on("cardDestroyed", onCardDestroyed);
-    // ✅ 직접 공격 수신
-    socket.on("directAttack", ({ attackerName, damage, newHP }) => {
-      // 현재 턴 주체가 나면 내가 공격자, 아니면 피격자
-      const iAmAttacker = currentTurnIdRef.current === socket.id;
-
-      if (iAmAttacker) {
-        setEnemyHP(newHP);
-      } else {
-        setPlayerHP(newHP);
-      }
-
-      setMessage(`💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`);
-      setShowMessage(true);
-    });
-
+    socket.on("directAttack", onDirectAttack);
     socket.on("gameOver", onGameOver);
     socket.on("timeUpdate", onTimeUpdate);
     socket.on("turnTimeout", onTurnTimeout);
+    // ++++++++++++++++ [추가된 Event 리스너 등록] ++++++++++++++++
+    socket.on("eventTriggered", onEventTriggered);
+    socket.on("eventHPUpdate", onEventHPUpdate);
+    socket.on("eventEnded", onEventEnded);
+    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     return () => {
       socket.off("error", onError);
@@ -670,6 +890,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("gameOver", onGameOver);
       socket.off("timeUpdate", onTimeUpdate);
       socket.off("turnTimeout", onTurnTimeout);
+      // ++++++++++++++++ [추가된 Event 리스너 해제] ++++++++++++++++
+      socket.off("eventTriggered", onEventTriggered);
+      socket.off("eventHPUpdate", onEventHPUpdate);
+      socket.off("eventEnded", onEventEnded);
+      // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     };
   }, [roomCode]);
 
@@ -709,7 +934,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   };
 
   // ===== 카드 클릭 =====
-  const handleCardClick = (cardId: string, fromZone: boolean, e: React.MouseEvent<HTMLDivElement>) => {
+  const handleCardClick = (
+    cardId: string,
+    fromZone: boolean,
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
     e.preventDefault();
 
     if (!isMyTurn) {
@@ -733,7 +962,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     // 🃏 손패 카드 클릭 시 → 소환 로직
     const card = handCards.find((c) => c.id === cardId);
     if (!card) return;
-    const normalizedCard = normalizeCard(card);
+    const normalizedCard = {
+      ...normalizeCard(card),
+      image2D: card.image2D ?? card.image ?? null,
+    };
+
     const cardCost = Number(normalizedCard.cost) || 0;
 
     if (cardCost > playerCostIcons) {
@@ -763,7 +996,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   };
 
   // === 카드 드래그 시 보이는 고스트 프리뷰 이펙트 핸들러 ===
-  const handleDragStart = (attackerId: string, e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragStart = (
+    attackerId: string,
+    e: React.DragEvent<HTMLDivElement>
+  ) => {
     e.stopPropagation(); // 클릭 이벤트와 동시 발동 방지
     // 🧩 클릭형 프리뷰 강제 종료 (드래그 시작 시 중복 방지)
     setIsHoldingCard(false);
@@ -802,7 +1038,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   // ====== 카드 클릭 시 고스트 효과 ======
   // ✅ 마우스 클릭 시작
-  const handleCardMouseDown = (card: Card, e: React.MouseEvent<HTMLDivElement>) => {
+  const handleCardMouseDown = (
+    card: Card,
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
     if (!isMyTurn) return;
     setIsHoldingCard(true);
     setHeldCard(card);
@@ -816,7 +1055,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // ✅ 마우스 이동 중
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isHoldingCard) {
-      setDragPreview((prev) => (prev ? { ...prev, x: e.clientX, y: e.clientY } : null));
+      setDragPreview((prev) =>
+        prev ? { ...prev, x: e.clientX, y: e.clientY } : null
+      );
     }
   };
 
@@ -848,7 +1089,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setMessage(`💥 ${attacker.name}이(가) 상대 플레이어를 직접 공격합니다!`);
       setShowMessage(true);
 
-      setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
+      setMyCardsInZone((prev) =>
+        prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c))
+      );
       setSelectedAttacker(null);
       return;
     }
@@ -861,7 +1104,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       const attackPower = Number(attacker.attack ?? 0);
       const newHP = Math.max(0, target.hp - attackPower);
 
-      setMessage(`🔥 ${attacker.name} ➤ ${target.name}에게 ${attackPower} 피해!`);
+      setMessage(
+        `🔥 ${attacker.name} ➤ ${target.name}에게 ${attackPower} 피해!`
+      );
       setShowMessage(true);
 
       if (newHP <= 0) {
@@ -878,14 +1123,19 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         targetId,
       });
 
-      setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
+      setMyCardsInZone((prev) =>
+        prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c))
+      );
 
       setSelectedAttacker(null);
     }
   };
 
   // ===== 상대 카드 클릭(공격 대상 선택) =====
-  const handleEnemyCardClick = (targetId: string, e: React.MouseEvent<HTMLDivElement>) => {
+  const handleEnemyCardClick = (
+    targetId: string,
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
     e.preventDefault();
 
     if (!isMyTurn) {
@@ -903,19 +1153,82 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     handleAttack(targetId);
   };
 
-  // ===== 턴 종료 =====
-  const handleEndTurn = () => {
+  // ++++++++++++++++ [추가된 Event 공격 함수] ++++++++++++++++
+  // (1번 파일의 공격 로직과 완벽히 호환됨)
+  const handleEventAttack = (eventId: number) => {
+    if (!isMyTurn) {
+      setMessage("상대방 턴입니다.");
+      setShowMessage(true);
+      return;
+    }
+    // 1번 파일의 'selectedAttacker' 상태를 그대로 활용
+    if (!selectedAttacker) {
+      setMessage("먼저 공격할 내 카드를 선택하세요!");
+      setShowMessage(true);
+      return;
+    }
+
+    const attacker = myCardsInZone.find((c) => c.id === selectedAttacker);
+    if (!attacker) return; // 로직 오류 방지
+
+    if (!attacker.canAttack) {
+      setMessage(`${attacker.name}은(는) 이미 공격했습니다!`);
+      setShowMessage(true);
+      return;
+    }
+
+    // ✅ 서버로 이벤트 공격 요청 (battle.ts에 추가한 핸들러 호출)
+    socket.emit("attackEvent", {
+      roomCode,
+      attackerId: attacker.id,
+      eventId,
+    });
+
+    // ✅ 공격권 즉시 소모 (UI 반응성)
+    setMyCardsInZone((prev) =>
+      prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c))
+    );
+    setSelectedAttacker(null); // 공격자 선택 해제
+    setMessage(`⚔️ ${attacker.name} (으)로 이벤트를 공격합니다!`);
+    setShowMessage(true);
+  };
+  // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  // ✅ 턴 종료 함수 고정
+  const handleEndTurn = useCallback(() => {
     if (!isMyTurn) return;
     socket.emit("endTurn", { roomCode });
-  };
+  }, [isMyTurn, roomCode, socket]);
+
+  // ✅ E키 감지: 최신 handleEndTurn 유지 + 중복 등록 방지
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "e") {
+        e.preventDefault();
+        handleEndTurn();
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleEndTurn]); // ✅ 이건 맞다
 
   // ✅ socket이 없을 때 — return 직전에 배치
   if (!socket) {
-    return <div style={{ color: "white", padding: 20 }}>서버 연결 중... 잠시만 기다려주세요.</div>;
+    return (
+      <div style={{ color: "white", padding: 20 }}>
+        서버 연결 중... 잠시만 기다려주세요.
+      </div>
+    );
   }
   // ===== 렌더 =====
   return (
-    <div className="battle-container" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
+    <div
+      className="battle-container"
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+    >
       {/* === 디버그 패널 === */}
       <div
         style={{
@@ -942,7 +1255,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       </div>
 
       {showMessage && (
-        <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1" onClose={() => setShowMessage(false)}>
+        <MessageBox
+          bgColor="#e3f2fd"
+          borderColor="#2196f3"
+          textColor="#0d47a1"
+          onClose={() => setShowMessage(false)}
+        >
           {message}
         </MessageBox>
       )}
@@ -973,7 +1291,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             enemyCardsInZone.map((card) => (
               <div
                 key={card.id}
-                className={`enemy-card-slot enemy-clickable ${lastEnemyCardId === card.id ? "fade-in-card" : ""}`}
+                className={`enemy-card-slot enemy-clickable ${
+                  lastEnemyCardId === card.id ? "fade-in-card" : ""
+                }`}
                 onClick={(e) => {
                   if (!isMyTurn) return;
                   if (!selectedAttacker) {
@@ -993,10 +1313,16 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                 tabIndex={0}
               >
                 {/* ▼▼▼ [ 1. 적 카드 HP 바 수정 ] ▼▼▼ */}
-                <div className="enemy-card in-zone" onMouseDown={(e) => handleCardMouseDown(card, e)}>
+                <div
+                  className="enemy-card in-zone"
+                  onMouseDown={(e) => handleCardMouseDown(card, e)}
+                >
                   <img src={getImageUrl(card.image)} alt={card.name} />
                   <div className="card-hp-bar">
-                    <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.maxhp) * 100}%` }} />
+                    <div
+                      className="card-hp-bar-inner"
+                      style={{ width: `${(card.hp / card.maxhp) * 100}%` }}
+                    />
                     <div className="card-hp-text">
                       {card.hp}/{card.maxhp}
                     </div>
@@ -1017,18 +1343,31 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="player-card-zone">
           {myCardsInZone.length > 0 ? (
             myCardsInZone.map((card) => (
-              <div key={card.id} className={`card-slot ${lastPlayedCardId === card.id ? "fade-in-card" : ""}`}>
+              <div
+                key={card.id}
+                className={`card-slot ${
+                  lastPlayedCardId === card.id ? "fade-in-card" : ""
+                }`}
+              >
                 {/* ▼▼▼ [ 2. 내 카드 HP 바 추가 ] ▼▼▼ */}
                 <div
-                  className={`my-card in-zone ${card.canAttack ? "can-attack" : "cannot-attack"}`}
+                  className={`my-card in-zone ${
+                    card.canAttack ? "can-attack" : "cannot-attack"
+                  }`}
                   draggable={isMyTurn}
-                  onMouseDown={(e) => card.canAttack && handleCardMouseDown(card, e)} // 클릭형 고스트
-                  onDragStart={(e) => card.canAttack && handleDragStart(card.id, e)} // 드래그 시작 (위에서 수정한 함수)
+                  onMouseDown={(e) =>
+                    card.canAttack && handleCardMouseDown(card, e)
+                  } // 클릭형 고스트
+                  onDragStart={(e) =>
+                    card.canAttack && handleDragStart(card.id, e)
+                  } // 드래그 시작 (위에서 수정한 함수)
                   onDrag={(e) => card.canAttack && handleDrag(e)} // 드래그 중 커서 이동
                   onDragEnd={handleDragEnd} // 드래그 끝
                   onClick={(e) => {
                     if (!card.canAttack) {
-                      setMessage(`${card.name}은(는) 이미 이번 턴에 공격했습니다!`);
+                      setMessage(
+                        `${card.name}은(는) 이미 이번 턴에 공격했습니다!`
+                      );
                       setShowMessage(true);
                       return;
                     }
@@ -1038,7 +1377,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   <img src={getImageUrl(card.image)} alt={card.name} />
                   {/* ▼ 누락된 HP 바 코드 추가 ▼ */}
                   <div className="card-hp-bar">
-                    <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.maxhp) * 100}%` }} />
+                    <div
+                      className="card-hp-bar-inner"
+                      style={{ width: `${(card.hp / card.maxhp) * 100}%` }}
+                    />
                     <div className="card-hp-text">
                       {card.hp}/{card.maxhp}
                     </div>
@@ -1064,21 +1406,38 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             className="deck-card"
             onClick={drawCard} // ✅ 함수 직접 호출
             disabled={!isMyTurn || hasDrawnThisTurn}
-            title={!isMyTurn ? "상대 턴입니다!" : hasDrawnThisTurn ? "이번 턴에는 이미 드로우했습니다!" : "드로우 (D 키)"}
+            title={
+              !isMyTurn
+                ? "상대 턴입니다!"
+                : hasDrawnThisTurn
+                ? "이번 턴에는 이미 드로우했습니다!"
+                : "드로우 (D 키)"
+            }
           >
             <div className="deck-count">{deckCards.length}</div>
           </button>
 
           {/* 🔥 수정된 손패 영역: showHand 상태에 따라 클래스 변경 */}
-          <div className={`hand-cards-wrapper ${showHand ? "expanded" : "collapsed"}`} onClick={handleHandClick}>
+          <div
+            className={`hand-cards-wrapper ${
+              showHand ? "expanded" : "collapsed"
+            }`}
+            onClick={handleHandClick}
+          >
             {/* 🔥 펼침/접힘 버튼 (카드가 2장 이상일 때만 표시) */}
             {handCards.length >= 2 && showHand && (
-              <button className="toggle-hand-button collapse-button" onClick={handleToggleHand}>
+              <button
+                className="toggle-hand-button collapse-button"
+                onClick={handleToggleHand}
+              >
                 접기
               </button>
             )}
             {handCards.length >= 2 && !showHand && (
-              <button className="toggle-hand-button expand-button" onClick={handleToggleHand}>
+              <button
+                className="toggle-hand-button expand-button"
+                onClick={handleToggleHand}
+              >
                 펼치기
               </button>
             )}
@@ -1104,9 +1463,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               </div>
             ))}
             {/* 🔥 접힌 상태일 때만 보이는 텍스트 */}
-            {!showHand && handCards.length > 0 && <div className="hand-count-overlay">{handCards.length} 장</div>}
+            {!showHand && handCards.length > 0 && (
+              <div className="hand-count-overlay">{handCards.length} 장</div>
+            )}
             {/* 🔥 카드가 없을 때만 보이는 텍스트 */}
-            {handCards.length === 0 && <div className="hand-count-overlay no-cards">손패 없음</div>}
+            {handCards.length === 0 && (
+              <div className="hand-count-overlay no-cards">손패 없음</div>
+            )}
           </div>
           {/* 이전의 hand-cards는 삭제하거나 아래처럼 수정됨 */}
         </div>
@@ -1114,7 +1477,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         {/* ▼ 코스트 영역 */}
         <div className="enemy-cost-zone">
           {Array.from({
-            length: Math.max(0, Math.min(8, Math.floor(Number(opponentCostIcons) || 0))),
+            length: Math.max(
+              0,
+              Math.min(8, Math.floor(Number(opponentCostIcons) || 0))
+            ),
           }).map((_, i) => (
             <div key={i} className="cost-icon" />
           ))}
@@ -1122,7 +1488,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
         <div className="player-cost-zone">
           {Array.from({
-            length: Math.max(0, Math.min(8, Math.floor(Number(playerCostIcons) || 0))),
+            length: Math.max(
+              0,
+              Math.min(8, Math.floor(Number(playerCostIcons) || 0))
+            ),
           }).map((_, i) => (
             <div key={i} className="cost-icon" />
           ))}
@@ -1135,31 +1504,59 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="enemy-info">
           <div className="enemy-avatar" />
           <div className="hp-bar">
-            <div className="hp-bar-inner" style={{ width: `${(enemyHP / 2000) * 100}%` }} />
+            <div
+              className="hp-bar-inner"
+              style={{ width: `${(enemyHP / 2000) * 100}%` }}
+            />
             <div className="hp-text">{enemyHP}/2000</div>
           </div>
         </div>
 
+        {/* ==================== 🔥 event-zone 수정 ==================== */}
         <div className="event-zone">
+          {/* 2번 파일에서 가져온 렌더링 로직 */}
+          <div className="event-items-container">
+            {activeEvents.map((event) => (
+              <EventItem
+                key={event.id}
+                event={event}
+                // ✅ 클릭 시 1번 파일의 공격 로직과 연동
+                onClick={() => handleEventAttack(event.id)}
+              />
+            ))}
+          </div>
+
+          {/* 1번 파일의 기존 턴 종료 버튼 */}
           <button className="endturn-button" onClick={handleEndTurn}>
             턴 종료 <CiClock1 size={24} />
           </button>
         </div>
+        {/* ============================================================== */}
 
         <div className="player-info">
           <div className="player-avatar" />
           <div className="hp-bar">
-            <div className="hp-bar-inner" style={{ width: `${(playerHP / 2000) * 100}%` }} />
+            <div
+              className="hp-bar-inner"
+              style={{ width: `${(playerHP / 2000) * 100}%` }}
+            />
             <div className="hp-text">{playerHP}/2000</div>
           </div>
-          <div className="surrender-button" onClick={() => setShowGameOver(true)}>
+          <div
+            className="surrender-button"
+            onClick={() => setShowGameOver(true)}
+          >
             항복 <CiFlag1 />
           </div>
         </div>
       </div>
 
       {showGameOver && (
-        <GameOverScreen message={gameOverMessage} onRestart={() => window.location.reload()} onGoToMainMenu={() => navigate("/")} />
+        <GameOverScreen
+          message={gameOverMessage}
+          onRestart={() => window.location.reload()}
+          onGoToMainMenu={() => navigate("/")}
+        />
       )}
 
       {dragPreview && (

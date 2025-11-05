@@ -78,7 +78,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [error, setError] = useState("");
   const [selectedDeck, setSelectedDeck] = useState<string[]>([]);
 
-
   // ✅ 공통 유저 정보 불러오기
   const fetchUser = async (): Promise<User | null> => {
     setLoading(true);
@@ -170,9 +169,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // ✅ 카드팩 개봉
-  const openCardPack = async (
-    packId: string
-  ): Promise<{ updatedInventory: CardPack[]; drawnCards: CardData[] }> => {
+  const openCardPack = async (packId: string): Promise<{ updatedInventory: CardPack[]; drawnCards: CardData[] }> => {
     if (!userInfo) throw new Error("유저 정보 없음");
     const pack = userInfo.inventory.find((p) => p.id === packId);
     if (!pack) throw new Error("카드팩을 찾을 수 없습니다.");
@@ -209,8 +206,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         buyCardPack,
         openCardPack,
         logout,
-        selectedDeck,      // ✅ 추가
-      setSelectedDeck,   // ✅ 추가
+        selectedDeck, // ✅ 추가
+        setSelectedDeck, // ✅ 추가
       }}
     >
       {children}

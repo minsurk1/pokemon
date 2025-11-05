@@ -453,11 +453,17 @@ export default function battleHandler(io: Server, socket: Socket) {
       return;
     }
 
-    try {
-      dbCardData = await Card.findById(card.id);
-    } catch (err) {
-      console.error("❌ DB 카드 조회 실패:", err);
-    }
+    const isValidObjectId = typeof card.id === "string" && /^[0-9a-fA-F]{24}$/.test(card.id);
+
+if (isValidObjectId) {
+  try {
+    dbCardData = await Card.findById(card.id);
+  } catch (err) {
+    console.error("❌ DB 카드 조회 실패:", err);
+  }
+} else {
+  console.log(`⚠️ '${card.id}' 은(는) ObjectId가 아님 → DB조회 생략`);
+}
 
     const summonedCard = {
       id: card.id,
@@ -472,6 +478,7 @@ export default function battleHandler(io: Server, socket: Socket) {
       image2D: dbCardData?.image2D ?? card.image2D ?? "default.png",
       canAttack: true,
     };
+    console.log("🃏 summonedCard:", summonedCard);
 
     game.cardsInZone[playerId].push(summonedCard);
 

@@ -493,8 +493,10 @@ if (isValidObjectId) {
   console.log(`⚠️ '${card.id}' 은(는) ObjectId가 아님 → DB조회 생략`);
 }
 */
-    const summonedCard = {
-      id: card.id,
+    const img = card.image2D ?? card.image ?? `${card.cardType}Tier${card.tier}.png`;
+
+const summonedCard = {
+  id: card.id,
   name: card.name,
   cardName: card.cardName,
   cardType: card.cardType,
@@ -503,9 +505,11 @@ if (isValidObjectId) {
   maxhp: card.maxhp,
   cost: card.cost,
   tier: card.tier,
-  image2D: card.image2D, // ✅ 프론트 이미지 그대로 사용
+  image2D: img,     // ✅ 무조건 값 존재
+  image: img,       // ✅ 프론트 fallback 방지
   canAttack: true,
-    };
+};
+
     console.log("🃏 summonedCard:", summonedCard);
 
     game.cardsInZone[playerId].push(summonedCard);

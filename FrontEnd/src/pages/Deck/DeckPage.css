@@ -153,6 +153,7 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 15px;
   background-image: url("../../assets/images/mainbg.png");
+  min-height: 51.8vh;
 }
 
 /* 카드 기본 스타일 */

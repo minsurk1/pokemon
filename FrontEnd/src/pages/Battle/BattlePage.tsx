@@ -992,12 +992,17 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                 role="button"
                 tabIndex={0}
               >
+                {/* ▼▼▼ [ 1. 적 카드 HP 바 수정 ] ▼▼▼ */}
                 <div className="enemy-card in-zone" onMouseDown={(e) => handleCardMouseDown(card, e)}>
                   <img src={getImageUrl(card.image)} alt={card.name} />
-                  <div className="enemy-hp-bar">
-                    <div className="enemy-hp-inner" style={{ width: `${(card.hp / card.maxhp) * 100}%` }} />
+                  <div className="card-hp-bar">
+                    <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.maxhp) * 100}%` }} />
+                    <div className="card-hp-text">
+                      {card.hp}/{card.maxhp}
+                    </div>
                   </div>
                 </div>
+                {/* ▲▲▲ [ 1. 적 카드 HP 바 수정 ] ▲▲▲ */}
               </div>
             ))
           ) : (
@@ -1013,6 +1018,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           {myCardsInZone.length > 0 ? (
             myCardsInZone.map((card) => (
               <div key={card.id} className={`card-slot ${lastPlayedCardId === card.id ? "fade-in-card" : ""}`}>
+                {/* ▼▼▼ [ 2. 내 카드 HP 바 추가 ] ▼▼▼ */}
                 <div
                   className={`my-card in-zone ${card.canAttack ? "can-attack" : "cannot-attack"}`}
                   draggable={isMyTurn}
@@ -1030,7 +1036,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   }} // 기존 공격 선택 유지
                 >
                   <img src={getImageUrl(card.image)} alt={card.name} />
+                  {/* ▼ 누락된 HP 바 코드 추가 ▼ */}
+                  <div className="card-hp-bar">
+                    <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.maxhp) * 100}%` }} />
+                    <div className="card-hp-text">
+                      {card.hp}/{card.maxhp}
+                    </div>
+                  </div>
                 </div>
+                {/* ▲▲▲ [ 2. 내 카드 HP 바 추가 ] ▲▲▲ */}
               </div>
             ))
           ) : (

@@ -1084,6 +1084,21 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.emit("endTurn", { roomCode });
   };
 
+  // E 키로 턴 종료 트리거
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // e 또는 E 눌렀을 때
+      if (e.key.toLowerCase() === "e") {
+        handleEndTurn();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleEndTurn]);
+
   // ✅ socket이 없을 때 — return 직전에 배치
   if (!socket) {
     return <div style={{ color: "white", padding: 20 }}>서버 연결 중... 잠시만 기다려주세요.</div>;

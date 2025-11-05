@@ -343,6 +343,33 @@ export default function battleHandler(io: Server, socket: Socket) {
       }
     }
 
+    // ✅ 덱은 있는데 손패가 비었으면 손패 생성 (재접속 처리)
+if (room.gameState && room.gameState.decks[socket.id]?.length > 0 && room.gameState.hands[socket.id]?.length === 0) {
+  const deck = room.gameState.decks[socket.id];
+
+  // 🔍 로그 확인용 (디버깅)
+  console.log(`🔁 재입장 감지 → ${socket.id}, 덱 ${deck.length}장, 손패 없음. 자동 손패 생성`);
+
+  const oneCostPool = deck.filter((c: any) => Number(c.cost) === 1);
+
+  let startingHand;
+  if (oneCostPool.length > 0) {
+    const guaranteed = oneCostPool[Math.floor(Math.random() * oneCostPool.length)];
+    const pool = deck.filter((c: any) => c.id !== guaranteed.id);
+
+    startingHand = [guaranteed, ...pool.slice(0, 2)];
+    room.gameState.hands[socket.id] = startingHand;
+    room.gameState.decks[socket.id] = pool.slice(2);
+  } else {
+    startingHand = deck.slice(0, 3);
+    room.gameState.hands[socket.id] = startingHand;
+    room.gameState.decks[socket.id] = deck.slice(3);
+  }
+
+  console.log(`♻️ 손패 재생성 완료:`, startingHand.map(c => c.name));
+}
+
+
     // ✅ 게임 상태가 있으면 전체 상태 즉시 전달
     if (room.gameState) {
       const g = room.gameState;
@@ -447,6 +474,7 @@ export default function battleHandler(io: Server, socket: Socket) {
     game.cost[playerId] = Math.max(0, playerCost - costValue);
 
     // ✅ 6. DB에서 카드 세부정보 보강
+    /*
     let dbCardData = null;
     if (!card || (!card.name && !card.cardName)) {
       socket.emit("error", "잘못된 카드 데이터입니다.");
@@ -464,19 +492,19 @@ if (isValidObjectId) {
 } else {
   console.log(`⚠️ '${card.id}' 은(는) ObjectId가 아님 → DB조회 생략`);
 }
-
+*/
     const summonedCard = {
       id: card.id,
-      name: dbCardData?.cardName ?? card.name ?? "Unknown",
-      cardName: dbCardData?.cardName ?? card.name ?? "Unknown",
-      cardType: dbCardData?.cardType ?? card.cardType ?? "normal",
-      attack: dbCardData?.attack ?? card.attack ?? 0,
-      hp: dbCardData?.hp ?? card.hp ?? 0,
-      maxhp: dbCardData?.hp ?? card.maxhp ?? 0,
-      cost: dbCardData?.cost ?? card.cost ?? 1,
-      tier: dbCardData?.tier ?? card.tier ?? 1,
-      image2D: dbCardData?.image2D ?? card.image2D ?? "default.png",
-      canAttack: true,
+  name: card.name,
+  cardName: card.cardName,
+  cardType: card.cardType,
+  attack: card.attack,
+  hp: card.hp,
+  maxhp: card.maxhp,
+  cost: card.cost,
+  tier: card.tier,
+  image2D: card.image2D, // ✅ 프론트 이미지 그대로 사용
+  canAttack: true,
     };
     console.log("🃏 summonedCard:", summonedCard);
 

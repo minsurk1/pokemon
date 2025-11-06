@@ -122,36 +122,24 @@ const detectTypeByName = (name: string) => {
 
 // ✅ 카드 표준화 함수 (서버 → 프론트 카드 정리)
 const normalizeCard = (card: any) => {
-  const realType =
-    (card.cardType && card.cardType !== "normal"
-      ? card.cardType
-      : card.type && card.type !== "normal"
-      ? card.type
-      : detectTypeByName(card.cardName ?? card.name)) || "normal";
+  // ✅ 카드 타입 보정
+  const realType = card.cardType || card.type || card.card?.cardType || detectTypeByName(card.cardName ?? card.name) || "normal";
 
-  // ✅ 이미지 파일 우선순위: image2D > image > fallback
-  const img = card.image2D || card.image || `${realType}Tier${card.tier ?? 1}.png`;
+  // ✅ 이미지 처리
+  const img = card.image2D || card.image || card.card?.image2D || `${realType}Tier${card.tier ?? 1}.png`;
 
-  // ✅ URL로 변환
-  const finalImg = img.startsWith("http") ? img : `${IMAGE_URL}/${img}`;
-
+  // ✅ 주요 필드 직접 참조 (card.cardName 대신 card.name)
   return {
-    id: String(card.id ?? card._id ?? card.cardId),
-    name: String(card.cardName ?? card.name ?? "Unknown"),
+    id: String(card.id ?? card._id ?? card.cardId ?? card.card?._id ?? "unknown"),
+    name: String(card.name ?? card.cardName ?? card.card?.cardName ?? "Unknown"),
     cardType: realType,
-    tier: Number(card.tier ?? 1),
-
-    attack: Number(card.attack ?? card.damage ?? 0),
-    hp: Number(card.hp ?? 0),
-    maxhp: Number(card.maxhp ?? card.hp ?? 0),
-    cost: Number(card.cost ?? card.tier ?? 1),
-
-    // ✅ 원본 필드 유지
-    image2D: card.image2D ?? null,
-
-    // ✅ 프론트에서 직접 쓰는 통합 이미지 필드 (URL 포함)
-    image: finalImg,
-
+    tier: Number(card.tier ?? card.card?.tier ?? 1),
+    attack: Number(card.attack ?? card.card?.attack ?? 0),
+    hp: Number(card.hp ?? card.card?.hp ?? 0),
+    maxhp: Number(card.maxhp ?? card.card?.maxhp ?? card.hp ?? 0),
+    cost: Number(card.cost ?? card.card?.cost ?? 1),
+    image2D: card.image2D ?? card.card?.image2D ?? null,
+    image: img.startsWith("http") ? img : `https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images/${img}`,
     canAttack: card.canAttack ?? true,
   };
 };
@@ -798,10 +786,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     // ✅ 카드 HP 갱신 수신
-    const onUpdateCardHP = ({ targetId, newHP }: { targetId: string; newHP: number }) => {
-      // 내 필드 / 상대 필드 모두 갱신
-      setMyCardsInZone((prev) => prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c)));
-      setEnemyCardsInZone((prev) => prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c)));
+    // 🔥 카드 HP 갱신 리스너
+    const onUpdateCardHP = ({ targetId, ownerId, newHP }: { targetId: string; ownerId: string; newHP: number }) => {
+      if (ownerId === socket.id) {
+        // 🔵 내 카드만 HP 갱신
+        setMyCardsInZone((prev) => prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c)));
+      } else {
+        // 🔴 상대 카드만 HP 갱신
+        setEnemyCardsInZone((prev) => prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c)));
+      }
     };
 
     // ✅ 카드 파괴 수신

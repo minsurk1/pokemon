@@ -498,9 +498,10 @@ if (isValidObjectId) {
 }
 */
     const img = card.image2D ?? card.image ?? `${card.cardType}Tier${card.tier}.png`;
+    const instanceId = `${card.id}:${playerId}:${crypto.randomUUID()}`;
 
     const summonedCard = {
-      id: card.id,
+      id: instanceId, // ← 매 소환마다 유일
       name: card.name,
       cardName: card.cardName,
       cardType: card.cardType,
@@ -520,6 +521,7 @@ if (isValidObjectId) {
 
     // ✅ 7. 모든 플레이어에게 최신 상태 전송
     io.to(roomCode).emit("cardSummoned", {
+      ownerId: playerId, // ← 추가
       playerId,
       card: summonedCard,
       updatedCost: game.cost[playerId],
@@ -645,7 +647,7 @@ if (isValidObjectId) {
     // ✅ 공격 성공 → 공격권 소모
     attacker.canAttack = false;
 
-    io.to(roomCode).emit("updateCardHP", { targetId, newHP });
+    io.to(roomCode).emit("updateCardHP", { targetId, ownerId: opponentId, newHP });
     console.log(`⚔️ ${attacker.name} → ${target.name} | 배율 x${multiplier} | ${prevHP} → ${newHP} (-${damage})`);
 
     // ✅ 카드 사망 처리

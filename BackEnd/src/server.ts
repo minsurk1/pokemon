@@ -49,7 +49,7 @@ const imagePath = path.resolve(__dirname, "../public/images");
 app.use("/images", express.static(imagePath));
 
 // ✅ React 정적 빌드 연결
-const frontPath = path.resolve(__dirname, "../../FrontEnd/dist");
+const frontPath = path.resolve(__dirname, "../FrontEnd/dist");
 app.use(express.static(frontPath));
 
 // ✅ React Router fallback

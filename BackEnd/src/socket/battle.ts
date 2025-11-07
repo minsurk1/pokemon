@@ -1033,27 +1033,29 @@ if (isValidObjectId) {
 
     game.lastShuffleTurn[playerId] = game.turnCount;
 
-    // 🔄 모든 유저에게 게임 상태 브로드캐스트
-    io.to(roomCode).emit("updateGameState", {
-      hp: game.hp,
-      decks: game.decks,
-      hands: game.hands,
-      graveyards: game.graveyards,
-      cost: game.cost,
-      turnCount: game.turnCount,
-      cardsInZone: game.cardsInZone,
-      activeEvent: game.activeEvent,
-      timeLeft: room.timeLeft,
-    });
-
-    // 🎯 셔플 결과는 요청자에게만 개별 전달
+    // ✅ 요청자에게 먼저 응답 (묘지 정보 포함)
     socket.emit("graveyardShuffled", {
       deckCount: shuffled.length,
       returned: returnedCards.length,
       failed: failedCards.length,
       penaltyHP,
-      graveCount: game.graveyards[playerId].length, // ✅ 남은 묘지 수 추가
+      graveyards: game.graveyards[playerId], // ✅ 남은 묘지 카드 정보 직접 전달
     });
+
+    // ✅ 약간의 지연 후 전체 broadcast (순서 문제 방지)
+    setTimeout(() => {
+      io.to(roomCode).emit("updateGameState", {
+        hp: game.hp,
+        decks: game.decks,
+        hands: game.hands,
+        graveyards: game.graveyards,
+        cost: game.cost,
+        turnCount: game.turnCount,
+        cardsInZone: game.cardsInZone,
+        activeEvent: game.activeEvent,
+        timeLeft: room.timeLeft,
+      });
+    }, 50); // 30~50ms 사이면 충분
 
     console.log(`♻️ ${playerId} 묘지 셔플: ${returnedCards.length}/${grave.length} 성공 / ${failedCards.length}장 실패 / (HP -${penaltyHP})`);
 

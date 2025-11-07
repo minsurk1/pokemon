@@ -82,10 +82,16 @@ function WaitPage() {
       setOpponentReady(false);
     };
 
-    const onGameStart = (data: { roomCode: string; currentTurn: string }) => {
+    const onGameStart = (data: { roomCode: string; currentTurn: string; timeLeft?: number }) => {
       console.log("🎮 gameStart 수신:", data);
+
       navigate(`/battle/${data.roomCode}`, {
-        state: { roomCode: data.roomCode, isHost },
+        state: {
+          roomCode: data.roomCode,
+          initialTurn: data.currentTurn, // ✅ 첫 턴 socket.id 함께 전달
+          timeLeft: data.timeLeft ?? 30, // ✅ 남은 시간(없으면 기본 30초)
+          isHost,
+        },
       });
     };
 

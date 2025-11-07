@@ -1177,3 +1177,23 @@
   color: #ff4d4d;
   animation: blink 1s infinite;
 }
+
+/* 묘지구역 셔플 버튼 */
+.clickable-grave {
+  cursor: pointer;
+  color: #ff5555;
+  font-weight: bold;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.clickable-grave:hover {
+  color: #ffaaaa;
+  transform: scale(1.05);
+  text-shadow: 0 0 6px #ff5555;
+}
+
+.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}

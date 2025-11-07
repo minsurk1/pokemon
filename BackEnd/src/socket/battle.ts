@@ -22,6 +22,17 @@ const SHUFFLE_PENALTY_HP = 300; // HP 감소량
 const SHUFFLE_MIN_GRAVE = 10; // 최소 묘지 카드 수
 const SHUFFLE_SUCCESS_RATE = 0.8; // 덱에 돌아올 확률 (0.0 ~ 1.0)
 
+// 카드의 총합 개수를 계산하는 함수
+function verifyCardTotal(game: GameState, playerId: string) {
+  const total =
+    (game.decks[playerId]?.length || 0) +
+    (game.hands[playerId]?.length || 0) +
+    (game.cardsInZone[playerId]?.length || 0) +
+    (game.graveyards[playerId]?.length || 0);
+
+  console.log(`🧮 ${playerId} 총 카드 수 = ${total}`);
+}
+
 // ✅ 기존 타이머 정지
 function stopSharedTimer(room: RoomInfo) {
   if (room.timer) {
@@ -89,15 +100,10 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
     console.log(`📌 선공 턴 시작 → turnCount = ${game.turnCount}`);
   }
 
-  const p1 = room.players[0];
-  const p2 = room.players[1];
-  game.cardsPlayed[p1] = [];
-  game.cardsPlayed[p2] = [];
-
   // ✅ n턴이면 n 코스트 증가 (최대 8)
   if (!game.cost[nextTurn]) game.cost[nextTurn] = 0;
   const costGain = game.turnCount; // n턴 = n 증가
-  game.cost[nextTurn] = Math.min(game.cost[nextTurn] + costGain, 8);
+  game.cost[nextTurn] = Math.min(game.cost[nextTurn] + costGain, MAX_COST);
 
   // ✅ 다음 턴 시작하면 해당 유저 카드 모두 공격 가능 복구
   if (!game.cardsInZone[nextTurn]) game.cardsInZone[nextTurn] = [];
@@ -185,30 +191,12 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 
   room.gameState = {
     currentTurn: player1,
-
     // ✅ 체력
-    hp: {
-      [player1]: MAX_HP,
-      [player2]: MAX_HP,
-    },
-
-    // ✅ 필드 및 사용된 카드
-    cardsPlayed: {
-      // ✅ 두 플레이어 모두 배열로
-      [player1]: [],
-      [player2]: [],
-    },
-    cardsInZone: {
-      [player1]: [],
-      [player2]: [],
-    },
-
+    hp: { [player1]: MAX_HP, [player2]: MAX_HP },
+    // ✅ 필드에 사용되는 카드
+    cardsInZone: { [player1]: [], [player2]: [] },
     // ✅ 코스트
-    cost: {
-      [player1]: 0,
-      [player2]: 0,
-    },
-
+    cost: { [player1]: 0, [player2]: 0 },
     // ✅ 새로 추가된 필드들
     decks: { [player1]: room.gameState?.decks?.[player1] || [], [player2]: room.gameState?.decks?.[player2] || [] },
     hands: { [player1]: [], [player2]: [] },
@@ -608,11 +596,18 @@ if (isValidObjectId) {
 
     console.log("🃏 summonedCard:", summonedCard);
 
+    // ✅ 손패에서 제거
+    game.hands[playerId] = game.hands[playerId].filter((c) => c.id !== card.id);
+
+    // ✅ 전장에 추가
     game.cardsInZone[playerId].push(summonedCard);
+
+    // ✅ 카드 총합 검증 (덱 + 손패 + 전장 + 묘지)
+    verifyCardTotal(game, playerId);
 
     // ✅ 7. 모든 플레이어에게 최신 상태 전송
     io.to(roomCode).emit("cardSummoned", {
-      ownerId: playerId, // ← 추가
+      ownerId: playerId,
       playerId,
       card: summonedCard,
       updatedCost: game.cost[playerId],
@@ -649,11 +644,6 @@ if (isValidObjectId) {
     const prevHP = game.hp[opponentId] ?? MAX_HP;
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;
-
-    if (!Array.isArray(game.cardsPlayed[socket.id])) {
-      game.cardsPlayed[socket.id] = [];
-    }
-    game.cardsPlayed[socket.id].push(card);
 
     io.to(roomCode).emit("cardPlayed", {
       playerId: socket.id,
@@ -745,6 +735,7 @@ if (isValidObjectId) {
     if (newHP <= 0) {
       if (!game.graveyards[opponentId]) game.graveyards[opponentId] = [];
       game.graveyards[opponentId].push(target);
+      verifyCardTotal(game, opponentId);
       game.cardsInZone[opponentId] = game.cardsInZone[opponentId].filter((c) => c.id !== targetId);
 
       io.to(roomCode).emit("cardDestroyed", {
@@ -836,18 +827,11 @@ if (isValidObjectId) {
   // ==================== 🃏 드로우 ====================
   socket.on("drawCard", ({ roomCode }) => {
     const room = rooms[roomCode];
-    if (!room?.gameState) {
-      console.log("❌ drawCard: room or gameState 없음");
-      return;
-    }
-
+    if (!room?.gameState) return;
     const playerId = socket.id;
     const game = room.gameState;
     const deck = game.decks[playerId];
     const hand = game.hands[playerId];
-
-    console.log(`🎯 drawCard 호출됨 by ${playerId}`);
-    console.log(`📦 현재 덱: ${deck?.length || 0}, 손패: ${hand?.length || 0}`);
 
     if (!deck || deck.length === 0) {
       io.to(playerId).emit("message", "덱이 비어 있습니다!");
@@ -859,17 +843,27 @@ if (isValidObjectId) {
       return;
     }
 
-    const randomIndex = Math.floor(Math.random() * deck.length);
-    const [drawnCard] = deck.splice(randomIndex, 1);
+    const drawnCard = deck.shift(); // 맨 위 카드 한 장
+    if (!drawnCard) return;
+
     hand.push(drawnCard);
 
     console.log(`🃏 ${playerId} 드로우: ${drawnCard.name} / 남은덱 ${deck.length}`);
-
     io.to(playerId).emit("cardDrawn", drawnCard);
 
-    // 수량 업데이트만
+    // ✅ 덱/손패 최신 반영
+    game.decks[playerId] = deck;
+    game.hands[playerId] = hand;
+
+    // ✅ 검증 로그
+    verifyCardTotal(game, playerId);
+
+    // ✅ 프론트 동기화
     io.to(roomCode).emit("updateGameState", {
-      decks: { [playerId]: game.decks[playerId].map((c) => ({ id: c.id })) },
+      decks: game.decks,
+      hands: game.hands,
+      graveyards: game.graveyards,
+      cardsInZone: game.cardsInZone,
     });
   });
 
@@ -895,6 +889,9 @@ if (isValidObjectId) {
     });
 
     console.log(`💀 ${destroyedCard.name}이(가) 묘지로 이동`);
+
+    // ✅ 카드 총합 검증
+    verifyCardTotal(game, playerId);
   });
 
   // ==================== ♻️ 묘지 셔플 ====================
@@ -948,6 +945,7 @@ if (isValidObjectId) {
     // ✅ 묘지에 실패한 카드만 남기기
     game.decks[playerId] = shuffled;
     game.graveyards[playerId] = failedCards;
+    verifyCardTotal(game, playerId);
 
     // ✅ 현재 턴을 기록 → 이번 턴엔 다시 셔플 불가
     game.lastShuffleTurn[playerId] = game.turnCount;

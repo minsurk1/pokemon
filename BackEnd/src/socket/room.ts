@@ -217,7 +217,6 @@ export default function roomHandler(io: Server, socket: Socket) {
         graveyards: {},
         cardsInZone: {},
         turnCount: 1,
-        cardsPlayed: {},
         // ✅ 추가
         activeEvent: null,
       };

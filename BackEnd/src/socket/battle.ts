@@ -5,6 +5,7 @@ import Card from "../models/Card"; // ✅ 추가
 import crypto from "crypto";
 import UserDeck from "../models/UserDeck"; // ✅ 덱 로딩용 추가
 import { calcDamage } from "./battle/calcDamage";
+import { detectTypeByName } from "../utils/detectTypeByName";
 
 // ======================= 🔁 공유 타이머 설정 =======================
 const TURN_TIME = 30; // 한 턴당 제한 시간 (초 단위)
@@ -508,7 +509,7 @@ export default function battleHandler(io: Server, socket: Socket) {
     game.decks[playerId] = deck.map((c: any) => ({
       id: String(c.id ?? c._id ?? c.cardId ?? "unknown"),
       name: String(c.name ?? c.cardName ?? "Unknown"),
-      cardType: c.cardType ?? c.type ?? "normal",
+      cardType: c.cardType ?? detectTypeByName(c.name) ?? "normal",
       attack: Number(c.attack ?? 0),
       hp: Number(c.hp ?? 0),
       maxhp: Number(c.maxhp ?? c.hp ?? 0),
@@ -642,7 +643,7 @@ if (isValidObjectId) {
       id: instanceId, // ← 매 소환마다 유일
       name: card.name,
       cardName: card.cardName,
-      cardType: card.cardType,
+      cardType: card.cardType ?? detectTypeByName(card.name) ?? "normal", // ✅ 타입 누락 시 자동 보정
       attack: card.attack,
       hp: card.hp,
       maxhp: card.maxhp ?? card.hp ?? 0,
@@ -767,6 +768,12 @@ if (isValidObjectId) {
       socket.emit("error", "공격 대상 카드를 찾을 수 없습니다.");
       return;
     }
+
+    // ✅ 카드 타입 누락 방어 (묘지 복귀 / 복사된 카드 대비)
+    attacker.cardType = attacker.cardType ?? detectTypeByName(attacker.name);
+    target.cardType = target.cardType ?? detectTypeByName(target.name);
+
+    console.log(`🧪 상성 검사: ${attacker.name}(${attacker.cardType}) → ${target.name}(${target.cardType})`);
 
     // ✅ 공격 계산
     const { damage, multiplier, message } = calcDamage(attacker, target);
@@ -1018,6 +1025,8 @@ if (isValidObjectId) {
       .map((c) => ({
         ...c,
         hp: c.maxhp ?? c.hp ?? 0,
+        // ✅ 타입 보정 추가
+        cardType: c.cardType ?? detectTypeByName(c.name) ?? "normal",
       }));
 
     // ✅ 2️⃣ 실패한 카드는 그대로 묘지에 남김
@@ -1110,6 +1119,10 @@ if (isValidObjectId) {
     const event = game.activeEvent as Event; // 타입 단언
     // ✅ 이벤트 공격 시 calcDamage 호출 (상성 무시)
     const { damage } = calcDamage(attacker, { type: "event", isEvent: true });
+
+    // ✅ 💬 로그 추가 — 타입과 데미지 확인용
+    console.log(`🎯 이벤트 공격: ${attacker.name}(${attacker.cardType}) → Event(${event.type}) | Damage ${damage}`);
+
     const prevHP = event.hp;
     const clampedHP = Math.max(0, prevHP - damage);
     const newHP = Math.max(0, prevHP - damage);

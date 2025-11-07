@@ -728,7 +728,7 @@ if (isValidObjectId) {
     }
   });
 
-  // ==================== ⚔️ 카드 간 공격 (또는 직접 공격) ====================
+  // ==================== ⚔️ 카드 간 공격 ====================
   socket.on("attackCard", ({ roomCode, attackerId, targetId }: { roomCode: string; attackerId: string; targetId?: string }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
@@ -758,8 +758,10 @@ if (isValidObjectId) {
 
     // ✅ 상대 필드 확인
     const opponentField = game.cardsInZone[opponentId] ?? [];
+
+    // ✅ 상대 필드가 비어 있으면 직접 공격을 안내
     if (opponentField.length === 0) {
-      socket.emit("error", "상대 필드가 비어 있습니다. 직접 공격을 시도하세요.");
+      socket.emit("error", "상대 필드가 비어 있습니다. 카드를 선택한 뒤 플레이어를 직접 클릭해 공격하세요!");
       return;
     }
 
@@ -770,20 +772,20 @@ if (isValidObjectId) {
       return;
     }
 
-    // ✅ 카드 타입 누락 방어 (묘지 복귀 / 복사된 카드 대비)
+    // ✅ 타입 보정 (묘지 복귀 등으로 타입 누락될 경우 대비)
     attacker.cardType = attacker.cardType ?? detectTypeByName(attacker.name);
     target.cardType = target.cardType ?? detectTypeByName(target.name);
 
     console.log(`🧪 상성 검사: ${attacker.name}(${attacker.cardType}) → ${target.name}(${target.cardType})`);
 
-    // ✅ 공격 계산
+    // ✅ 데미지 계산
     const { damage, multiplier, message } = calcDamage(attacker, target);
 
     const prevHP = Number(target.hp ?? 0);
     const newHP = Math.max(0, prevHP - damage);
     target.hp = newHP;
 
-    // 효과 메시지 전달
+    // ✅ 결과 전송
     io.to(roomCode).emit("attackResult", {
       attacker: attacker.name,
       defender: target.name,
@@ -792,9 +794,10 @@ if (isValidObjectId) {
       message,
     });
 
-    // ✅ 공격 성공 → 공격권 소모
+    // ✅ 공격권 소모
     attacker.canAttack = false;
 
+    // ✅ HP 갱신
     io.to(roomCode).emit("updateCardHP", { targetId, ownerId: opponentId, newHP });
     console.log(`⚔️ ${attacker.name} → ${target.name} | 배율 x${multiplier} | ${prevHP} → ${newHP} (-${damage})`);
 
@@ -813,13 +816,13 @@ if (isValidObjectId) {
       console.log(`💀 ${target.name}이(가) 쓰러져 묘지로 이동했습니다.`);
     }
 
-    // ✅ 상대 필드가 전부 사라졌다면 — 다음 공격부터 직접 공격 가능
+    // ✅ 상대 필드 비면 안내
     if (game.cardsInZone[opponentId].length === 0) {
       io.to(roomCode).emit("opponentFieldEmpty", { opponentId });
       console.log(`⚠️ ${opponentId}의 필드가 비었습니다. 다음 공격부터 직접 공격 가능`);
     }
 
-    // ✅ 승패 조건 확인 (플레이어 HP가 0 이하인 경우)
+    // ✅ 게임 종료 조건 검사
     const remainingHP = game.hp[opponentId] ?? MAX_HP;
     if (remainingHP <= 0) {
       io.to(roomCode).emit("gameOver", {
@@ -832,7 +835,7 @@ if (isValidObjectId) {
     }
   });
 
-  // ==================== ⚔️ 직접 공격 ====================
+  // ==================== ⚡ 직접 공격 ====================
   socket.on("directAttack", ({ roomCode, attackerId }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
@@ -842,42 +845,61 @@ if (isValidObjectId) {
     const opponentId = room.players.find((id) => id !== playerId);
     if (!opponentId) return;
 
+    // ✅ 턴 확인
     if (playerId !== game.currentTurn) {
       socket.emit("error", "당신의 턴이 아닙니다.");
       return;
     }
 
+    // ✅ 🔒 추가된 룰: 1턴에는 직접 공격 불가
+    if (game.turnCount <= 1) {
+      socket.emit("error", "❌ 1턴에는 직접 공격할 수 없습니다!");
+      return;
+    }
+
+    // ✅ 공격자 카드 찾기
     const attacker = game.cardsInZone[playerId]?.find((c) => c.id === attackerId);
     if (!attacker) {
       socket.emit("error", "공격할 카드를 찾을 수 없습니다.");
       return;
     }
 
-    // ✅ 공격 여부 확인
+    // ✅ 이미 공격한 카드면 중복 불가
     if (!attacker.canAttack) {
       socket.emit("error", `${attacker.name}은(는) 이미 이번 턴에 공격했습니다.`);
       return;
     }
 
-    // ✅ 공격 후 공격 불가로 변경
+    // ✅ 공격권 소모
     attacker.canAttack = false;
 
-    // ✅ 플레이어 직접 공격 → 상성 무시
-    const { damage, multiplier, message } = calcDamage(attacker, { type: "player", isPlayer: true });
-    console.log(`⚡ ${attacker.name} → 플레이어 직접 공격 | 배율 x${multiplier}, 피해 ${damage}`);
+    // ✅ 플레이어 직접 공격 (상성 무시)
+    const { damage, multiplier, message } = calcDamage(attacker, {
+      type: "player",
+      isPlayer: true,
+    });
 
     const prevHP = game.hp[opponentId] ?? MAX_HP;
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;
 
+    console.log(`⚡ [Direct Attack] ${attacker.name} → ${opponentId} | 피해 ${damage} | 배율 x${multiplier} | HP ${prevHP} → ${newHP}`);
+
+    // ✅ 브로드캐스트 (모든 클라이언트)
     io.to(roomCode).emit("directAttack", {
       attackerName: attacker.name,
+      attackerId: playerId,
+      defenderId: opponentId,
       damage,
       newHP,
       multiplier,
       message,
     });
 
+    // ✅ HP 업데이트 전송 (프론트 HP바 즉시 반영)
+    io.to(roomCode).emit("updateHP", { hp: game.hp });
+
+    // ✅ HP 0 → 게임 종료
     if (newHP <= 0) {
       io.to(roomCode).emit("gameOver", {
         winnerId: playerId,
@@ -887,11 +909,9 @@ if (isValidObjectId) {
       room.gameState = null;
       console.log(`🏁 ${playerId} 승리 (직접 공격으로 게임 종료)`);
     }
-
-    console.log(`⚡ ${attacker.name} → 직접 공격 (${damage} 피해)`);
   });
 
-  // ==================== 🃏 드로우 ====================
+  // ==================== 🃏 카드 드로우 ====================
   socket.on("drawCard", ({ roomCode }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
@@ -991,7 +1011,7 @@ if (isValidObjectId) {
 
     if (!game.graveyards[playerId]) game.graveyards[playerId] = [];
     if (!game.decks[playerId]) game.decks[playerId] = [];
-    if (!game.hp[playerId] && game.hp[playerId] !== 0) game.hp[playerId] = 0;
+    if (game.hp[playerId] === undefined) game.hp[playerId] = MAX_HP;
 
     const grave = game.graveyards[playerId];
     const deck = game.decks[playerId];

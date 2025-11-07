@@ -834,10 +834,11 @@ if (isValidObjectId) {
   });
 
   // ==================== 🃏 드로우 ====================
-  socket.on("drawCard", ({ roomCode, playerId }) => {
+  socket.on("drawCard", ({ roomCode }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
+    const playerId = socket.id; // ✅ 명시적
     const game = room.gameState;
     const deck = game.decks[playerId];
     const hand = game.hands[playerId];
@@ -856,8 +857,23 @@ if (isValidObjectId) {
     const [drawnCard] = deck.splice(randomIndex, 1);
     hand.push(drawnCard);
 
+    console.log(`🃏 ${playerId} 드로우: ${drawnCard.name} (남은 덱: ${deck.length})`);
+
+    // ✅ 본인에게 알림
     io.to(playerId).emit("cardDrawn", drawnCard);
-    console.log(`🃏 ${playerId} 드로우: ${drawnCard.name}`);
+
+    // ✅ 전체 상태 갱신 (덱 수량 포함)
+    io.to(roomCode).emit("updateGameState", {
+      hp: game.hp,
+      decks: game.decks,
+      hands: game.hands,
+      graveyards: game.graveyards,
+      cost: game.cost,
+      turnCount: game.turnCount,
+      cardsInZone: game.cardsInZone,
+      activeEvent: game.activeEvent,
+      timeLeft: room.timeLeft,
+    });
   });
 
   // ==================== 💀 카드 파괴 ====================

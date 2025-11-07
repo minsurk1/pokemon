@@ -215,6 +215,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   } | null>(null);
   const [dragOverTargetId, setDragOverTargetId] = useState<string | null>(null);
 
+  // 🧩 드래그 중인지 여부 감지 (공격 커서 표시용)
+  const [isDragActive, setIsDragActive] = useState(false);
+
   // 🧩 클릭 기반 고스트 프리뷰 상태 관리
   const [isHoldingCard, setIsHoldingCard] = useState(false);
   const [heldCard, setHeldCard] = useState<Card | null>(null);
@@ -1089,6 +1092,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     // ✅ 드래그로 카드 ID 전달
     e.dataTransfer.setData("attackerId", attackerId);
     e.dataTransfer.effectAllowed = "move";
+    setIsDragActive(true); // ✅ 드래그 시작 시 활성화
 
     // 기본 브라우저 고스트 숨기기
     const img = new Image();
@@ -1112,6 +1116,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const handleDragEnd = () => {
     setDragPreview(null);
     setDragOverTargetId(null);
+    setIsDragActive(false);
   };
 
   // ====== 카드 클릭 시 고스트 효과 ======
@@ -1283,6 +1288,94 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     setShowMessage(true);
   }, [isMyTurn, roomCode, socket]);
 
+  // ===== 직접 공격 처리 함수 =====
+  const handleDirectAttackOnEnemy = useCallback(
+    (attackerIdParam?: string) => {
+      if (!isMyTurn) {
+        setMessage("지금은 당신의 턴이 아닙니다!");
+        setShowMessage(true);
+        return;
+      }
+
+      if (enemyCardsInZone.length > 0) {
+        setMessage("상대 필드에 카드가 있습니다! 카드를 먼저 공격하세요!");
+        setShowMessage(true);
+        return;
+      }
+
+      // ✅ 추가된 규칙: 1턴에는 플레이어 직접 공격 금지
+      if (turn <= 1) {
+        setMessage("❌ 1턴에는 직접 공격할 수 없습니다!");
+        setShowMessage(true);
+        return;
+      }
+
+      const attackerId = attackerIdParam || selectedAttacker;
+      if (!attackerId) {
+        setMessage("먼저 공격할 내 카드를 선택하세요!");
+        setShowMessage(true);
+        return;
+      }
+
+      const attacker = myCardsInZone.find((c) => c.id === attackerId);
+      if (!attacker) return;
+
+      if (!attacker.canAttack) {
+        setMessage(`${attacker.name}은(는) 이미 이번 턴에 공격했습니다!`);
+        setShowMessage(true);
+        return;
+      }
+
+      socket.emit("directAttack", { roomCode, attackerId });
+      setMessage(`💥 ${attacker.name}이(가) 상대 플레이어를 직접 공격합니다!`);
+      setShowMessage(true);
+
+      setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
+      setSelectedAttacker(null);
+    },
+    [isMyTurn, enemyCardsInZone, selectedAttacker, myCardsInZone, roomCode, socket, turn]
+  );
+
+  // ⚔️ 적 카드존 클릭/드롭 처리 함수
+  const handleEnemyZoneInteraction = useCallback(
+    (e?: React.MouseEvent | React.DragEvent) => {
+      if (!isMyTurn) return;
+      if (!e) return; // ✅ undefined 방어 (타입 좁히기)
+
+      // ✅ 카드가 필드에 남아 있다면 직접 공격 불가
+      if (enemyCardsInZone.length > 0) return;
+
+      let attackerId: string | null = null;
+
+      // ✅ 드래그/클릭 구분 안전하게
+      if ("dataTransfer" in e && e.dataTransfer) {
+        attackerId = e.dataTransfer.getData("attackerId") || selectedAttacker;
+      } else {
+        attackerId = selectedAttacker;
+      }
+
+      if (!attackerId) {
+        setMessage("먼저 공격할 내 카드를 선택하세요!");
+        setShowMessage(true);
+        return;
+      }
+
+      const attacker = myCardsInZone.find((c) => c.id === attackerId);
+      if (!attacker) return;
+
+      if (!attacker.canAttack) {
+        setMessage(`${attacker.name}은(는) 이미 이번 턴에 공격했습니다!`);
+        setShowMessage(true);
+        return;
+      }
+
+      // ✅ 공격 실행
+      handleDirectAttackOnEnemy(attackerId);
+      setIsDragActive(false);
+    },
+    [isMyTurn, enemyCardsInZone, selectedAttacker, myCardsInZone, handleDirectAttackOnEnemy]
+  );
+
   // ✅ E키 감지: 최신 handleEndTurn 유지 + 중복 등록 방지
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1347,7 +1440,17 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="BottomLeft-Dia" />
         <div className="BottomRight-Dia" />
         <div className="enemy-card-bg" />
-        <div className="enemy-field" />
+        <div
+          className={`enemy-field ${
+            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
+          }`}
+          onClick={(e) => handleEnemyZoneInteraction(e)}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => handleEnemyZoneInteraction(e)}
+          role="button"
+          tabIndex={0}
+        />
+
         <div className="player-card-bg" />
         <div className="player-field" />
         {/* === 적 손패 === */}
@@ -1357,7 +1460,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           ))}
         </div>
         {/* === 적 필드 === */}
-        <div className="enemy-card-zone">
+        <div
+          className={`enemy-card-zone ${
+            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
+          }`}
+          onClick={(e) => handleEnemyZoneInteraction(e)}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => handleEnemyZoneInteraction(e)}
+        >
           {enemyCardsInZone.length > 0 ? (
             enemyCardsInZone.map((card) => (
               <div
@@ -1372,16 +1482,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   }
                   handleEnemyCardClick(card.id, e);
                 }}
-                onDragOver={(e) => e.preventDefault()} // ✅ 드롭 가능 영역
+                onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
-                  const attackerId = e.dataTransfer.getData("attackerId"); // ✅ 드래그 ID 가져오기
-                  if (attackerId) handleAttack(card.id, attackerId); // ✅ 공격 실행
+                  const attackerId = e.dataTransfer.getData("attackerId");
+                  if (attackerId) handleAttack(card.id, attackerId);
                 }}
-                role="button"
-                tabIndex={0}
               >
-                {/* ▼▼▼ [ 1. 적 카드 HP 바 수정 ] ▼▼▼ */}
                 <div className="enemy-card in-zone" onMouseDown={(e) => handleCardMouseDown(card, e)}>
                   <img src={getImageUrl(card.image)} alt={card.name} />
                   <div className="card-hp-bar">
@@ -1391,13 +1498,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                     </div>
                   </div>
                 </div>
-                {/* ▲▲▲ [ 1. 적 카드 HP 바 수정 ] ▲▲▲ */}
               </div>
             ))
           ) : (
-            <div className="empty-zone">상대 필드가 비어있습니다</div>
+            <div className="empty-zone-text">상대 필드가 비어있습니다</div>
           )}
         </div>
+
         {/* ▼ 중앙 타이머 라인 */}
         <BurnLineComponent timeLeft={turnTime} isMyTurn={isMyTurn} />
         {/* ▼ 내 카드 존 */}
@@ -1543,7 +1650,19 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       {/* === 오른쪽 사이드 영역 === */}
       <div className="right-container">
-        <div className="enemy-info">
+        <div
+          className={`enemy-info ${
+            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
+          }`}
+          onClick={() => handleDirectAttackOnEnemy()}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            const attackerId = e.dataTransfer.getData("attackerId");
+            if (attackerId) handleDirectAttackOnEnemy(attackerId);
+            setIsDragActive(false); // ✅ 드래그 종료 시 초기화
+          }}
+        >
           <div className="enemy-avatar" />
           <div className="hp-bar">
             <div className="hp-bar-inner" style={{ width: `${(enemyHP / MAX_HP) * 100}%` }} />

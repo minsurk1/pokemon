@@ -284,11 +284,11 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     });
   });
 
-  // 3) 원하는 경우, 타이머 숫자만 한 번 더 푸시(선택)
-  io.to(roomCode).emit("timeUpdate", room.timeLeft);
-
-  // 4) 공유 타이머 시작 (tick마다 timeUpdate, 시간만료 시 turnChanged 발생)
+  // 3) 공유 타이머 시작 (tick마다 timeUpdate, 시간만료 시 turnChanged 발생)
   startSharedTimer(io, roomCode, room);
+
+  // 4) 원하는 경우, 타이머 숫자만 한 번 더 푸시(선택)
+  io.to(roomCode).emit("timeUpdate", room.timeLeft);
 
   // ✅ 선공(방장) 첫 턴 시작 시 코스트 +1
   room.gameState.cost[player1] = 1;

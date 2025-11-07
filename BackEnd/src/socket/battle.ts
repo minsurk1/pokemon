@@ -963,62 +963,78 @@ if (isValidObjectId) {
   });
 
   // ==================== ♻️ 묘지 셔플 ====================
-  socket.on("shuffleGraveyard", ({ roomCode, playerId }) => {
+  socket.on("shuffleGraveyard", ({ roomCode }) => {
+    console.log("📨 shuffleGraveyard 수신:", { roomCode, from: socket.id });
+
     const room = rooms[roomCode];
-    if (!room?.gameState) return;
+    if (!room) {
+      console.log("⚠️ room 없음:", roomCode);
+      socket.emit("message", "방을 찾을 수 없습니다!");
+      return;
+    }
+    if (!room.gameState) {
+      console.log("⚠️ gameState 없음:", roomCode);
+      socket.emit("message", "게임이 아직 시작되지 않았습니다!");
+      return;
+    }
 
     const game = room.gameState;
 
+    // 클라이언트가 보낸 playerId를 쓰지 말고, 소켓의 id만 신뢰
+    const playerId = socket.id;
+
     if (!game.graveyards[playerId]) game.graveyards[playerId] = [];
     if (!game.decks[playerId]) game.decks[playerId] = [];
+    if (!game.hp[playerId] && game.hp[playerId] !== 0) game.hp[playerId] = 0;
 
     const grave = game.graveyards[playerId];
     const deck = game.decks[playerId];
 
-    // ✅ 방어 코드
     if (!grave || !deck) {
-      io.to(playerId).emit("message", "묘지 또는 덱 정보를 찾을 수 없습니다!");
+      console.log("⚠️ grave/deck 누락:", { hasGrave: !!grave, hasDeck: !!deck });
+      socket.emit("message", "묘지 또는 덱 정보를 찾을 수 없습니다!");
       return;
     }
 
-    // ✅ 쿨타임 저장용 객체 없으면 초기화
     if (!game.lastShuffleTurn) game.lastShuffleTurn = {};
-
-    // ✅ 0️⃣ 턴당 1회 제한 — 같은 턴에 이미 사용했는지 검사
     if (game.lastShuffleTurn[playerId] === game.turnCount) {
-      io.to(playerId).emit("message", "이 턴에는 이미 묘지를 셔플했습니다!");
+      console.log("⛔ 동일 턴 중복 요청 차단:", { playerId, turn: game.turnCount });
+      socket.emit("message", "이 턴에는 이미 묘지를 셔플했습니다!");
       return;
     }
 
-    // ✅ 1️⃣ 최소 카드 개수 조건: 묘지에 10장 이상일 때만 가능
     if (grave.length < SHUFFLE_MIN_GRAVE) {
-      io.to(playerId).emit("message", `묘지가 ${grave.length}장입니다. 최소 ${SHUFFLE_MIN_GRAVE}장 이상일 때만 셔플할 수 있습니다!`);
+      console.log("⛔ 최소 장수 미달:", { len: grave.length, need: SHUFFLE_MIN_GRAVE });
+      socket.emit("message", `묘지가 ${grave.length}장입니다. 최소 ${SHUFFLE_MIN_GRAVE}장 이상일 때만 셔플할 수 있습니다!`);
       return;
     }
 
-    // ✅ 2️⃣ HP 300 감소 패널티 적용
+    // ===== 실제 처리 =====
     const penaltyHP = SHUFFLE_PENALTY_HP;
     game.hp[playerId] = Math.max(0, (game.hp[playerId] ?? 0) - penaltyHP);
 
-    // ✅ 3️⃣ 확률적 실패형 (예: 80% 확률로만 회수됨)
     const successRate = SHUFFLE_SUCCESS_RATE;
-    const returnedCards = grave.filter(() => Math.random() < successRate);
+    // 카드 객체에 id가 반드시 있어야 함
+    const returnedCards = grave.filter((c) => Math.random() < successRate);
     const returnedIds = new Set(returnedCards.map((c) => c.id));
     const failedCards = grave.filter((c) => !returnedIds.has(c.id));
 
-    // ✅ 덱에 성공한 카드들만 합치기
     const combined = [...deck, ...returnedCards];
     const shuffled = combined.sort(() => Math.random() - 0.5);
 
-    // ✅ 묘지에 실패한 카드만 남기기
     game.decks[playerId] = shuffled;
     game.graveyards[playerId] = failedCards;
-    verifyCardTotal(game, playerId);
 
-    // ✅ 현재 턴을 기록 → 이번 턴엔 다시 셔플 불가
+    if (typeof verifyCardTotal === "function") {
+      try {
+        verifyCardTotal(game, playerId);
+      } catch (e) {
+        console.log("⚠️ verifyCardTotal 에러:", e);
+      }
+    }
+
     game.lastShuffleTurn[playerId] = game.turnCount;
 
-    // ✅ 전체 게임 상태 업데이트 (양쪽 다)
     io.to(roomCode).emit("updateGameState", {
       hp: game.hp,
       decks: game.decks,
@@ -1031,8 +1047,8 @@ if (isValidObjectId) {
       timeLeft: room.timeLeft,
     });
 
-    // ✅ 개별 플레이어에게 상세 알림
-    io.to(playerId).emit("graveyardShuffled", {
+    // Ack는 요청자 소켓에만
+    socket.emit("graveyardShuffled", {
       deckCount: shuffled.length,
       returned: returnedCards.length,
       failed: failedCards.length,
@@ -1041,7 +1057,6 @@ if (isValidObjectId) {
 
     console.log(`♻️ ${playerId} 묘지 셔플: ${returnedCards.length}/${grave.length} 성공 / ${failedCards.length}장 실패 / (HP -${penaltyHP})`);
 
-    // ✅ 체력 0 이하일 경우 게임 종료 처리
     if (game.hp[playerId] <= 0) {
       const opponentId = room.players.find((id) => id !== playerId);
       if (opponentId) {

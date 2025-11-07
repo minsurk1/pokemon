@@ -45,7 +45,7 @@ app.use("/api/userdeck", userDeckRoutes_1.default);
 const imagePath = path_1.default.resolve(__dirname, "../public/images");
 app.use("/images", express_1.default.static(imagePath));
 // ✅ React 정적 빌드 연결
-const frontPath = path_1.default.resolve(__dirname, "../../FrontEnd/dist");
+const frontPath = path_1.default.resolve(__dirname, "../FrontEnd/dist");
 app.use(express_1.default.static(frontPath));
 // ✅ React Router fallback
 app.get("*", (req, res) => {

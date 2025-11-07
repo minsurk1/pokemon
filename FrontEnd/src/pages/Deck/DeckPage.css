@@ -18,6 +18,7 @@
   z-index: 200;
   position: sticky;
   top: 0;
+  border-bottom: solid 2px rgb(86, 80, 80);
 }
 
 .deck-header-image {
@@ -32,34 +33,38 @@
   height: 12.5vh;
 }
 
-.deck-new-button{
+/* ▼▼▼ [수정됨] 버튼 크기 및 margin 조절 ▼▼▼ */
+.deck-new-button {
   font-family: "Do Hyeon", serif;
   background-color: transparent;
   color: #ffd803;
   border: none;
   border-radius: 14px;
-  padding: 1rem 2rem;
-  font-size: 1.18rem;
+  padding: 0.5rem 1.5rem; /* 패딩 줄임 */
+  font-size: 1rem; /* 폰트 크기 줄임 */
   font-weight: bold;
   box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
   text-shadow: 0 0 8px #ffd803;
   transition: box-shadow 0.2s, color 0.2s;
-  margin-bottom: 40px
+  margin-bottom: 0; /* margin 제거 */
+  cursor: pointer;
 }
 
-.deck-save-button{
+.deck-save-button {
   font-family: "Do Hyeon", serif;
   background-color: transparent;
   color: #ffd803;
   border: none;
   border-radius: 14px;
-  padding: 1rem 2rem;
-  font-size: 1.18rem;
+  padding: 0.5rem 1.5rem; /* 패딩 줄임 */
+  font-size: 1rem; /* 폰트 크기 줄임 */
   font-weight: bold;
   box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
   text-shadow: 0 0 8px #ffd803;
   transition: box-shadow 0.2s, color 0.2s;
+  cursor: pointer;
 }
+/* ▲▲▲ [수정됨] 버튼 크기 및 margin 조절 ▲▲▲ */
 
 .nav-button {
   font-family: "Do Hyeon", serif;
@@ -75,41 +80,90 @@
   transition: box-shadow 0.2s, color 0.2s;
 }
 
-.nav-button:hover {
+.nav-button:hover,
+.deck-new-button:hover,
+.deck-save-button:hover {
   color: #fff;
   box-shadow: 0 0 28px #ffd803, 0 0 60px #232946 inset;
 }
 
+/* ▼▼▼ [수정됨] sticky-deck-row를 세로 방향 Flex로 변경 ▼▼▼ */
 .sticky-deck-row {
-  display: flex; /* 자식 요소들을 가로로 나란히 배치 */
-  position: sticky; 
-  top: 12vh; /* 자식 요소의 top 값과 동일하게 설정하여 고정 */
+  display: flex;
+  flex-direction: column; /* 컨트롤러와 덱 목록을 세로로 배치 */
+  position: sticky;
+  top: 12vh; /* 상단 고정 위치 (navigation-section 높이만큼) */
   z-index: 100;
 }
+/* ▲▲▲ [수정됨] sticky-deck-row를 세로 방향 Flex로 변경 ▲▲▲ */
 
-.button-deck-sidebar {
-  position: sticky;
-  top: 12vh; /* 동일한 top 값 */
-  width: 8vw; /* 유지 */
-  height: 28vh; /* 유지 */
-  z-index: 101; /* 유지 */
-  background-color: #000000; 
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
-  border-top: 4px solid #1f3a4c;
+
+/* ▼▼▼ [추가됨] 버튼 + 필터 래퍼 ▼▼▼ */
+.deck-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 버튼과 필터를 양 끝으로 */
+  flex-wrap: wrap; /* 화면 좁아지면 줄바꿈 */
+  gap: 15px;
+  padding: 10px 20px;
+  background-image: url("../../assets/images/mainbg.png");
+  border-bottom: 4px solid #1f3a4c;
+  z-index: 101; /* 덱 목록보다 위 */
+  box-sizing: border-box;
+  width: 100%;
 }
 
+.button-group {
+  display: flex;
+  gap: 10px; /* new, save 버튼 사이 간격 */
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* 필터 라벨, 드롭다운 사이 간격 */
+  flex-wrap: wrap; /* 화면 좁아지면 줄바꿈 */
+}
+
+.filter-group select {
+  padding: 5px;
+  font-family: "Do Hyeon", sans-serif;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  height: 30px;
+}
+
+.filter-group span {
+  color: white;
+  font-family: "Do Hyeon", sans-serif;
+  font-size: 0.9rem;
+  margin-right: 5px;
+}
+/* ▲▲▲ [추가됨] 버튼 + 필터 래퍼 ▲▲▲ */
+
+
+/* ▼▼▼ [제거됨] .button-deck-sidebar (deck-controls로 대체) ▼▼▼ */
+/* .button-deck-sidebar { ... } */
+/* ▲▲▲ [제거됨] .button-deck-sidebar (deck-controls로 대체) ▲▲▲ */
+
+
+/* ▼▼▼ [수정됨] selected-cards-container의 불필요한 속성 제거 ▼▼▼ */
 .selected-cards-container {
-  position: sticky;
   font-family: "Do Hyeon", serif;
-  top: 12vh; 
-  width: calc(100% - 8vw); /* 유지 */ 
-  z-index: 100;
+  width: 100%; /* 부모 너비(100%)에 맞춤 */
+  z-index: 100; /* 컨트롤러보다 아래 */
   background-color: rgb(0, 0, 0);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border-top: 4px solid #1f3a4c;
+  border-top: none; /* 컨트롤러가 테두리를 가지므로 제거 */
   overflow-x: auto;
   white-space: nowrap;
+  box-sizing: border-box;
 }
+/* ▲▲▲ [수정됨] selected-cards-container의 불필요한 속성 제거 ▲▲▲ */
+
 .selected-cards-container::-webkit-scrollbar {
   height: 1vh;
 }
@@ -171,7 +225,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   position: relative;
-  margin-left: 1vw
+  margin-left: 1vw;
 }
 
 /* hover 효과 (살짝 위로 + 확대 + 그림자 강화 + glow) */

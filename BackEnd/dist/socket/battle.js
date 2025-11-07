@@ -6,10 +6,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.initializeBattle = initializeBattle;
 exports.default = battleHandler;
 const room_1 = require("./room"); // ✅ room.ts의 rooms 공유
-const Card_1 = __importDefault(require("../models/Card")); // ✅ 추가
-const crypto_1 = __importDefault(require("crypto"));
+const UserDeck_1 = __importDefault(require("../models/UserDeck")); // ✅ 덱 로딩용 추가
+const calcDamage_1 = require("./battle/calcDamage");
 // ======================= 🔁 공유 타이머 설정 =======================
 const TURN_TIME = 30; // 한 턴당 제한 시간 (초 단위)
+const MAX_HP = 2000;
+const MAX_COST = 8;
+const EVENT_REWARD = {
+    bomb: { dmg: 200 },
+    heal: { heal: 500 },
+    cost: { inc: 3 },
+};
 // ✅ 기존 타이머 정지
 function stopSharedTimer(room) {
     if (room.timer) {
@@ -20,11 +27,12 @@ function stopSharedTimer(room) {
 }
 // ✅ 타이머 시작 (모든 유저와 동기화)
 function startSharedTimer(io, roomCode, room) {
-    stopSharedTimer(room); // 혹시 이전 타이머가 있으면 정리
     if (room.timer)
-        return; // ✅ 이미 타이머가 있으면 중복 방지
-    room.timeLeft = TURN_TIME; // 타이머 리셋
-    io.to(roomCode).emit("timeUpdate", room.timeLeft); // 즉시 한번 전송 (UI 초기화용)
+        clearInterval(room.timer); // 가드
+    room.timer = null;
+    // ✅ 새 타이머 시작
+    room.timeLeft = TURN_TIME;
+    io.to(roomCode).emit("timeUpdate", room.timeLeft);
     room.timer = setInterval(() => {
         if (!room.gameState) {
             stopSharedTimer(room);
@@ -43,33 +51,92 @@ function startSharedTimer(io, roomCode, room) {
 function switchTurnAndRestartTimer(io, roomCode, room) {
     if (!room?.gameState)
         return;
+    // ✅ 턴 바꾸기 전에 항상 기존 타이머 정지 (중복 방지)
+    stopSharedTimer(room);
     const game = room.gameState;
-    const currentIndex = room.players.indexOf(game.currentTurn);
+    let currentIndex = room.players.indexOf(game.currentTurn);
+    // ✅ 혹시 currentTurn 값이 플레이어 목록에 없을 때(예: 상대가 먼저 나간 경우)
+    if (currentIndex === -1) {
+        console.warn(`⚠️ currentTurn not in room.players. Defaulting to host.`);
+        currentIndex = 0; // 방장 기준으로 리셋
+        game.currentTurn = room.players[0];
+    }
     const nextIndex = (currentIndex + 1) % room.players.length;
     const nextTurn = room.players[nextIndex];
     game.currentTurn = nextTurn;
-    game.turnCount = (game.turnCount ?? 0) + 1;
-    game.cardsPlayed = {};
-    // ✅ 다음 턴 유저 코스트 1 증가 (최대 8)
+    // ✅ 선공 기준으로만 turnCount 증가
+    const hostId = room.players[0];
+    if (nextTurn === hostId) {
+        game.turnCount = (game.turnCount ?? 0) + 1;
+        console.log(`📌 선공 턴 시작 → turnCount = ${game.turnCount}`);
+    }
+    const p1 = room.players[0];
+    const p2 = room.players[1];
+    game.cardsPlayed[p1] = [];
+    game.cardsPlayed[p2] = [];
+    // ✅ n턴이면 n 코스트 증가 (최대 8)
     if (!game.cost[nextTurn])
         game.cost[nextTurn] = 0;
-    game.cost[nextTurn] = Math.min(game.cost[nextTurn] + 1, 8);
-    // ✅ 턴이 바뀌면 새 턴 유저의 모든 카드를 다시 공격 가능 상태로 리셋
+    const costGain = game.turnCount; // n턴 = n 증가
+    game.cost[nextTurn] = Math.min(game.cost[nextTurn] + costGain, 8);
+    // ✅ 다음 턴 시작하면 해당 유저 카드 모두 공격 가능 복구
     if (game.cardsInZone[nextTurn]) {
-        game.cardsInZone[nextTurn].forEach((card) => (card.canAttack = true));
+        game.cardsInZone[nextTurn].forEach((c) => (c.canAttack = true));
     }
-    // ✅ 여기서 먼저 리셋
+    // ✅ 이벤트: 선공의 턴이고, turnCount가 5의 배수일 때 & 현재 이벤트가 없을 때만 생성
+    // ✅ 5턴마다 이벤트 처리 (선공 턴 기준)
+    if (nextTurn === hostId && game.turnCount > 0 && game.turnCount % 5 === 0) {
+        const imageServerUrl = process.env.IMAGE_URL || "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images";
+        // ✅ 기존 이벤트가 살아있다면 강제 제거
+        if (game.activeEvent) {
+            io.to(roomCode).emit("eventEnded", { eventId: game.activeEvent.id });
+            console.log(`⚠️ 기존 이벤트 제거됨 (턴 ${game.turnCount})`);
+            game.activeEvent = null;
+        }
+        // ✅ 이벤트 타입 랜덤 (1=bomb, 2=heal, 3=cost)
+        const eventType = Math.floor(Math.random() * 3) + 1;
+        const EVENT_MAP = {
+            1: { img: "bomb.png", msg: "폭발 몬스터 등장! 처치 시 상대 체력 감소!", hp: 400 },
+            2: { img: "heal.png", msg: "치유 몬스터 등장! 처치 시 체력 회복!", hp: 300 },
+            3: { img: "cost.png", msg: "에너지 몬스터 등장! 처치 시 코스트 +3!", hp: 350 },
+        };
+        const eventData = EVENT_MAP[eventType]; // ✅ TS가 이게 절대 undefined 아닐 걸 암
+        const newEvent = {
+            id: Date.now(),
+            type: eventType,
+            image: `${imageServerUrl}/${eventData.img}`,
+            message: eventData.msg,
+            hp: eventData.hp,
+            maxHp: eventData.hp,
+            effect: () => { },
+        };
+        game.activeEvent = newEvent;
+        io.to(roomCode).emit("eventTriggered", newEvent);
+        console.log(`🔥 새 이벤트 생성! type=${eventType}, turn=${game.turnCount}`);
+    }
+    // ✅ 타이머 리셋
     room.timeLeft = TURN_TIME;
-    // ✅ 변경 사항 모든 플레이어에 브로드캐스트
+    // ✅ 턴 정보 브로드캐스트
     io.to(roomCode).emit("turnChanged", {
         currentTurn: nextTurn,
         cost: game.cost,
         hp: game.hp,
-        turnCount: game.turnCount,
-        timeLeft: TURN_TIME, // ← 30초 보장
+        timeLeft: TURN_TIME,
     });
-    console.log(`🔁 자동 턴 전환: ${nextTurn} (타이머 리셋됨)`);
-    // ✅ 타이머 시작(내부에서 또 timeUpdate 쏴줌)
+    // ✅ 전체 상태 브로드캐스트
+    io.to(roomCode).emit("updateGameState", {
+        hp: game.hp,
+        decks: game.decks,
+        hands: game.hands,
+        graveyards: game.graveyards,
+        cost: game.cost,
+        turnCount: game.turnCount,
+        cardsInZone: game.cardsInZone,
+        activeEvent: game.activeEvent,
+        timeLeft: TURN_TIME,
+    });
+    console.log(`🔁 턴 전환 → ${nextTurn}, 턴: ${game.turnCount}`);
+    // ✅ 타이머 다시 시작
     startSharedTimer(io, roomCode, room);
 }
 // ======================= 배틀 초기화 =======================
@@ -88,15 +155,19 @@ function initializeBattle(io, roomCode, room) {
             [player2]: initialHP,
         },
         // ✅ 필드 및 사용된 카드
-        cardsPlayed: {},
+        cardsPlayed: {
+            // ✅ 두 플레이어 모두 배열로
+            [player1]: [],
+            [player2]: [],
+        },
         cardsInZone: {
             [player1]: [],
             [player2]: [],
         },
         // ✅ 코스트
         cost: {
-            [player1]: 1,
-            [player2]: 1,
+            [player1]: 0,
+            [player2]: 0,
         },
         // ✅ 새로 추가된 필드들
         decks: {
@@ -112,6 +183,7 @@ function initializeBattle(io, roomCode, room) {
             [player2]: [],
         },
         turnCount: 1, // 첫 턴은 1로 시작
+        activeEvent: null, // ✅ [추가] 이벤트 상태 초기화
     };
     // ✅ 전투 시작과 동시에 타이머용 잔여 시간 먼저 세팅
     room.timeLeft = TURN_TIME;
@@ -123,10 +195,16 @@ function initializeBattle(io, roomCode, room) {
         cost: { ...room.gameState.cost },
         turnCount: 1,
     });
+    // ✅ 바로 다음에 추가 — 첫 턴 즉시 배포
+    io.to(roomCode).emit("turnChanged", {
+        currentTurn: player1,
+        cost: room.gameState.cost,
+        hp: room.gameState.hp,
+        timeLeft: 30, // TURN_TIME
+    });
     // 2) 각 플레이어에게 전체 스냅샷(복구용 정답 상태)
     room.players.forEach((pid) => {
         io.to(pid).emit("updateGameState", {
-            currentTurn: room.gameState.currentTurn,
             hp: room.gameState.hp,
             decks: room.gameState.decks,
             hands: room.gameState.hands,
@@ -134,63 +212,127 @@ function initializeBattle(io, roomCode, room) {
             cost: room.gameState.cost,
             turnCount: room.gameState.turnCount,
             cardsInZone: room.gameState.cardsInZone,
-            timeLeft: room.timeLeft, // ← 이미 세팅된 값
+            activeEvent: room.gameState.activeEvent, // ✅ [추가] 이벤트 상태 전송
+            timeLeft: room.timeLeft,
         });
     });
-    // ❌ (처음엔) turnChanged 내보내지 않음
-    // io.to(roomCode).emit("turnChanged", { ... })  ← 제거
     // 3) 원하는 경우, 타이머 숫자만 한 번 더 푸시(선택)
     io.to(roomCode).emit("timeUpdate", room.timeLeft);
     // 4) 공유 타이머 시작 (tick마다 timeUpdate, 시간만료 시 turnChanged 발생)
     startSharedTimer(io, roomCode, room);
+    // ✅ 선공(방장) 첫 턴 시작 시 코스트 +1
+    room.gameState.cost[player1] = 1;
     console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
-    // ✅ 첫 턴 즉시 전송 (가장 중요)
-    io.to(roomCode).emit("turnChanged", {
-        currentTurn: player1,
-        cost: { ...room.gameState.cost },
-        hp: { ...room.gameState.hp },
-        turnCount: 1,
-        timeLeft: TURN_TIME,
-    });
 }
 // ======================= 배틀 이벤트 핸들러 =======================
 function battleHandler(io, socket) {
     console.log(`⚔️ 배틀 소켓 연결됨: ${socket.id}`);
-    // ✅ 방에 이미 속해있는 유저가 battle 페이지 재입장 시 자동 동기화
     // ✅ BattlePage 진입 시 현재 상태 즉시 동기화
-    socket.on("joinRoom", ({ roomCode }) => {
+    socket.on("joinRoom", async ({ roomCode }) => {
         const room = room_1.rooms[roomCode];
-        if (!room?.gameState)
+        if (!room)
             return;
         console.log(`📥 BattlePage joinRoom → ${socket.id}`);
         // 소켓을 다시 방에 넣어준다 (새 탭 / 새 페이지 고려)
         socket.join(roomCode);
-        const g = room.gameState;
-        // ✅ 전체 상태 즉시 전달
-        socket.emit("updateGameState", {
-            currentTurn: g.currentTurn,
-            hp: g.hp,
-            decks: g.decks,
-            hands: g.hands,
-            graveyards: g.graveyards,
-            cost: g.cost,
-            turnCount: g.turnCount,
-            cardsInZone: g.cardsInZone,
-        });
-        // ✅ 타이머 동기화
-        if (room.timeLeft !== undefined) {
-            socket.emit("timeUpdate", room.timeLeft);
+        if (room.gameState && (!room.gameState.decks[socket.id] || room.gameState.decks[socket.id].length === 0)) {
+            try {
+                // 소켓에 저장된 userId를 사용 (로그인 시 저장되어 있어야 함)
+                const userId = socket.userId;
+                if (userId) {
+                    const userDeck = await UserDeck_1.default.findOne({ user: userId }).populate({
+                        path: "cards.card",
+                        select: "cardName cardType tier attack hp maxhp cost image2D",
+                    });
+                    if (userDeck && userDeck.cards && userDeck.cards.length > 0) {
+                        const deckCards = userDeck.cards.map((c) => {
+                            const card = c.card; // ✅ populate된 실제 카드 데이터
+                            return {
+                                id: String(card._id),
+                                name: card.cardName,
+                                cardType: card.cardType,
+                                tier: card.tier,
+                                attack: card.attack,
+                                hp: card.hp,
+                                maxhp: card.hp,
+                                cost: card.cost,
+                                image2D: card.image2D, // ✅ DB의 원본 이미지 사용
+                                canAttack: true,
+                            };
+                        });
+                        // 덱 셔플
+                        const shuffled = [...deckCards].sort(() => Math.random() - 0.5);
+                        // 1코스트 카드 풀
+                        const oneCostPool = shuffled.filter((c) => Number(c.cost) === 1);
+                        let startingHand;
+                        if (oneCostPool.length > 0) {
+                            // 1코 카드 중 랜덤 1장
+                            const guaranteed = oneCostPool[Math.floor(Math.random() * oneCostPool.length)];
+                            // 나머지 덱에서 해당 카드 제외
+                            const pool = shuffled.filter((c) => c.id !== guaranteed.id);
+                            startingHand = [guaranteed, ...pool.slice(0, 2)];
+                            room.gameState.hands[socket.id] = startingHand;
+                            room.gameState.decks[socket.id] = pool.slice(2);
+                        }
+                        else {
+                            // 1코스트 없을 경우 일반 셔플
+                            startingHand = shuffled.slice(0, 3);
+                            room.gameState.hands[socket.id] = startingHand;
+                            room.gameState.decks[socket.id] = shuffled.slice(3);
+                        }
+                        console.log(`✅ ${socket.id} 덱 자동 로딩 완료: ${deckCards.length}장`);
+                        console.log("🎴 서버 덱 이미지 체크:", deckCards.map(c => ({
+                            name: c.name,
+                            image2D: c.image2D
+                        })));
+                    }
+                }
+            }
+            catch (error) {
+                console.error(`❌ 덱 로딩 실패 (${socket.id}):`, error);
+            }
         }
-        // ✅ 현재 턴 재전송 (초기 turnChanged 놓쳤을 때)
-        if (room.gameState?.currentTurn) {
-            socket.emit("turnChanged", {
-                currentTurn: room.gameState.currentTurn,
-                cost: room.gameState.cost,
-                hp: room.gameState.hp,
-                turnCount: room.gameState.turnCount,
-                timeLeft: room.timeLeft ?? TURN_TIME,
+        // ✅ 덱은 있는데 손패가 비었으면 손패 생성 (재접속 처리)
+        if (room.gameState && room.gameState.decks[socket.id]?.length > 0 && room.gameState.hands[socket.id]?.length === 0) {
+            const deck = room.gameState.decks[socket.id];
+            // 🔍 로그 확인용 (디버깅)
+            console.log(`🔁 재입장 감지 → ${socket.id}, 덱 ${deck.length}장, 손패 없음. 자동 손패 생성`);
+            const oneCostPool = deck.filter((c) => Number(c.cost) === 1);
+            let startingHand;
+            if (oneCostPool.length > 0) {
+                const guaranteed = oneCostPool[Math.floor(Math.random() * oneCostPool.length)];
+                const pool = deck.filter((c) => c.id !== guaranteed.id);
+                startingHand = [guaranteed, ...pool.slice(0, 2)];
+                room.gameState.hands[socket.id] = startingHand;
+                room.gameState.decks[socket.id] = pool.slice(2);
+            }
+            else {
+                startingHand = deck.slice(0, 3);
+                room.gameState.hands[socket.id] = startingHand;
+                room.gameState.decks[socket.id] = deck.slice(3);
+            }
+            console.log(`♻️ 손패 재생성 완료:`, startingHand.map(c => c.name));
+        }
+        // ✅ 게임 상태가 있으면 전체 상태 즉시 전달
+        if (room.gameState) {
+            const g = room.gameState;
+            socket.emit("updateGameState", {
+                hp: g.hp,
+                decks: g.decks,
+                hands: g.hands,
+                graveyards: g.graveyards,
+                cost: g.cost,
+                turnCount: g.turnCount,
+                cardsInZone: g.cardsInZone,
+                activeEvent: g.activeEvent, // ✅ [추가] 이벤트 상태 전송
+                timeLeft: room.timeLeft,
             });
-            console.log("📨 joinRoom → 기존 턴 재전송:", room.gameState.currentTurn);
+            // ✅ 타이머 동기화
+            if (room.timeLeft !== undefined) {
+                socket.emit("timeUpdate", room.timeLeft);
+            }
+            if (!room.gameState || !room.gameState.currentTurn)
+                return;
         }
         console.log(`✅ BattlePage 상태 동기화 완료 → ${socket.id}`);
     });
@@ -201,7 +343,6 @@ function battleHandler(io, socket) {
             return;
         const g = room.gameState;
         socket.emit("updateGameState", {
-            currentTurn: g.currentTurn,
             hp: g.hp,
             decks: g.decks,
             hands: g.hands,
@@ -209,6 +350,7 @@ function battleHandler(io, socket) {
             cost: g.cost,
             turnCount: g.turnCount,
             cardsInZone: g.cardsInZone,
+            activeEvent: g.activeEvent, // ✅ [추가] 이벤트 상태 전송
             timeLeft: room.timeLeft,
         });
         console.log(`🔁 ${socket.id} 요청 → 현재 게임 상태 재전송 완료`);
@@ -220,9 +362,11 @@ function battleHandler(io, socket) {
             return;
         // 이미 덱 있는 플레이어가 재전송하면 무시
         if (room.gameState.decks[socket.id]?.length > 0) {
+            console.log(`⚠️ ${socket.id} 덱이 이미 존재함. 중복 전송 무시.`);
             return;
         }
-        room.gameState.decks[socket.id] = deck;
+        // ObjectId만 들어오도록 보장 (문자열이면 문자열로 유지)
+        room.gameState.decks[socket.id] = deck.map((c) => c.id ?? c);
         console.log(`📥 덱 저장: ${socket.id}`, deck.length);
     });
     // ==================== 🃏 카드 소환 ====================
@@ -235,7 +379,7 @@ function battleHandler(io, socket) {
         // ✅ 1. cost 안전 변환
         let costValue = 0;
         if (card && card.cost !== undefined) {
-            costValue = parseInt(card.cost, 10);
+            costValue = Number.parseInt(card.cost, 10);
             if (isNaN(costValue))
                 costValue = 0;
         }
@@ -260,27 +404,41 @@ function battleHandler(io, socket) {
         // ✅ 5. 코스트 차감
         game.cost[playerId] = Math.max(0, playerCost - costValue);
         // ✅ 6. DB에서 카드 세부정보 보강
+        /*
         let dbCardData = null;
         if (!card || (!card.name && !card.cardName)) {
-            socket.emit("error", "잘못된 카드 데이터입니다.");
-            return;
+          socket.emit("error", "잘못된 카드 데이터입니다.");
+          return;
         }
-        try {
-            dbCardData = await Card_1.default.findOne({
-                cardName: card.name || card.cardName,
-            });
-        }
-        catch (err) {
-            console.error("❌ DB 카드 조회 실패:", err);
-        }
+    
+        const isValidObjectId = typeof card.id === "string" && /^[0-9a-fA-F]{24}$/.test(card.id);
+    
+    if (isValidObjectId) {
+      try {
+        dbCardData = await Card.findById(card.id);
+      } catch (err) {
+        console.error("❌ DB 카드 조회 실패:", err);
+      }
+    } else {
+      console.log(`⚠️ '${card.id}' 은(는) ObjectId가 아님 → DB조회 생략`);
+    }
+    */
+        const img = card.image2D ?? card.image ?? `${card.cardType}Tier${card.tier}.png`;
         const summonedCard = {
-            ...card,
-            id: card.id ?? crypto_1.default.randomUUID(), // ✅ 서버에서 id 보장
-            cost: costValue,
-            cardType: dbCardData?.cardType ?? card.cardType ?? "normal",
-            image2D: dbCardData?.image2D ?? card.image2D ?? "default.png",
-            canAttack: true, // ✅ 기본값 추가
+            id: card.id,
+            name: card.name,
+            cardName: card.cardName,
+            cardType: card.cardType,
+            attack: card.attack,
+            hp: card.hp,
+            maxhp: card.maxhp,
+            cost: card.cost,
+            tier: card.tier,
+            image2D: img, // ✅ 무조건 값 존재
+            image: img, // ✅ 프론트 fallback 방지
+            canAttack: true,
         };
+        console.log("🃏 summonedCard:", summonedCard);
         game.cardsInZone[playerId].push(summonedCard);
         // ✅ 7. 모든 플레이어에게 최신 상태 전송
         io.to(roomCode).emit("cardSummoned", {
@@ -307,18 +465,22 @@ function battleHandler(io, socket) {
         const opponentId = room.players.find((id) => id !== socket.id);
         if (!opponentId)
             return;
-        const damage = Math.max(0, Number(card.attack ?? 0));
+        const { damage, multiplier } = (0, calcDamage_1.calcDamage)(card, { cardType: "normal" });
         const prevHP = game.hp[opponentId] ?? 2000;
         const newHP = Math.max(0, prevHP - damage);
         game.hp[opponentId] = newHP;
-        game.cardsPlayed[socket.id] = card;
+        if (!Array.isArray(game.cardsPlayed[socket.id])) {
+            game.cardsPlayed[socket.id] = [];
+        }
+        game.cardsPlayed[socket.id].push(card);
         io.to(roomCode).emit("cardPlayed", {
             playerId: socket.id,
             card,
             damage,
+            multiplier,
             hp: game.hp,
         });
-        console.log(`💥 ${socket.id} → ${opponentId}에게 ${damage} 피해`);
+        console.log(`💥 ${socket.id} → ${opponentId} | 배율 x${multiplier} | 피해 ${damage}`);
         if (newHP <= 0) {
             io.to(roomCode).emit("gameOver", {
                 winnerId: socket.id,
@@ -358,7 +520,7 @@ function battleHandler(io, socket) {
         const opponentField = game.cardsInZone[opponentId] ?? [];
         if (opponentField.length === 0) {
             socket.emit("error", "상대 필드가 비어 있습니다. 직접 공격을 시도하세요.");
-            return; // 아직 공격권 소모하지 않음
+            return;
         }
         // ✅ 공격 대상 찾기
         const target = opponentField.find((c) => c.id === targetId);
@@ -367,14 +529,21 @@ function battleHandler(io, socket) {
             return;
         }
         // ✅ 공격 계산
-        const atk = Math.max(0, Number(attacker.attack ?? 0));
+        const { damage, multiplier } = (0, calcDamage_1.calcDamage)(attacker, target);
         const prevHP = Number(target.hp ?? 0);
-        const newHP = Math.max(0, prevHP - atk);
+        const newHP = Math.max(0, prevHP - damage);
         target.hp = newHP;
+        // 효과 메시지 전달
+        io.to(roomCode).emit("effectMessage", {
+            attacker: attacker.name,
+            defender: target.name,
+            multiplier,
+            damage,
+        });
         // ✅ 공격 성공 → 공격권 소모
         attacker.canAttack = false;
         io.to(roomCode).emit("updateCardHP", { targetId, newHP });
-        console.log(`⚔️ ${attacker.name}(${atk}) → ${target.name} | HP ${prevHP} → ${newHP}`);
+        console.log(`⚔️ ${attacker.name} → ${target.name} | 배율 x${multiplier} | ${prevHP} → ${newHP} (-${damage})`);
         // ✅ 카드 사망 처리
         if (newHP <= 0) {
             if (!game.graveyards[opponentId])
@@ -430,7 +599,7 @@ function battleHandler(io, socket) {
         }
         // ✅ 공격 후 공격 불가로 변경
         attacker.canAttack = false;
-        const damage = Math.max(0, Number(attacker.attack ?? 0));
+        const { damage, multiplier } = (0, calcDamage_1.calcDamage)(attacker, { cardType: "normal" });
         const prevHP = game.hp[opponentId] ?? 2000;
         const newHP = Math.max(0, prevHP - damage);
         game.hp[opponentId] = newHP;
@@ -450,6 +619,111 @@ function battleHandler(io, socket) {
         }
         console.log(`⚡ ${attacker.name} → 직접 공격 (${damage} 피해)`);
     });
+    // ✅ 클라이언트가 턴 요청 시 즉시 재전송
+    socket.on("requestTurn", ({ roomCode }) => {
+        const room = room_1.rooms[roomCode];
+        if (!room?.gameState)
+            return;
+        const g = room.gameState;
+        socket.emit("turnChanged", {
+            currentTurn: g.currentTurn,
+            cost: g.cost,
+            hp: g.hp,
+            timeLeft: room.timeLeft ?? 30,
+        });
+    });
+    // ++++++++++++++++ [추가된 이벤트 공격 핸들러] ++++++++++++++++
+    socket.on("attackEvent", ({ roomCode, attackerId, eventId }) => {
+        const room = room_1.rooms[roomCode];
+        if (!room?.gameState)
+            return;
+        const game = room.gameState;
+        const playerId = socket.id;
+        if (playerId !== game.currentTurn) {
+            return socket.emit("error", "당신의 턴이 아닙니다.");
+        }
+        // ✅ 1. 공격자 확인
+        const attacker = game.cardsInZone[playerId]?.find((c) => c.id === attackerId);
+        if (!attacker) {
+            return socket.emit("error", "공격할 카드를 찾을 수 없습니다.");
+        }
+        if (!attacker.canAttack) {
+            return socket.emit("error", `${attacker.name}은(는) 이미 공격했습니다.`);
+        }
+        // ✅ 2. 이벤트 확인
+        if (!game.activeEvent || game.activeEvent.id !== eventId) {
+            return socket.emit("error", "존재하지 않거나 만료된 이벤트입니다.");
+        }
+        const event = game.activeEvent; // 타입 단언
+        const atk = Math.max(0, Number(attacker.attack ?? 0));
+        const prevHP = event.hp;
+        const newHP = Math.max(0, prevHP - atk);
+        event.hp = newHP;
+        attacker.canAttack = false; // ✅ 공격권 소모
+        // ✅ 모든 클라이언트에 이벤트 HP 갱신 알림
+        io.to(roomCode).emit("eventHPUpdate", { eventId: event.id, newHP });
+        console.log(`⚔️ ${attacker.name}(${atk}) → 이벤트(${event.id}) | HP ${prevHP} → ${newHP}`);
+        // ✅ 이벤트가 파괴되었는지 확인
+        if (newHP <= 0) {
+            const eventType = event.type;
+            const opponentId = room.players.find((id) => id !== playerId);
+            if (!opponentId)
+                return; // or throw error
+            if (eventType === 1) {
+                // ✅ 폭발 몬스터 → 상대 체력 감소
+                const damage = 200;
+                game.hp[opponentId] = Math.max(0, (game.hp[opponentId] ?? 0) - damage);
+                io.to(roomCode).emit("directAttack", {
+                    attackerName: "이벤트 피해",
+                    damage,
+                    newHP: game.hp[opponentId],
+                });
+            }
+            else if (eventType === 2) {
+                // ✅ 치유 몬스터 → 내 체력 회복
+                const heal = 500;
+                game.hp[playerId] = Math.min(MAX_HP, (game.hp[playerId] ?? 0) + EVENT_REWARD.heal.heal);
+                io.to(roomCode).emit("directAttack", {
+                    attackerName: "이벤트 회복",
+                    damage: -heal,
+                    newHP: game.hp[playerId],
+                });
+            }
+            else if (eventType === 3) {
+                // ✅ 에너지 몬스터 → 코스트 +3 (최대 8)
+                game.cost[playerId] = Math.min(MAX_COST, (game.cost[playerId] ?? 0) + EVENT_REWARD.cost.inc);
+                io.to(roomCode).emit("updateGameState", {
+                    hp: game.hp,
+                    decks: game.decks,
+                    hands: game.hands,
+                    graveyards: game.graveyards,
+                    cost: game.cost,
+                    turnCount: game.turnCount,
+                    cardsInZone: game.cardsInZone,
+                    activeEvent: game.activeEvent, // null
+                    timeLeft: room.timeLeft,
+                });
+            }
+            // ✅ 이벤트 제거 및 알림
+            const endedId = event.id;
+            game.activeEvent = null;
+            io.to(roomCode).emit("eventEnded", { eventId: endedId });
+            console.log(`🎁 이벤트 완료! 타입 ${eventType} 보상 적용`);
+            // ✅ 이벤트 종료 후 전체 상태 동기화
+            io.to(roomCode).emit("updateGameState", {
+                hp: game.hp,
+                decks: game.decks,
+                hands: game.hands,
+                graveyards: game.graveyards,
+                cost: game.cost,
+                turnCount: game.turnCount,
+                cardsInZone: game.cardsInZone,
+                activeEvent: game.activeEvent, // null
+                timeLeft: room.timeLeft,
+            });
+        }
+    });
+    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     // ==================== 🔁 턴 종료 ====================
     socket.on("endTurn", ({ roomCode }) => {
         const room = room_1.rooms[roomCode];
@@ -459,7 +733,7 @@ function battleHandler(io, socket) {
             socket.emit("error", "당신의 턴이 아닙니다.");
             return;
         }
-        switchTurnAndRestartTimer(io, roomCode, room); // ✅ turnCount 증가, canAttack 리셋, 코스트 증가, 타이머 재시작 모두 포함
+        switchTurnAndRestartTimer(io, roomCode, room);
     });
     // ==================== 🚪 연결 해제 ====================
     socket.on("disconnecting", () => {

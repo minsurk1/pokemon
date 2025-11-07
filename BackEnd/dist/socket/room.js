@@ -179,6 +179,8 @@ function roomHandler(io, socket) {
                 cardsInZone: {},
                 turnCount: 1,
                 cardsPlayed: {},
+                // ✅ 추가
+                activeEvent: null,
             };
         }
         // ✅ 덱을 그대로 저장 (id 배열이 아님)

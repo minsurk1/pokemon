@@ -11,16 +11,16 @@ interface DeckPageProps {
 }
 
 interface UserCardDTO {
-  _id?: string; // ✅ DB에서 온 카드 ObjectId
-  id?: string; // ✅ 안전용
+  _id?: string;
+  id?: string;
   cardId: string;
   name: string;
-  cardType?: string; // ✅ 타입 추가
+  cardType?: string;
   attack: number;
   hp: number;
   tier: number;
   image: string;
-  image2D?: string; // ✅ 서버 이미지 필드
+  image2D?: string;
   count: number;
   cost?: number;
 }
@@ -33,6 +33,11 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
 
   const [message, setMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
+
+  const [filterType, setFilterType] = useState("all");
+  // ▼▼▼ [버그 수정] setFilterType -> setFilterCost로 변경 ▼▼▼
+  const [filterCost, setFilterCost] = useState("all"); 
+  // ▲▲▲ [버그 수정] setFilterType -> setFilterCost로 변경 ▲▲▲
 
   const maxSelectedCards = 30;
   const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api";
@@ -53,8 +58,8 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const normalized = res.data.userCards.map((c: any) => ({
-          _id: c._id ?? c.cardId, // ✅ DB ID 보존
-          cardId: c.cardId ?? c._id, // ✅ fallback
+          _id: c._id ?? c.cardId,
+          cardId: c.cardId ?? c._id,
           name: c.cardName ?? c.name,
           cardType: c.cardType ?? "normal",
           attack: c.attack ?? 0,
@@ -85,7 +90,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
         if (res.data.deck) {
           const deckCards: UserCardDTO[] = res.data.deck.cards.map((c: any) => ({
             ...c,
-            image: c.image2D || c.image || `${c.cardType ?? "fire"}Tier${c.tier ?? 1}.png`,
+            image: c.image2D || c.image || `${c.cardType ?? "normal"}Tier${c.tier ?? 1}.png`,
           }));
 
           const deckCardIds = deckCards.map((c) => c.id || c.cardId);
@@ -146,7 +151,6 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
   const saveDeck = async () => {
     if (!token) return;
 
-    // 🔥 덱에 포함된 카드의 상세정보를 전부 포함하도록 수정
     const formattedDeck = selectedCards
       .map((cardId) => {
         const card = allUserCards.find((c) => c.cardId === cardId);
@@ -161,10 +165,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
           maxhp: card.hp ?? 0,
           cost: card.cost ?? card.tier ?? 1,
           tier: card.tier ?? 1,
-          // ✅ image2D 필드 유지
           image2D: card.image2D || card.image,
-
-          // ✅ 백업용 image (optional)
           image: card.image,
         };
       })
@@ -173,7 +174,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
     try {
       await axios.post(
         `${API_URL}/userdeck/single/save`,
-        { cards: formattedDeck }, // ✅ 카드 전체 데이터로 전송
+        { cards: formattedDeck },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log("🔥 formattedDeck before save:", formattedDeck);
@@ -187,8 +188,11 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
   };
 
   return (
-    <div className="deck-page">
-      {/* 상단 네비게이션 */}
+    // ▼▼▼ [수정 1] .deck-page가 배경을 갖도록 CSS에서 수정할 예정 ▼▼▼
+    <div className="deck-page"> 
+
+      {/* <div className="deck-header"/> */} 
+
       <div className="navigation-section">
         <button className="nav-button" onClick={() => navigate("/main")}>
           메인페이지
@@ -199,28 +203,54 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
         </button>
       </div>
 
-      {/* 버튼 영역 */}
-      {/* <div style={{ margin: "1rem" }}>
-        <button className="nav-button" onClick={createNewDeck} style={{ marginRight: "1rem" }}>
-          새 덱 생성
-        </button>
-        <button className="nav-button" onClick={saveDeck}>
-          덱 저장
-        </button>
-      </div> */}
-
       <div className="sticky-deck-row">
-        <div className="button-deck-sidebar">
-          {/* 버튼 영역 */}
-          <div style={{ margin: "1rem" }}>
-            <button className="deck-new-button" onClick={createNewDeck} style={{ marginRight: "1rem" }}>
-              new
-            </button>
-            <button className="deck-save-button" onClick={saveDeck}>
-              save
-            </button>
+        <div className="deck-controls">
+          <div className="button-group">
+            <button className="deck-new-button" onClick={createNewDeck}>new</button>
+            <button className="deck-save-button" onClick={saveDeck}>save</button>
+          </div>
+
+          <div className="filter-group">
+            <span style={{ color: "white", fontFamily: "Do Hyeon", marginRight: "5px" }}>속성:</span>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              style={{ marginRight: "10px", padding: "5px", fontFamily: "Do Hyeon", borderRadius: "5px", height: "30px" }}
+            >
+              <option value="all">모든 속성</option>
+              <option value="fire">불</option>
+              <option value="water">물</option>
+              <option value="forest">풀</option>
+              <option value="electric">전기</option>
+              <option value="fly">비행</option>
+              <option value="ice">얼음</option>
+              <option value="land">땅</option>
+              <option value="normal">노말</option>
+              <option value="poison">독</option>
+              <option value="worm">벌레</option>
+              <option value="esper">에스퍼</option>
+              <option value="legend">전설</option>
+            </select>
+
+            <span style={{ color: "white", fontFamily: "Do Hyeon", marginRight: "5px" }}>코스트:</span>
+            <select
+              value={filterCost}
+              onChange={(e) => setFilterCost(e.target.value)}
+              style={{ padding: "5px", fontFamily: "Do Hyeon", borderRadius: "5px", height: "30px" }}
+            >
+              <option value="all">모든 코스트</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+            </select>
           </div>
         </div>
+
         <div className="selected-cards-container">
           <div className="selected-cards">
             {Array.from({ length: maxSelectedCards }).map((_, index) => {
@@ -245,29 +275,37 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
           </div>
         </div>
       </div>
+      
       {showMessage && (
         <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1" onClose={() => setShowMessage(false)}>
           {message}
         </MessageBox>
       )}
 
-      {/* 보유 카드 목록 */}
       <div className="card-list">
-        {userCards.map((card) => (
-          <div key={card.cardId} className={`card ${card.count <= 0 ? "unowned" : ""}`} onClick={() => selectCard(card.cardId)}>
-            <img
-              src={card.image.startsWith("http") ? card.image : `${IMAGE_URL}/images/${card.image}`}
-              alt={card.name}
-              className={card.count <= 0 ? "grayscale" : ""}
-            />
-            <div className="card-info">
-              <p className="card-name">{card.name}</p>
-              <p>공격력: {card.attack}</p>
-              <p>HP: {card.hp}</p>
-              <p>등급: {card.tier}</p>
-              <p>보유 수량: {card.count}</p>
+        {userCards
+          .filter(card => {
+            return filterType === "all" ? true : card.cardType === filterType;
+          })
+          .filter(card => {
+            const cardCost = card.cost ?? card.tier;
+            return filterCost === "all" ? true : String(cardCost) === filterCost;
+          })
+          .map((card) => (
+            <div key={card.cardId} className={`card ${card.count <= 0 ? "unowned" : ""}`} onClick={() => selectCard(card.cardId)}>
+              <img
+                src={card.image.startsWith("http") ? card.image : `${IMAGE_URL}/images/${card.image}`}
+                alt={card.name}
+                className={card.count <= 0 ? "grayscale" : ""}
+              />
+              <div className="card-info">
+                <p className="card-name">{card.name}</p>
+                <p>공격력: {card.attack}</p>
+                <p>HP: {card.hp}</p>
+                <p>등급: {card.tier}</p>
+                <p>보유 수량: {card.count}</p>
+              </div>
             </div>
-          </div>
         ))}
       </div>
     </div>

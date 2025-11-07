@@ -836,12 +836,18 @@ if (isValidObjectId) {
   // ==================== 🃏 드로우 ====================
   socket.on("drawCard", ({ roomCode }) => {
     const room = rooms[roomCode];
-    if (!room?.gameState) return;
+    if (!room?.gameState) {
+      console.log("❌ drawCard: room or gameState 없음");
+      return;
+    }
 
-    const playerId = socket.id; // ✅ 플레이어 식별 확실히
+    const playerId = socket.id;
     const game = room.gameState;
     const deck = game.decks[playerId];
     const hand = game.hands[playerId];
+
+    console.log(`🎯 drawCard 호출됨 by ${playerId}`);
+    console.log(`📦 현재 덱: ${deck?.length || 0}, 손패: ${hand?.length || 0}`);
 
     if (!deck || deck.length === 0) {
       io.to(playerId).emit("message", "덱이 비어 있습니다!");
@@ -853,21 +859,17 @@ if (isValidObjectId) {
       return;
     }
 
-    // ✅ 랜덤 카드 1장 드로우
     const randomIndex = Math.floor(Math.random() * deck.length);
-    const [drawnCard] = deck.splice(randomIndex, 1); // 덱에서 제거
-    hand.push(drawnCard); // 손패에 추가
+    const [drawnCard] = deck.splice(randomIndex, 1);
+    hand.push(drawnCard);
 
-    console.log(`🃏 ${playerId} 드로우: ${drawnCard.name} (남은 덱: ${deck.length})`);
+    console.log(`🃏 ${playerId} 드로우: ${drawnCard.name} / 남은덱 ${deck.length}`);
 
-    // ✅ 본인에게만 새 카드 알림
     io.to(playerId).emit("cardDrawn", drawnCard);
 
-    // ✅ 덱 수량만 갱신(상대방은 굳이 카드 내용 받을 필요 없음)
+    // 수량 업데이트만
     io.to(roomCode).emit("updateGameState", {
-      decks: {
-        [playerId]: game.decks[playerId].map((c) => ({ id: c.id })), // 카드 내용은 제외 (수량용)
-      },
+      decks: { [playerId]: game.decks[playerId].map((c) => ({ id: c.id })) },
     });
   });
 

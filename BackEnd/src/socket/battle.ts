@@ -179,7 +179,6 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
 
 // ======================= 배틀 초기화 =======================
 export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
-  // 디버깅 로그
   console.log(`🎯 initializeBattle 실행됨 (${roomCode})`);
   console.log("🧩 room.players =", room.players);
 
@@ -187,35 +186,37 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     console.error(`❌ 전투 초기화 실패: ${roomCode} 방에 플레이어가 2명 미만`);
     return;
   }
+
   const [player1, player2] = room.players;
 
+  // ✅ 게임 상태 초기화
   room.gameState = {
     currentTurn: player1,
-    // ✅ 체력
     hp: { [player1]: MAX_HP, [player2]: MAX_HP },
-    // ✅ 필드에 사용되는 카드
     cardsInZone: { [player1]: [], [player2]: [] },
-    // ✅ 코스트
     cost: { [player1]: 0, [player2]: 0 },
-    // ✅ 새로 추가된 필드들
-    decks: { [player1]: room.gameState?.decks?.[player1] || [], [player2]: room.gameState?.decks?.[player2] || [] },
+    decks: {
+      [player1]: room.gameState?.decks?.[player1] || [],
+      [player2]: room.gameState?.decks?.[player2] || [],
+    },
     hands: { [player1]: [], [player2]: [] },
     graveyards: { [player1]: [], [player2]: [] },
-    turnCount: 1, // 첫 턴은 1로 시작
-    activeEvent: null, // ✅ [추가] 이벤트 상태 초기화
-    lastShuffleTurn: {}, // ✅ 추가 (안전 초기화)
+    turnCount: 1,
+    activeEvent: null,
+    lastShuffleTurn: {},
   };
 
   // ✅ 초기 손패 생성 (각 플레이어 3장, 1코스트 카드 1장 보장)
   for (const pid of [player1, player2]) {
     const fullDeck = [...(room.gameState.decks[pid] || [])];
+
     if (fullDeck.length < 3) {
       io.to(pid).emit("message", "덱에 카드가 3장 이상 있어야 게임을 시작할 수 있습니다!");
       continue;
     }
 
     // 1코스트 카드 필터링
-    const lowCostCards = fullDeck.filter((c: any) => c.cost === 1);
+    const lowCostCards = fullDeck.filter((c: any) => Number(c.cost) === 1);
     const guaranteedLowCost = lowCostCards.length > 0 ? [lowCostCards[Math.floor(Math.random() * lowCostCards.length)]] : [];
 
     // 나머지 카드 중 랜덤 2장
@@ -228,8 +229,8 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     // 손패 등록
     room.gameState.hands[pid] = drawnCards;
 
-    // 덱에서 제거
-    room.gameState.decks[pid] = fullDeck.filter((c) => !drawnCards.includes(c));
+    // 덱에서 손패 제거
+    room.gameState.decks[pid] = fullDeck.filter((c) => !drawnCards.some((h) => h.id === c.id));
 
     console.log(
       `🎴 초기 손패 (${pid}):`,
@@ -237,27 +238,40 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     );
   }
 
-  // ✅ 전투 시작과 동시에 타이머용 잔여 시간 먼저 세팅
+  // ✅ 여기서 서버 상태를 확정 반영 + 프론트에 동기화 추가
+  io.to(roomCode).emit("updateGameState", {
+    hp: room.gameState.hp,
+    decks: room.gameState.decks,
+    hands: room.gameState.hands,
+    graveyards: room.gameState.graveyards,
+    cost: room.gameState.cost,
+    turnCount: room.gameState.turnCount,
+    cardsInZone: room.gameState.cardsInZone,
+    activeEvent: room.gameState.activeEvent,
+    timeLeft: TURN_TIME,
+  });
+
+  // ✅ 전투 시작 시점 타이머 초기화
   if (room.timeLeft === undefined) room.timeLeft = TURN_TIME;
 
-  // 1) 게임 시작 알림 (UI용 배너/사운드 등)
+  // ✅ UI용 게임 시작 알림
   io.to(roomCode).emit("gameStart", {
     roomCode,
     currentTurn: player1,
-    hp: { ...room.gameState!.hp },
-    cost: { ...room.gameState!.cost },
+    hp: { ...room.gameState.hp },
+    cost: { ...room.gameState.cost },
     turnCount: 1,
   });
 
-  // ✅ 바로 다음에 추가 — 첫 턴 즉시 배포
+  // ✅ 첫 턴 정보 배포
   io.to(roomCode).emit("turnChanged", {
     currentTurn: player1,
     cost: room.gameState.cost,
     hp: room.gameState.hp,
-    timeLeft: 30, // TURN_TIME
+    timeLeft: TURN_TIME,
   });
 
-  // 2) 각 플레이어에게 전체 스냅샷(복구용 정답 상태)
+  // ✅ 각 플레이어에게 완전한 상태 스냅샷 전송 (복구용)
   room.players.forEach((pid) => {
     io.to(pid).emit("updateGameState", {
       hp: room.gameState!.hp,
@@ -267,18 +281,15 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
       cost: room.gameState!.cost,
       turnCount: room.gameState!.turnCount,
       cardsInZone: room.gameState!.cardsInZone,
-      activeEvent: room.gameState!.activeEvent, // ✅ [추가] 이벤트 상태 전송
+      activeEvent: room.gameState!.activeEvent,
       timeLeft: room.timeLeft,
     });
   });
 
-  // 3) 공유 타이머 시작 (tick마다 timeUpdate, 시간만료 시 turnChanged 발생)
+  // ✅ 공유 타이머 시작
   startSharedTimer(io, roomCode, room);
 
-  // 4) 원하는 경우, 타이머 숫자만 한 번 더 푸시(선택)
-  io.to(roomCode).emit("timeUpdate", room.timeLeft);
-
-  // ✅ 선공(방장) 첫 턴 시작 시 코스트 +1
+  // ✅ 첫 턴 코스트 보정
   room.gameState.cost[player1] = 1;
 
   console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
@@ -849,7 +860,11 @@ if (isValidObjectId) {
     hand.push(drawnCard);
 
     console.log(`🃏 ${playerId} 드로우: ${drawnCard.name} / 남은덱 ${deck.length}`);
-    io.to(playerId).emit("cardDrawn", drawnCard);
+    io.to(playerId).emit("cardDrawn", {
+      card: drawnCard, // ✅ 항상 { card: {...} } 구조
+      decks: game.decks,
+      hands: game.hands,
+    });
 
     // ✅ 덱/손패 최신 반영
     game.decks[playerId] = deck;

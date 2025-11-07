@@ -213,8 +213,6 @@ const keepCardShape = (c: any): Card => {
 
 // ===================== BattlePage =====================
 function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
-  console.log("🎯 selectedDeck 확인:", selectedDeck);
-
   const socket = useSocket();
   const myId = socket.id ?? "";
 

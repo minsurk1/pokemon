@@ -921,12 +921,17 @@ if (isValidObjectId) {
     // ✅ 검증 로그
     verifyCardTotal(game, playerId);
 
-    // ✅ 프론트 동기화
+    // ✅ 프론트 동기화 (activeEvent 포함)
     io.to(roomCode).emit("updateGameState", {
+      hp: game.hp,
       decks: game.decks,
       hands: game.hands,
       graveyards: game.graveyards,
       cardsInZone: game.cardsInZone,
+      cost: game.cost,
+      turnCount: game.turnCount,
+      activeEvent: game.activeEvent, // ✅ 핵심
+      timeLeft: room.timeLeft,
     });
   });
 

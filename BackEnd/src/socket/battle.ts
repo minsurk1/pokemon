@@ -189,67 +189,56 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
 
   const [player1, player2] = room.players;
 
-  // ✅ 게임 상태 초기화
-  room.gameState = {
-    currentTurn: player1,
-    hp: { [player1]: MAX_HP, [player2]: MAX_HP },
-    cardsInZone: { [player1]: [], [player2]: [] },
-    cost: { [player1]: 0, [player2]: 0 },
-    decks: {
-      [player1]: room.gameState?.decks?.[player1] || [],
-      [player2]: room.gameState?.decks?.[player2] || [],
-    },
-    hands: { [player1]: [], [player2]: [] },
-    graveyards: { [player1]: [], [player2]: [] },
-    turnCount: 1,
-    activeEvent: null,
-    lastShuffleTurn: {},
-  };
+  // ✅ 기존 gameState가 있으면 유지
+  if (!room.gameState) {
+    room.gameState = {
+      currentTurn: player1,
+      hp: { [player1]: MAX_HP, [player2]: MAX_HP },
+      cardsInZone: { [player1]: [], [player2]: [] },
+      cost: { [player1]: 0, [player2]: 0 },
+      decks: { [player1]: [], [player2]: [] },
+      hands: { [player1]: [], [player2]: [] },
+      graveyards: { [player1]: [], [player2]: [] },
+      turnCount: 1,
+      activeEvent: null,
+      lastShuffleTurn: {},
+    };
+  }
 
-  // ✅ 초기 손패 생성 (각 플레이어 3장, 1코스트 카드 1장 보장)
+  if (!room.gameState.decks[player1]) room.gameState.decks[player1] = [];
+  if (!room.gameState.decks[player2]) room.gameState.decks[player2] = [];
+
+  const game = room.gameState;
+
+  // ✅ 초기 손패 생성 (덱이 있고, 손패가 비었을 때만)
   for (const pid of [player1, player2]) {
-    const fullDeck = [...(room.gameState.decks[pid] || [])];
+    const fullDeck = [...(game.decks[pid] || [])];
 
-    if (fullDeck.length < 3) {
-      io.to(pid).emit("message", "덱에 카드가 3장 이상 있어야 게임을 시작할 수 있습니다!");
+    if (fullDeck.length === 0) {
+      console.warn(`⚠️ ${pid}의 덱이 비어 있습니다. (sendDeck이 먼저 와야 할 수도 있음)`);
       continue;
     }
 
-    // 1코스트 카드 필터링
-    const lowCostCards = fullDeck.filter((c: any) => Number(c.cost) === 1);
-    const guaranteedLowCost = lowCostCards.length > 0 ? [lowCostCards[Math.floor(Math.random() * lowCostCards.length)]] : [];
+    if (!game.hands[pid] || game.hands[pid].length === 0) {
+      // 1코스트 카드 필터링
+      const lowCostCards = fullDeck.filter((c: any) => Number(c.cost) === 1);
+      const guaranteedLowCost = lowCostCards.length > 0 ? [lowCostCards[Math.floor(Math.random() * lowCostCards.length)]] : [];
 
-    // 나머지 카드 중 랜덤 2장
-    const remainingCards = fullDeck.filter((c) => !guaranteedLowCost.includes(c));
-    const otherDraws = remainingCards.sort(() => Math.random() - 0.5).slice(0, 2);
+      const remainingCards = fullDeck.filter((c) => !guaranteedLowCost.includes(c));
+      const otherDraws = remainingCards.sort(() => Math.random() - 0.5).slice(0, 2);
+      const drawnCards = [...guaranteedLowCost, ...otherDraws];
 
-    // 최종 손패 3장
-    const drawnCards = [...guaranteedLowCost, ...otherDraws];
+      game.hands[pid] = drawnCards;
+      game.decks[pid] = fullDeck.filter((c) => !drawnCards.some((h) => h.id === c.id));
 
-    // 손패 등록
-    room.gameState.hands[pid] = drawnCards;
-
-    // 덱에서 손패 제거
-    room.gameState.decks[pid] = fullDeck.filter((c) => !drawnCards.some((h) => h.id === c.id));
-
-    console.log(
-      `🎴 초기 손패 (${pid}):`,
-      drawnCards.map((c) => c.name)
-    );
+      console.log(
+        `🎴 초기 손패 (${pid}):`,
+        drawnCards.map((c) => c.name)
+      );
+    } else {
+      console.log(`🟢 ${pid}는 이미 손패가 존재함 (패스)`);
+    }
   }
-
-  // ✅ 여기서 서버 상태를 확정 반영 + 프론트에 동기화 추가
-  io.to(roomCode).emit("updateGameState", {
-    hp: room.gameState.hp,
-    decks: room.gameState.decks,
-    hands: room.gameState.hands,
-    graveyards: room.gameState.graveyards,
-    cost: room.gameState.cost,
-    turnCount: room.gameState.turnCount,
-    cardsInZone: room.gameState.cardsInZone,
-    activeEvent: room.gameState.activeEvent,
-    timeLeft: TURN_TIME,
-  });
 
   // ✅ 전투 시작 시점 타이머 초기화
   if (room.timeLeft === undefined) room.timeLeft = TURN_TIME;
@@ -258,39 +247,37 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
   io.to(roomCode).emit("gameStart", {
     roomCode,
     currentTurn: player1,
-    hp: { ...room.gameState.hp },
-    cost: { ...room.gameState.cost },
+    hp: { ...game.hp },
+    cost: { ...game.cost },
     turnCount: 1,
   });
 
   // ✅ 첫 턴 정보 배포
   io.to(roomCode).emit("turnChanged", {
     currentTurn: player1,
-    cost: room.gameState.cost,
-    hp: room.gameState.hp,
+    cost: game.cost,
+    hp: game.hp,
     timeLeft: TURN_TIME,
   });
 
-  // ✅ 각 플레이어에게 완전한 상태 스냅샷 전송 (복구용)
-  room.players.forEach((pid) => {
-    io.to(pid).emit("updateGameState", {
-      hp: room.gameState!.hp,
-      decks: room.gameState!.decks,
-      hands: room.gameState!.hands,
-      graveyards: room.gameState!.graveyards,
-      cost: room.gameState!.cost,
-      turnCount: room.gameState!.turnCount,
-      cardsInZone: room.gameState!.cardsInZone,
-      activeEvent: room.gameState!.activeEvent,
-      timeLeft: room.timeLeft,
-    });
+  // ✅ 전체 상태 동기화
+  io.to(roomCode).emit("updateGameState", {
+    hp: game.hp,
+    decks: game.decks,
+    hands: game.hands,
+    graveyards: game.graveyards,
+    cost: game.cost,
+    turnCount: game.turnCount,
+    cardsInZone: game.cardsInZone,
+    activeEvent: game.activeEvent,
+    timeLeft: room.timeLeft,
   });
 
-  // ✅ 공유 타이머 시작
+  // ✅ 타이머 시작
   startSharedTimer(io, roomCode, room);
 
-  // ✅ 첫 턴 코스트 보정
-  room.gameState.cost[player1] = 1;
+  // ✅ 첫 턴 코스트 +1
+  game.cost[player1] = 1;
 
   console.log(`🎮 전투 시작: 방 ${roomCode}, 첫 턴 → ${player1}`);
 }
@@ -460,16 +447,65 @@ export default function battleHandler(io: Server, socket: Socket) {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
+    // ✅ game을 최상단에서 선언 (이게 핵심!)
+    const game = room.gameState!;
     const playerId = socket.id;
-    const existingDeck = room.gameState.decks[playerId] || [];
+    const existingDeck = game.decks[playerId] || [];
 
+    // 이미 덱이 있는 경우
     if (existingDeck.length > 0) {
       console.log(`⚠️ ${playerId}의 덱이 이미 존재함. 중복 전송 무시.`);
+
+      // ✅ 손패가 비어 있다면 여기서 바로 생성
+      if (!game.hands[playerId] || game.hands[playerId].length === 0) {
+        const fullDeck = [...existingDeck];
+        const costOneCards = fullDeck.filter((c) => Number(c.cost) === 1);
+        const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
+
+        let hand: any[] = [];
+        if (costOneCards.length > 0) {
+          const guaranteed = shuffle(costOneCards)[0];
+          const remainingPool = fullDeck.filter((c) => c.id !== guaranteed.id);
+          const randomTwo = shuffle(remainingPool).slice(0, 2);
+          hand = [guaranteed, ...randomTwo];
+        } else {
+          hand = shuffle(fullDeck).slice(0, 3);
+        }
+
+        const handIds = new Set(hand.map((c) => c.id));
+        const remainingDeck = fullDeck.filter((c) => !handIds.has(c.id));
+
+        game.hands[playerId] = hand;
+        game.decks[playerId] = remainingDeck;
+
+        // ✅ 내 화면 업데이트
+        io.to(playerId).emit("updateGameState", {
+          decks: game.decks,
+          hands: game.hands,
+          graveyards: game.graveyards,
+          cost: game.cost,
+          hp: game.hp,
+        });
+
+        // ✅ 전체 싱크 (여기서 game 참조 오류 해결됨)
+        io.to(roomCode).emit("updateGameState", {
+          hp: game.hp,
+          decks: game.decks,
+          hands: game.hands,
+          graveyards: game.graveyards,
+          cost: game.cost,
+          turnCount: game.turnCount,
+          cardsInZone: game.cardsInZone,
+          activeEvent: game.activeEvent,
+          timeLeft: room.timeLeft,
+        });
+      }
+
       return;
     }
 
     // ✅ 1️⃣ 덱 전체 저장
-    room.gameState.decks[playerId] = deck.map((c: any) => ({
+    game.decks[playerId] = deck.map((c: any) => ({
       id: String(c.id ?? c._id ?? c.cardId ?? "unknown"),
       name: String(c.name ?? c.cardName ?? "Unknown"),
       cardType: c.cardType ?? c.type ?? "normal",
@@ -482,17 +518,16 @@ export default function battleHandler(io: Server, socket: Socket) {
       canAttack: true,
     }));
 
-    const game = room.gameState;
-    const fullDeck = [...room.gameState.decks[playerId]];
+    const fullDeck = [...game.decks[playerId]];
 
-    // ✅ 2️⃣ 덱 유효성 검사 (이 부분을 여기에 넣는다!)
+    // ✅ 2️⃣ 덱 유효성 검사
     if (fullDeck.length < 3) {
       io.to(playerId).emit("message", "덱에 카드가 3장 이상 있어야 게임을 시작할 수 있습니다!");
       console.warn(`⚠️ ${playerId}의 덱이 너무 작음 (${fullDeck.length}장) → 게임 불가`);
       return;
     }
 
-    // ✅ 3️⃣ 1코스트 포함 손패 구성
+    // ✅ 3️⃣ 손패 구성
     const costOneCards = fullDeck.filter((c) => Number(c.cost) === 1);
     const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
 
@@ -517,6 +552,19 @@ export default function battleHandler(io: Server, socket: Socket) {
 
     // ✅ 4️⃣ 클라이언트에 즉시 반영
     io.to(playerId).emit("updateGameState", {
+      hp: game.hp,
+      decks: game.decks,
+      hands: game.hands,
+      graveyards: game.graveyards,
+      cost: game.cost,
+      turnCount: game.turnCount,
+      cardsInZone: game.cardsInZone,
+      activeEvent: game.activeEvent,
+      timeLeft: room.timeLeft,
+    });
+
+    // ✅ 5️⃣ 전체 싱크
+    io.to(roomCode).emit("updateGameState", {
       hp: game.hp,
       decks: game.decks,
       hands: game.hands,

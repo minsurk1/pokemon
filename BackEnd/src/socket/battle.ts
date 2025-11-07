@@ -748,9 +748,9 @@ if (isValidObjectId) {
       game.cardsInZone[opponentId] = game.cardsInZone[opponentId].filter((c) => c.id !== targetId);
 
       io.to(roomCode).emit("cardDestroyed", {
-        targetId,
-        ownerId: opponentId,
-        graveCount: game.graveyards[opponentId].length, // ✅ 추가
+        playerId: opponentId,
+        card: target,
+        graveCount: game.graveyards[opponentId].length,
       });
       console.log(`💀 ${target.name}이(가) 쓰러져 묘지로 이동했습니다.`);
     }

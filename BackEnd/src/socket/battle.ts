@@ -838,7 +838,7 @@ if (isValidObjectId) {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
-    const playerId = socket.id; // ✅ 명시적
+    const playerId = socket.id; // ✅ 플레이어 식별 확실히
     const game = room.gameState;
     const deck = game.decks[playerId];
     const hand = game.hands[playerId];
@@ -853,26 +853,21 @@ if (isValidObjectId) {
       return;
     }
 
+    // ✅ 랜덤 카드 1장 드로우
     const randomIndex = Math.floor(Math.random() * deck.length);
-    const [drawnCard] = deck.splice(randomIndex, 1);
-    hand.push(drawnCard);
+    const [drawnCard] = deck.splice(randomIndex, 1); // 덱에서 제거
+    hand.push(drawnCard); // 손패에 추가
 
     console.log(`🃏 ${playerId} 드로우: ${drawnCard.name} (남은 덱: ${deck.length})`);
 
-    // ✅ 본인에게 알림
+    // ✅ 본인에게만 새 카드 알림
     io.to(playerId).emit("cardDrawn", drawnCard);
 
-    // ✅ 전체 상태 갱신 (덱 수량 포함)
+    // ✅ 덱 수량만 갱신(상대방은 굳이 카드 내용 받을 필요 없음)
     io.to(roomCode).emit("updateGameState", {
-      hp: game.hp,
-      decks: game.decks,
-      hands: game.hands,
-      graveyards: game.graveyards,
-      cost: game.cost,
-      turnCount: game.turnCount,
-      cardsInZone: game.cardsInZone,
-      activeEvent: game.activeEvent,
-      timeLeft: room.timeLeft,
+      decks: {
+        [playerId]: game.decks[playerId].map((c) => ({ id: c.id })), // 카드 내용은 제외 (수량용)
+      },
     });
   });
 

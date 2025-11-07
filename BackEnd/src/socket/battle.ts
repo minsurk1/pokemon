@@ -1012,10 +1012,19 @@ if (isValidObjectId) {
     game.hp[playerId] = Math.max(0, (game.hp[playerId] ?? 0) - penaltyHP);
 
     const successRate = SHUFFLE_SUCCESS_RATE;
-    const returnedCards = grave.filter((c) => Math.random() < successRate);
+    // ✅ 1️⃣ 성공한 카드는 HP 복구 후 반환
+    const returnedCards = grave
+      .filter((c) => Math.random() < successRate)
+      .map((c) => ({
+        ...c,
+        hp: c.maxhp ?? c.hp ?? 0,
+      }));
+
+    // ✅ 2️⃣ 실패한 카드는 그대로 묘지에 남김
     const returnedIds = new Set(returnedCards.map((c) => c.id));
     const failedCards = grave.filter((c) => !returnedIds.has(c.id));
 
+    // ✅ 3️⃣ 덱에 복구 카드 합치기
     const combined = [...deck, ...returnedCards];
     const shuffled = combined.sort(() => Math.random() - 0.5);
 

@@ -183,15 +183,13 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
   }
   const [player1, player2] = room.players;
 
-  const initialHP = 2000;
-
   room.gameState = {
     currentTurn: player1,
 
     // ✅ 체력
     hp: {
-      [player1]: initialHP,
-      [player2]: initialHP,
+      [player1]: MAX_HP,
+      [player2]: MAX_HP,
     },
 
     // ✅ 필드 및 사용된 카드
@@ -219,6 +217,37 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     activeEvent: null, // ✅ [추가] 이벤트 상태 초기화
     lastShuffleTurn: {}, // ✅ 추가 (안전 초기화)
   };
+
+  // ✅ 초기 손패 생성 (각 플레이어 3장, 1코스트 카드 1장 보장)
+  for (const pid of [player1, player2]) {
+    const fullDeck = [...(room.gameState.decks[pid] || [])];
+    if (fullDeck.length < 3) {
+      io.to(pid).emit("message", "덱에 카드가 3장 이상 있어야 게임을 시작할 수 있습니다!");
+      continue;
+    }
+
+    // 1코스트 카드 필터링
+    const lowCostCards = fullDeck.filter((c: any) => c.cost === 1);
+    const guaranteedLowCost = lowCostCards.length > 0 ? [lowCostCards[Math.floor(Math.random() * lowCostCards.length)]] : [];
+
+    // 나머지 카드 중 랜덤 2장
+    const remainingCards = fullDeck.filter((c) => !guaranteedLowCost.includes(c));
+    const otherDraws = remainingCards.sort(() => Math.random() - 0.5).slice(0, 2);
+
+    // 최종 손패 3장
+    const drawnCards = [...guaranteedLowCost, ...otherDraws];
+
+    // 손패 등록
+    room.gameState.hands[pid] = drawnCards;
+
+    // 덱에서 제거
+    room.gameState.decks[pid] = fullDeck.filter((c) => !drawnCards.includes(c));
+
+    console.log(
+      `🎴 초기 손패 (${pid}):`,
+      drawnCards.map((c) => c.name)
+    );
+  }
 
   // ✅ 전투 시작과 동시에 타이머용 잔여 시간 먼저 세팅
   if (room.timeLeft === undefined) room.timeLeft = TURN_TIME;
@@ -617,7 +646,7 @@ if (isValidObjectId) {
     if (!opponentId) return;
 
     const { damage, multiplier, message } = calcDamage(card, { type: "player", isPlayer: true });
-    const prevHP = game.hp[opponentId] ?? 2000;
+    const prevHP = game.hp[opponentId] ?? MAX_HP;
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;
 
@@ -733,7 +762,7 @@ if (isValidObjectId) {
     }
 
     // ✅ 승패 조건 확인 (플레이어 HP가 0 이하인 경우)
-    const remainingHP = game.hp[opponentId] ?? 2000;
+    const remainingHP = game.hp[opponentId] ?? MAX_HP;
     if (remainingHP <= 0) {
       io.to(roomCode).emit("gameOver", {
         winnerId: playerId,
@@ -779,7 +808,7 @@ if (isValidObjectId) {
     const { damage, multiplier, message } = calcDamage(attacker, { type: "player", isPlayer: true });
     console.log(`⚡ ${attacker.name} → 플레이어 직접 공격 | 배율 x${multiplier}, 피해 ${damage}`);
 
-    const prevHP = game.hp[opponentId] ?? 2000;
+    const prevHP = game.hp[opponentId] ?? MAX_HP;
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;
 

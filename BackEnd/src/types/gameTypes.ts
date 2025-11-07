@@ -40,6 +40,7 @@ export interface GameState {
   graveyards: Record<string, CardData[]>; // 각 플레이어 묘지
   turnCount: number; // 현재 턴 수
   activeEvent: Event | null; // ✅ [추가] 현재 활성화된 이벤트
+  lastShuffleTurn?: Record<string, number>;
 }
 
 export interface RoomInfo {

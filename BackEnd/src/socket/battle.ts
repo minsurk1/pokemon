@@ -979,8 +979,6 @@ if (isValidObjectId) {
     }
 
     const game = room.gameState;
-
-    // 클라이언트가 보낸 playerId를 쓰지 말고, 소켓의 id만 신뢰
     const playerId = socket.id;
 
     if (!game.graveyards[playerId]) game.graveyards[playerId] = [];
@@ -1014,7 +1012,6 @@ if (isValidObjectId) {
     game.hp[playerId] = Math.max(0, (game.hp[playerId] ?? 0) - penaltyHP);
 
     const successRate = SHUFFLE_SUCCESS_RATE;
-    // 카드 객체에 id가 반드시 있어야 함
     const returnedCards = grave.filter((c) => Math.random() < successRate);
     const returnedIds = new Set(returnedCards.map((c) => c.id));
     const failedCards = grave.filter((c) => !returnedIds.has(c.id));
@@ -1022,9 +1019,10 @@ if (isValidObjectId) {
     const combined = [...deck, ...returnedCards];
     const shuffled = combined.sort(() => Math.random() - 0.5);
 
-    game.decks[playerId] = shuffled;
-    game.graveyards[playerId] = failedCards;
+    game.graveyards[playerId] = [...failedCards]; // ✅ 실패 카드 유지
+    game.decks[playerId] = [...shuffled]; // ✅ 덱 갱신
 
+    // 카드 총합 검증 (안전하게 한 번만)
     if (typeof verifyCardTotal === "function") {
       try {
         verifyCardTotal(game, playerId);
@@ -1035,6 +1033,7 @@ if (isValidObjectId) {
 
     game.lastShuffleTurn[playerId] = game.turnCount;
 
+    // 🔄 모든 유저에게 게임 상태 브로드캐스트
     io.to(roomCode).emit("updateGameState", {
       hp: game.hp,
       decks: game.decks,
@@ -1047,12 +1046,13 @@ if (isValidObjectId) {
       timeLeft: room.timeLeft,
     });
 
-    // Ack는 요청자 소켓에만
+    // 🎯 셔플 결과는 요청자에게만 개별 전달
     socket.emit("graveyardShuffled", {
       deckCount: shuffled.length,
       returned: returnedCards.length,
       failed: failedCards.length,
       penaltyHP,
+      graveCount: game.graveyards[playerId].length, // ✅ 남은 묘지 수 추가
     });
 
     console.log(`♻️ ${playerId} 묘지 셔플: ${returnedCards.length}/${grave.length} 성공 / ${failedCards.length}장 실패 / (HP -${penaltyHP})`);

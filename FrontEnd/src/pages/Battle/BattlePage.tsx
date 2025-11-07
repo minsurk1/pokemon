@@ -17,6 +17,7 @@ import { CiFlag1 } from "react-icons/ci";
 
 // ===================== 🔥 이벤트 시스템 추가 =====================
 import EventItem from "../../components/battle/Eventitem"; // ✅ EventItem 임포트
+import { detectTypeByName } from "../../utils/detectTypeByName";
 
 interface TurnPayload {
   currentTurn?: string | null;
@@ -83,78 +84,21 @@ const getImageUrl = (imagePath: any) => {
   return `${IMAGE_URL}/${fname || "default.png"}`;
 };
 
-// ✅ 이름 기반 타입 감지 함수 (백업용)
-// ✅ 이름 기반 타입 감지 함수 (강화 버전)
-const detectTypeByName = (name: string) => {
-  const lower = name.toLowerCase();
-
-  // 🔥 불 타입
-  if (lower.includes("불") || lower.includes("fire") || lower.includes("파이리") || lower.includes("리자몽") || lower.includes("불꽃"))
-    return "fire";
-
-  // 💧 물 타입
-  if (lower.includes("물") || lower.includes("water") || lower.includes("꼬부기") || lower.includes("갸라도스") || lower.includes("가이오가"))
-    return "water";
-
-  // ⚡ 전기 타입
-  if (
-    lower.includes("전기") ||
-    lower.includes("electric") ||
-    lower.includes("피카츄") ||
-    lower.includes("라이츄") ||
-    lower.includes("전룡") ||
-    lower.includes("볼트로스")
-  )
-    return "electric";
-
-  // 🌿 풀 타입
-  if (lower.includes("풀") || lower.includes("forest") || lower.includes("이상해") || lower.includes("리피아") || lower.includes("토대부기"))
-    return "forest";
-
-  // ❄️ 얼음 타입
-  if (lower.includes("얼음") || lower.includes("ice") || lower.includes("프리져")) return "ice";
-
-  // 🌍 땅 타입
-  if (lower.includes("땅") || lower.includes("land") || lower.includes("한카리아스")) return "land";
-
-  // 🕊️ 비행 타입
-  if (lower.includes("비행") || lower.includes("fly") || lower.includes("피죤투")) return "fly";
-
-  // ☠️ 독 타입
-  if (lower.includes("독") || lower.includes("poison") || lower.includes("아보") || lower.includes("또가스")) return "poison";
-
-  // 🐛 벌레 타입
-  if (lower.includes("벌레") || lower.includes("worm") || lower.includes("케터피") || lower.includes("버터플")) return "worm";
-
-  // 🧠 에스퍼 타입
-  if (lower.includes("에스퍼") || lower.includes("esper") || lower.includes("후딘")) return "esper";
-
-  // 🏆 전설 타입
-  if (
-    lower.includes("전설") ||
-    lower.includes("legend") ||
-    lower.includes("아르세우스") ||
-    lower.includes("제크로무") ||
-    lower.includes("펄기아")
-  )
-    return "legend";
-
-  // 🪶 기본값
-  return "normal";
-};
-
 // ✅ 카드 표준화 함수 (서버 → 프론트 카드 정리)
 const normalizeCard = (card: any) => {
-  // ✅ 카드 타입 보정
-  const realType = card.cardType || card.type || card.card?.cardType || detectTypeByName(card.cardName ?? card.name) || "normal";
+  // ✅ 카드 이름 정리 (공백 제거)
+  const name = String(card.name ?? card.cardName ?? card.card?.cardName ?? "Unknown").trim();
 
-  // ✅ 이미지 처리
+  // ✅ detectTypeByName으로 타입 자동 감지 (기존값보다 우선)
+  const detectedType = detectTypeByName(name);
+  const realType = detectedType || card.cardType || card.type || card.card?.cardType || "normal";
+
+  // ✅ 이미지 경로 보정
   const img = card.image2D || card.image || card.card?.image2D || `${realType}Tier${card.tier ?? 1}.png`;
 
-  // ✅ 주요 필드 직접 참조 (card.cardName 대신 card.name)
   return {
     id: String(card.id ?? card._id ?? card.cardId ?? card.card?._id ?? "unknown"),
-    name: String(card.name ?? card.cardName ?? card.card?.cardName ?? "Unknown"),
+    name,
     cardType: realType,
     tier: Number(card.tier ?? card.card?.tier ?? 1),
     attack: Number(card.attack ?? card.card?.attack ?? 0),
@@ -185,21 +129,22 @@ const keepCardShape = (c: any): Card => {
     };
   }
 
-  // ✅ card 속성이 객체가 아닐 때 대비 (undefined 방지)
   const base = typeof c.card === "object" && c.card !== null && !Array.isArray(c.card) ? c.card : c;
 
-  // ✅ 타입/티어 기본값 보강
-  const cardType = base.cardType ?? c.cardType ?? "normal";
+  // ✅ 이름 우선 추출
+  const name = String(base.cardName ?? base.name ?? c.cardName ?? c.name ?? "Unknown").trim();
+
+  // ✅ 타입 우선순위 강화 (detectTypeByName 최우선)
+  const detectedType = detectTypeByName(name);
+  const cardType = detectedType || base.cardType || c.cardType || "normal";
+
   const tier = Number(base.tier ?? c.tier ?? 1);
-
-  // ✅ 이미지 경로 우선순위 보강
   const imagePath = base.image2D ?? base.image ?? c.image2D ?? c.image ?? `${cardType}Tier${tier}.png`;
-
   const finalImage = imagePath.startsWith("http") ? imagePath : `${IMAGE_URL}/${imagePath.split("/").pop()}`;
 
   return {
     id: String(base._id ?? base.id ?? c.id ?? crypto.randomUUID()),
-    name: String(base.cardName ?? base.name ?? c.cardName ?? c.name ?? "Unknown"),
+    name,
     cardType,
     tier,
     attack: Number(base.attack ?? c.attack ?? 0),
@@ -998,6 +943,41 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
   }, [roomCode]);
 
+  // ✅ 묘지 셔플 관련 리스너 추가
+  useEffect(() => {
+    if (!socket) return;
+
+    const onMessage = (msg: string) => {
+      console.log("📩 서버 message 수신:", msg);
+      setMessage(msg);
+      setShowMessage(true);
+    };
+
+    const onGraveyardShuffled = ({
+      deckCount,
+      returned,
+      failed,
+      penaltyHP,
+    }: {
+      deckCount: number;
+      returned: number;
+      failed: number;
+      penaltyHP: number;
+    }) => {
+      setHasShuffledThisTurn(true); // ✅ 서버 응답 이후에만 비활성화
+      setMessage(`♻️ 묘지를 섞었습니다! (${returned}장 성공, ${failed}장 실패, HP -${penaltyHP})`);
+      setShowMessage(true);
+    };
+
+    socket.on("message", onMessage);
+    socket.on("graveyardShuffled", onGraveyardShuffled);
+
+    return () => {
+      socket.off("message", onMessage);
+      socket.off("graveyardShuffled", onGraveyardShuffled);
+    };
+  }, [socket]);
+
   // ✅ 초기 턴 동기화 로그
   useEffect(() => {
     if (socket.id && deckLoaded) {
@@ -1034,6 +1014,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   };
 
   // ===== 카드 클릭 =====
+  // 🃏 손패 카드 클릭 시 → 소환 로직
   const handleCardClick = (cardId: string, fromZone: boolean, e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
 
@@ -1058,8 +1039,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     // 🃏 손패 카드 클릭 시 → 소환 로직
     const card = handCards.find((c) => c.id === cardId);
     if (!card) return;
+
+    // ✅ 타입 보정 추가 (핵심)
+    const fixedType = detectTypeByName(card.name);
     const normalizedCard = {
       ...normalizeCard(card),
+      cardType: fixedType || card.cardType || "normal", // ← 자동 감지 결과 적용
       image2D: card.image2D ?? card.image ?? null,
     };
 
@@ -1236,11 +1221,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // (1번 파일의 공격 로직과 완벽히 호환됨)
   const handleEventAttack = (eventId: number) => {
     if (!isMyTurn) {
-      setMessage("상대방 턴입니다.");
+      setMessage("상대방 턴입니다!");
       setShowMessage(true);
       return;
     }
-    // 1번 파일의 'selectedAttacker' 상태를 그대로 활용
+
     if (!selectedAttacker) {
       setMessage("먼저 공격할 내 카드를 선택하세요!");
       setShowMessage(true);
@@ -1248,7 +1233,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     }
 
     const attacker = myCardsInZone.find((c) => c.id === selectedAttacker);
-    if (!attacker) return; // 로직 오류 방지
+    if (!attacker) return;
 
     if (!attacker.canAttack) {
       setMessage(`${attacker.name}은(는) 이미 공격했습니다!`);
@@ -1256,25 +1241,46 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       return;
     }
 
-    // ✅ 서버로 이벤트 공격 요청 (battle.ts에 추가한 핸들러 호출)
+    // ✅ 공격 직전 시각적 피드백 추가
+    setMessage(`⚔️ ${attacker.name}이(가) 이벤트를 공격합니다!`);
+    setShowMessage(true);
+
+    // ✅ 서버로 공격 요청
     socket.emit("attackEvent", {
       roomCode,
       attackerId: attacker.id,
       eventId,
     });
 
-    // ✅ 공격권 즉시 소모 (UI 반응성)
+    // ✅ 공격 후 카드 상태 즉시 반영 (UI 반응)
     setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
-    setSelectedAttacker(null); // 공격자 선택 해제
-    setMessage(`⚔️ ${attacker.name} (으)로 이벤트를 공격합니다!`);
-    setShowMessage(true);
+
+    // ✅ 선택 해제
+    setSelectedAttacker(null);
+
+    // ✅ 이벤트 HP 임시 감소 (체감 반응용)
+    setActiveEvents((prev) =>
+      prev.map((e) =>
+        e.id === eventId
+          ? { ...e, hp: Math.max(0, e.hp - (attacker.attack ?? 0)), temp: true } // ✅ temp 표시
+          : e
+      )
+    );
+
+    // ✅ 0.5초 후 서버 이벤트로 최종 HP 갱신 (자연스러운 딜레이)
+    setTimeout(() => {
+      // 서버가 eventHPUpdate / eventEnded로 덮어씌움
+    }, 500);
   };
+
   // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
   // ✅ 턴 종료 함수 고정
   const handleEndTurn = useCallback(() => {
     if (!isMyTurn) return;
     socket.emit("endTurn", { roomCode });
+    setMessage("🔚 턴을 종료했습니다!");
+    setShowMessage(true);
   }, [isMyTurn, roomCode, socket]);
 
   // ✅ E키 감지: 최신 handleEndTurn 유지 + 중복 등록 방지
@@ -1321,6 +1327,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div>isMyTurn: {String(isMyTurn)}</div>
         <div>turnTime: {turnTime}</div>
         <div>deckLoaded: {String(deckLoaded)}</div>
+        <div>
+          HP: {playerHP}/{enemyHP}
+        </div>
       </div>
 
       {showMessage && (
@@ -1341,14 +1350,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="enemy-field" />
         <div className="player-card-bg" />
         <div className="player-field" />
-
         {/* === 적 손패 === */}
         <div className="enemy-hand-zone">
           {Array.from({ length: enemyHandCount }).map((_, i) => (
             <div key={i} className="enemy-hand-card" />
           ))}
         </div>
-
         {/* === 적 필드 === */}
         <div className="enemy-card-zone">
           {enemyCardsInZone.length > 0 ? (
@@ -1391,10 +1398,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             <div className="empty-zone">상대 필드가 비어있습니다</div>
           )}
         </div>
-
         {/* ▼ 중앙 타이머 라인 */}
         <BurnLineComponent timeLeft={turnTime} isMyTurn={isMyTurn} />
-
         {/* ▼ 내 카드 존 */}
         <div className="player-card-zone">
           {myCardsInZone.length > 0 ? (
@@ -1433,13 +1438,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             <div className="empty-zone">카드를 여기에 배치하세요</div>
           )}
         </div>
-
         {/* ▼ 턴, 타이머 */}
         <div className="time-zone">
           <div className="turn-indicator">턴: {turn}</div>
           <CircularTimer turnTime={turnTime} />
         </div>
-
         {/* ▼ 덱 & 손패 */}
         <div className="deck-area">
           <button
@@ -1501,7 +1504,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             <div key={i} className="cost-icon" />
           ))}
         </div>
-
         <div className="player-cost-zone">
           {Array.from({
             length: Math.max(0, Math.min(8, Math.floor(Number(playerCostIcons) || 0))),
@@ -1529,8 +1531,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               return;
             }
 
-            socket.emit("shuffleGraveyard", { roomCode, playerId: socket.id });
-            setHasShuffledThisTurn(true);
+            console.log("🧩 묘지 셔플 요청 전송:", roomCode);
+            socket.emit("shuffleGraveyard", { roomCode });
+            // ✅ setHasShuffledThisTurn(true); ← 이건 나중에 서버 응답 받고 나서 처리
           }}
           title={!isMyTurn ? "상대 턴입니다!" : "묘지를 클릭하면 덱으로 섞입니다"}
         >

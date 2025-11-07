@@ -639,6 +639,7 @@ if (isValidObjectId) {
     const img = card.image2D ?? card.image ?? `${card.cardType}Tier${card.tier}.png`;
     const instanceId = `${card.id}:${playerId}:${crypto.randomUUID()}`;
 
+    console.log(`🎯 [타입 보정 확인] ${card.name} → 받은 cardType=${card.cardType}, 감지된=${detectTypeByName(card.name)}`);
     const summonedCard = {
       id: instanceId, // ← 매 소환마다 유일
       name: card.name,

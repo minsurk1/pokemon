@@ -33,6 +33,9 @@ function stopSharedTimer(room: RoomInfo) {
 
 // ✅ 타이머 시작 (모든 유저와 동기화)
 function startSharedTimer(io: Server, roomCode: string, room: RoomInfo) {
+  // 디버깅 로그
+  console.log(`⏱ 타이머 시작: ${roomCode}`);
+
   if (room.timer) clearInterval(room.timer); // 가드
   room.timer = null;
 
@@ -170,6 +173,10 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
 
 // ======================= 배틀 초기화 =======================
 export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
+  // 디버깅 로그
+  console.log(`🎯 initializeBattle 실행됨 (${roomCode})`);
+  console.log("🧩 room.players =", room.players);
+
   if (room.players.length < 2) {
     console.error(`❌ 전투 초기화 실패: ${roomCode} 방에 플레이어가 2명 미만`);
     return;

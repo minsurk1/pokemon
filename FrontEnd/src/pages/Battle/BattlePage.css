@@ -38,7 +38,7 @@
   background-color: white;
   z-index: 1001;
   top: 26.8vh;
-  transform: rotate(-24deg);
+  transform: rotate(-26deg);
   transform-origin: 0 0;
 }
 .BottomLeft-Dia {
@@ -48,29 +48,29 @@
   background-color: white;
   z-index: 1001;
   top: 71.7vh;
-  transform: rotate(24deg);
+  transform: rotate(26deg);
   transform-origin: 0 0;
 }
 .TopRight-Dia {
   position: relative;
   left: 85.5vw;
-  width: 12vw;
+  width: 13vw;
   height: 2px;
   background-color: white;
   z-index: 1001;
   top: 18.8vh;
-  transform: rotate(67.4deg);
+  transform: rotate(69deg);
   transform-origin: 0 0;
 }
 .BottomRight-Dia {
   position: relative;
   left: 85.4vw;
-  width: 11.6vw;
+  width: 12.8vw;
   height: 2px;
   background-color: white;
   z-index: 1001;
   top: 79.35vh;
-  transform: rotate(-66.8deg);
+  transform: rotate(-68.9deg);
   transform-origin: 0 0;
 }
 .animating-card-overlay {
@@ -583,6 +583,7 @@
   height: 37.3vh;
   clip-path: polygon(0 45%, 100% 0%, 100% 100%, 0% 100%);
   /* background-color: transparent; */
+  background: url("../../assets/images/mainbg.jpg");
   background-color: #2d2d2d;
   z-index: 100;
   width: 4.4vw;
@@ -600,6 +601,7 @@
   height: 37.3vh;
   clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 55%);
   /* background-color: transparent; */
+  background: url("../../assets/images/mainbg.jpg");
   background-color: #2d2d2d;
   z-index: 100;
   width: 4.4vw;
@@ -693,6 +695,8 @@
   padding: 10px;
   position: relative;
   border-left: solid 2px white;
+  margin-right: 0px;
+  
 }
 
 .player-info {

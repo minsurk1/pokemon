@@ -213,7 +213,7 @@
 /* 카드 기본 스타일 */
 .card {
   width: 11vw;
-  height: auto;
+  height: fit-content;
   background-color: #2980b9;
   color: #fff;
   display: flex;

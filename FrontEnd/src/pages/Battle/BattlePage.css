@@ -180,7 +180,7 @@
   position: absolute;
   top: 26vh; /* 여기 조절하면 상대 카드 소환 위치 변경 가능 */
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateZ(0); /* ✅ 안정화 */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -189,6 +189,11 @@
   min-height: 150px;
   z-index: 900; /* ✅ 항상 위로 */
   pointer-events: auto; /* ✅ 클릭 가능하도록 */
+
+  /* ✅ 클릭 시 밀림 방지 */
+  outline: none;
+  user-select: none;
+  transition: none !important;
 }
 
 .player-card-zone {
@@ -256,6 +261,10 @@
   overflow: visible !important; /* ✅ 확대 시 잘리지 않도록 */
   position: relative;
   z-index: 10;
+}
+
+.enemy-card-slot {
+  pointer-events: auto; /* 기본값 복구 */
 }
 
 .my-card {
@@ -1180,4 +1189,69 @@
 .turn-timer.low-time {
   color: #ff4d4d;
   animation: blink 1s infinite;
+}
+
+/* 묘지구역 셔플 버튼 */
+.clickable-grave {
+  cursor: pointer;
+  color: #ff5555;
+  font-weight: bold;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.clickable-grave:hover {
+  color: #ffaaaa;
+  transform: scale(1.05);
+  text-shadow: 0 0 6px #ff5555;
+}
+
+.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ======================================
+   ⚔️ 직접 공격 가능 상태 시 커서/하이라이트 효과
+   ====================================== */
+.enemy-direct-attack {
+  cursor: crosshair; /* ⚔️ 공격 가능 상태 */
+  transition: filter 0.2s ease, background-color 0.2s ease; /* ✅ transform 제외 */
+}
+
+.enemy-direct-attack:hover {
+  /* ✅ 위치 밀림 방지: transform 제거 */
+  filter: brightness(1.1);
+  background-color: rgba(255, 0, 0, 0.05);
+}
+
+/* 드래그 중 공격 가능 상태 */
+.enemy-direct-attack.drag-active {
+  cursor: crosshair;
+  outline: 2px dashed #ff3333;
+  background-color: rgba(255, 50, 50, 0.15);
+  transition: none; /* ✅ 깜빡임/이동 방지 */
+}
+
+/* ======================================
+   ⚔️ enemy-card-zone 직접 공격 활성화
+   ====================================== */
+.enemy-card-zone.enemy-direct-attack .enemy-card-slot,
+.enemy-card-zone.enemy-direct-attack .empty-zone {
+  pointer-events: none; /* 직접 공격 모드일 때만 내부 클릭 차단 */
+}
+
+.enemy-card-zone.enemy-direct-attack {
+  cursor: crosshair;
+  transition: background-color 0.2s ease, filter 0.2s ease;
+}
+
+/* ✅ hover 및 drag-active 상태에서도 위치 고정 */
+.enemy-card-zone.enemy-direct-attack:hover,
+.enemy-card-zone.enemy-direct-attack.drag-active {
+  transform: translateX(-50%) scale(1) !important; /* ✅ 중앙 위치 고정 */
+  background-color: rgba(255, 0, 0, 0.08);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.3) inset;
+  outline: 2px dashed rgba(255, 80, 80, 0.25);
+  transition: none !important; /* ✅ 부드러운 이동 제거 */
 }

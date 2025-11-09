@@ -30,7 +30,6 @@ export interface Event {
 export interface GameState {
   currentTurn: string; // 현재 턴의 플레이어 ID
   hp: Record<string, number>; // 플레이어별 체력
-  cardsPlayed: Record<string, CardData[]>; // 최근 사용 카드 (옵션)
   cardsInZone: Record<string, CardData[]>; // 각 플레이어 필드
   cost: Record<string, number>; // 플레이어별 코스트
 
@@ -40,6 +39,7 @@ export interface GameState {
   graveyards: Record<string, CardData[]>; // 각 플레이어 묘지
   turnCount: number; // 현재 턴 수
   activeEvent: Event | null; // ✅ [추가] 현재 활성화된 이벤트
+  lastShuffleTurn?: Record<string, number>;
 }
 
 export interface RoomInfo {

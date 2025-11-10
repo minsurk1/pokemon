@@ -27,8 +27,8 @@ export function startRoomCleaner() {
         }
       }
 
-      // ✅ 3) 게임 끝난 상태에서 오래 유지 → 삭제
-      if (room.gameState && !room.gameState.inGame) {
+      // ✅ 3) 게임이 끝났고 오래 유지되면 삭제
+      if (!room.inGame) {
         if (now - room.lastActivity > GAME_END_TIMEOUT) {
           delete rooms[roomCode];
           continue;

@@ -813,6 +813,15 @@ if (isValidObjectId) {
     io.to(roomCode).emit("updateCardHP", { targetId, ownerId: opponentId, newHP });
     console.log(`⚔️ ${attacker.name} → ${target.name} | 배율 x${multiplier} | ${prevHP} → ${newHP} (-${damage})`);
 
+    io.to(roomCode).emit("attackAnimation", {
+      attackerOwner: playerId,
+      attackerId: attacker.id,
+      targetType: "card",
+      targetOwner: opponentId,
+      targetId: target.id,
+      eventId: null,
+    });
+
     // ✅ 카드 사망 처리
     if (newHP <= 0) {
       if (!game.graveyards[opponentId]) game.graveyards[opponentId] = [];
@@ -896,6 +905,15 @@ if (isValidObjectId) {
     game.hp[opponentId] = newHP;
 
     console.log(`⚡ [Direct Attack] ${attacker.name} → ${opponentId} | 피해 ${damage} | 배율 x${multiplier} | HP ${prevHP} → ${newHP}`);
+
+    io.to(roomCode).emit("attackAnimation", {
+      attackerOwner: playerId,
+      attackerId: attacker.id,
+      targetType: "player",
+      targetOwner: opponentId,
+      targetId: null,
+      eventId: null,
+    });
 
     // ✅ 브로드캐스트 (모든 클라이언트)
     io.to(roomCode).emit("directAttack", {
@@ -1166,6 +1184,15 @@ if (isValidObjectId) {
     event.hp = clampedHP; // ✅ 안전 보정
 
     attacker.canAttack = false; // ✅ 공격권 소모
+
+    io.to(roomCode).emit("attackAnimation", {
+      attackerOwner: playerId,
+      attackerId: attacker.id,
+      targetType: "event",
+      targetOwner: null,
+      targetId: null,
+      eventId: event.id,
+    });
 
     // ✅ 모든 클라이언트에 이벤트 HP 갱신 알림
     io.to(roomCode).emit("eventHPUpdate", { eventId: event.id, newHP: clampedHP });

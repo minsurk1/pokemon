@@ -82,7 +82,7 @@
   padding: 10px;
   /* 스크롤을 위에서부터 (최신 메시지부터) */
   display: flex;
-  flex-direction: column-reverse; 
+  flex-direction: column-reverse;
 }
 
 .chat-log-history::-webkit-scrollbar {
@@ -108,7 +108,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.chat-log-message:first-child { /* 맨 위 메시지 (가장 최신) */
+.chat-log-message:first-child {
+  /* 맨 위 메시지 (가장 최신) */
   color: #61dafb; /* 강조 */
   font-weight: bold;
 }
@@ -117,7 +118,6 @@
   font-style: italic;
 }
 /* ▲▲▲ 채팅 로그 스타일 ▲▲▲ */
-
 
 .Top-Line {
   position: relative;
@@ -245,7 +245,7 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 300; 
+  z-index: 300;
   opacity: 0.8;
   transition: background 0.3s ease;
 }
@@ -281,17 +281,17 @@
 
 .enemy-card-zone {
   position: absolute;
-  top: 26vh; 
+  top: 26vh;
   left: 50%;
-  transform: translateX(-50%) translateZ(0); 
+  transform: translateX(-50%) translateZ(0);
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 50px;
   padding: 20px;
   min-height: 150px;
-  z-index: 900; 
-  pointer-events: auto; 
+  z-index: 900;
+  pointer-events: auto;
   outline: none;
   user-select: none;
   transition: none !important;
@@ -352,13 +352,13 @@
 
 .enemy-card-slot,
 .card-slot {
-  width: 100px; 
-  height: 140px; 
+  width: 100px;
+  height: 140px;
   flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: visible !important; 
+  overflow: visible !important;
   position: relative;
   z-index: 10;
 }
@@ -379,10 +379,10 @@
 .enemy-card-slot img {
   width: 100%;
   height: 100%;
-  object-fit: contain; 
+  object-fit: contain;
   border-radius: 8px;
   transition: transform 0.2s ease-in-out;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .my-card:hover:not(.in-zone) {
@@ -392,15 +392,15 @@
 
 .my-card.in-zone,
 .enemy-card.in-zone {
-  width: 110px; 
-  height: 155px; 
+  width: 110px;
+  height: 155px;
 }
 
 .my-card.in-zone img,
 .enemy-card.in-zone img {
   width: 100%;
   height: 100%;
-  object-fit: contain; 
+  object-fit: contain;
   border-radius: 8px;
 }
 
@@ -514,21 +514,21 @@
   display: flex;
   align-items: flex-end;
   cursor: pointer;
-  height: 17vh; 
+  height: 17vh;
   transition: width 0.3s ease, transform 0.3s ease;
   box-sizing: content-box;
 }
 
 .hand-cards-wrapper.collapsed {
-  width: 7vw; 
+  width: 7vw;
   justify-content: flex-start;
   align-items: flex-start;
 }
 
 .hand-cards-wrapper.expanded {
-  width: auto; 
-  gap: 10px; 
-  background: rgba(0, 0, 0, 0.6); 
+  width: auto;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.6);
   padding: 10px;
   border-radius: 10px;
 }
@@ -537,24 +537,24 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 7vw; 
-  height: 17vh; 
+  width: 7vw;
+  height: 17vh;
 }
 
 .hand-cards-wrapper.collapsed .card-slot:not(:first-child) {
-  transform: translate(2px, 2px); 
+  transform: translate(2px, 2px);
 }
 
 .hand-cards-wrapper.collapsed .card-slot .my-card {
-  transform: scale(1); 
+  transform: scale(1);
 }
 
 .hand-cards-wrapper.expanded .card-slot {
   position: relative;
   left: auto;
   top: auto;
-  width: 100px; 
-  height: 140px; 
+  width: 100px;
+  height: 140px;
   transition: transform 0.3s ease, margin 0.3s ease;
 }
 
@@ -566,13 +566,13 @@
   position: absolute;
   bottom: 5px;
   right: 5px;
-  background: rgba(135, 206, 235, 0.8); 
+  background: rgba(135, 206, 235, 0.8);
   color: rgb(255, 255, 255);
   padding: 2px 6px;
   border-radius: 10px;
   font-size: 0.9rem;
   font-weight: bold;
-  pointer-events: none; 
+  pointer-events: none;
   z-index: 100;
   border: 1px solid #ffffff;
 }
@@ -584,7 +584,7 @@
 
 .toggle-hand-button {
   position: absolute;
-  top: -30px; 
+  top: -30px;
   right: 0;
   padding: 5px 10px;
   border: 1px solid white;
@@ -598,12 +598,12 @@
 }
 
 .toggle-hand-button.expand-button {
-  background: linear-gradient(to right, #8e9eab, #eef2f3); 
+  background: linear-gradient(to right, #8e9eab, #eef2f3);
   color: white;
 }
 
 .toggle-hand-button.collapse-button {
-  background-color: #ff4d4d; 
+  background-color: #ff4d4d;
   color: white;
 }
 
@@ -613,7 +613,7 @@
 
 .enemy-hand-zone {
   position: absolute;
-  top: 3vh; 
+  top: 3vh;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -621,13 +621,13 @@
   align-items: center;
   gap: 0.4vw;
   z-index: 650;
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .enemy-hand-card {
   width: 85px;
   height: 115px;
-  background-image: url("../../assets/images/default.png"); 
+  background-image: url("../../assets/images/default.png");
   background-size: cover;
   background-position: center;
   border-radius: 8px;
@@ -737,7 +737,7 @@
   border-radius: 50px;
   height: 25px;
   width: 25px;
-  transition: transform 0.3s ease, opacity 0.3s ease; 
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .cost-icon.fade-out {
@@ -805,7 +805,7 @@
   border-radius: 15px;
   align-items: center;
   border: solid gold 2px;
-  cursor: pointer; 
+  cursor: pointer;
 }
 
 .surrender-button.disabled {
@@ -1010,12 +1010,13 @@
 .my-card.in-zone {
   cursor: pointer;
   transition: transform 0.25s ease-in-out, z-index 0.25s;
-  transform-origin: center bottom; 
+  transform-origin: center bottom;
 }
 
 .my-card.in-zone:hover {
-  transform: scale(1.05);
-  z-index: 50; 
+  /* transform: scale(1.05);  ✅ 삭제 */
+  filter: brightness(1.1);
+  z-index: 50;
 }
 
 .my-card.in-zone:active {
@@ -1024,13 +1025,13 @@
 }
 
 .enemy-clickable {
-  pointer-events: auto; 
-  cursor: pointer; 
-  transition: transform 0.2s ease-in-out; 
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
 }
 
 .enemy-clickable:hover {
-  transform: scale(1.05); 
+  /* transform: scale(1.05); ✅ 삭제 */
   z-index: 40;
 }
 
@@ -1039,7 +1040,7 @@
   cursor: grabbing;
 }
 
-.enemy-card-slot.drag-over {
+.enemy-card-slot.drag-over:not(.attacking) {
   transform: scale(1.1);
   filter: brightness(1.3);
   transition: all 0.2s ease;
@@ -1203,7 +1204,7 @@
 
   .my-card.in-zone,
   .enemy-card.in-zone {
-    cursor: pointer; 
+    cursor: pointer;
     width: 80px;
     height: 120px;
   }
@@ -1315,8 +1316,8 @@
 }
 
 .enemy-direct-attack {
-  cursor: crosshair; 
-  transition: filter 0.2s ease, background-color 0.2s ease; 
+  cursor: crosshair;
+  transition: filter 0.2s ease, background-color 0.2s ease;
 }
 
 .enemy-direct-attack:hover {
@@ -1328,12 +1329,12 @@
   cursor: crosshair;
   outline: 2px dashed #ff3333;
   background-color: rgba(255, 50, 50, 0.15);
-  transition: none; 
+  transition: none;
 }
 
 .enemy-card-zone.enemy-direct-attack .enemy-card-slot,
 .enemy-card-zone.enemy-direct-attack .empty-zone {
-  pointer-events: none; 
+  pointer-events: none;
 }
 
 .enemy-card-zone.enemy-direct-attack {
@@ -1341,34 +1342,34 @@
   transition: background-color 0.2s ease, filter 0.2s ease;
 }
 
-.enemy-card-zone.enemy-direct-attack:hover,
-.enemy-card-zone.enemy-direct-attack.drag-active {
-  transform: translateX(-50%) scale(1) !important; 
+/* 공격 애니메이션 중이면 transform 덮어쓰기 방지 */
+.enemy-card-zone.enemy-direct-attack:hover:not(.attacking),
+.enemy-card-zone.enemy-direct-attack.drag-active:not(.attacking) {
+  transform: translateX(-50%) scale(1) !important;
   background-color: rgba(255, 0, 0, 0.08);
   box-shadow: 0 0 8px rgba(255, 0, 0, 0.3) inset;
-  outline: 2px dashed rgba(255, 80, 80, 0.25);
-  transition: none !important; 
+  transition: none !important;
 }
 
 .game-over-panel.defeat {
   background-color: #4e4343;
-  border: 2px solid #ff0000; 
-  box-shadow: 0 0 30px rgba(255, 0, 0, 0.5); 
+  border: 2px solid #ff0000;
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
 }
 
 .game-over-panel.victory {
-  background-color: #4a5a7e; 
-  border: 2px solid #ffd700; 
-  box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); 
+  background-color: #4a5a7e;
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
 }
 
 .game-over-panel.victory .game-over-message {
-  color: #ffd700; 
+  color: #ffd700;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .game-over-panel.defeat .game-over-message {
-  color: #ff4d4d; 
+  color: #ff4d4d;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
@@ -1585,4 +1586,25 @@
     transform: translateY(-200px) scale(3);
     box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252, -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740, 30px 0 #ffd600;
   }
+}
+
+/* 카드 모션 최적화 */
+.card-motion-wrapper {
+  will-change: transform;
+}
+
+.my-card.attacking,
+.enemy-card.attacking {
+  transition: none !important;
+  transform-origin: center center !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+.enemy-card-zone.enemy-direct-attack.attacking,
+.enemy-card-zone.enemy-direct-attack.attacking:hover {
+  transform: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
 }

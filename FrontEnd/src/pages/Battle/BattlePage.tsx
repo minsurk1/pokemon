@@ -628,15 +628,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         setGraveCount(graveyards[myId].length);
       }
 
-      /* ✅ 5) HP 되살림 방지 (더 낮은 HP만 반영) */
-      if (!suppressing && hp) {
+      /* ✅ 5) HP 업데이트 (되살림 방지 대신 서버 값 그대로 반영) */
+      if (hp) {
         if (hp[myId] !== undefined) {
-          setPlayerHP((prev) => Math.min(prev, Number(hp[myId])));
+          setPlayerHP(Number(hp[myId]));
         }
 
         const enemyId = Object.keys(hp).find((id) => id !== myId);
         if (enemyId && hp[enemyId] !== undefined) {
-          setEnemyHP((prev) => Math.min(prev, Number(hp[enemyId])));
+          setEnemyHP(Number(hp[enemyId]));
         }
       }
 

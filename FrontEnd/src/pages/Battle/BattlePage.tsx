@@ -42,6 +42,15 @@ interface Event {
   maxHp: number;
 }
 
+// ====================================
+// 🔧 Window 커스텀 타입 확장 선언
+// ====================================
+declare global {
+  interface Window {
+    __surrenderMessageStart?: number;
+  }
+}
+
 // ===================== 상수 =====================
 const INITIAL_TIME = 30;
 const IMAGE_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images";
@@ -108,6 +117,18 @@ const normalizeCard = (card: any) => {
 };
 
 // ✅ 카드 형태 통일 함수 (서버·클라이언트 혼합 대응)
+// ✅ 안전한 UUID 생성 함수 (crypto.randomUUID 미지원 브라우저 대비)
+const safeUUID = () => {
+  try {
+    if (globalThis.crypto?.randomUUID) {
+      return globalThis.crypto.randomUUID();
+    }
+  } catch (e) {}
+
+  // ✅ 폴백 UUID 생성 (충돌 거의 없음)
+  return `tmp-${Math.random().toString(36).slice(2)}-${Date.now()}`;
+};
+
 const keepCardShape = (c: any): Card => {
   if (!c) {
     console.warn("⚠️ keepCardShape: undefined 카드 데이터 수신", c);
@@ -124,16 +145,22 @@ const keepCardShape = (c: any): Card => {
       canAttack: true,
     };
   }
+
+  // ✅ card가 들어올 수도 있고, card.card 안에 들어올 수도 있음
   const base = typeof c.card === "object" && c.card !== null && !Array.isArray(c.card) ? c.card : c;
+
+  // ✅ 이름/타입 처리
   const name = String(base.cardName ?? base.name ?? c.cardName ?? c.name ?? "Unknown").trim();
   const detectedType = detectTypeByName(name);
   const cardType = detectedType || base.cardType || c.cardType || "normal";
+
   const tier = Number(base.tier ?? c.tier ?? 1);
   const imagePath = base.image2D ?? base.image ?? c.image2D ?? c.image ?? `${cardType}Tier${tier}.png`;
-  const finalImage = imagePath.startsWith("http") ? imagePath : `${IMAGE_URL}/${imagePath.split("/").pop()}`;
+
+  const fileName = imagePath.startsWith("http") ? imagePath : `${IMAGE_URL}/${imagePath.split("/").pop()}`;
 
   return {
-    id: String(base._id ?? base.id ?? c.id ?? crypto.randomUUID()),
+    id: String(base._id ?? base.id ?? c.id ?? safeUUID()), // ✅ 변경 포인트
     name,
     cardType,
     tier,
@@ -141,7 +168,7 @@ const keepCardShape = (c: any): Card => {
     hp: Number(base.hp ?? c.hp ?? 0),
     maxhp: Number(base.maxhp ?? base.hp ?? c.maxhp ?? c.hp ?? 0),
     cost: Number(base.cost ?? c.cost ?? tier),
-    image: finalImage,
+    image: fileName,
     canAttack: base.canAttack ?? c.canAttack ?? true,
   };
 };
@@ -197,6 +224,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [opponentCostIcons, setOpponentCostIcons] = useState<number>(1);
 
   const [messageBox, setMessageBox] = useState<string | null>(null);
+  const [messageLocked, setMessageLocked] = useState(false);
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -228,6 +256,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // ✅ 항복 연타 방지
   const [canClickSurrender, setCanClickSurrender] = useState(true);
 
+  const [surrendering, setSurrendering] = useState(false);
+
   // ======================================== 게임오버 상태 ========================================
   // ✅ VICTORY 애니메이션 컨트롤용
   const [showVictoryBanner, setShowVictoryBanner] = useState(false);
@@ -257,9 +287,17 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     if (isMyTurn) setHasShuffledThisTurn(false);
   }, [isMyTurn]);
 
-  const showMessageBox = (msg: string) => {
-    setMessageBox(msg);
-    setTimeout(() => setMessageBox(null), 2000);
+  const showMessageBox = (text: string, duration: number = 1500, lock = false) => {
+    if (messageLocked) return; // ✅ 잠겨있으면 새 메시지 무시
+
+    setMessageBox(text);
+
+    if (lock) setMessageLocked(true); // ✅ 중요 메시지면 잠금
+
+    setTimeout(() => {
+      setMessageBox(null);
+      if (lock) setMessageLocked(false); // ✅ 시간이 끝나면 잠금 해제
+    }, duration);
   };
 
   const addMessageToLog = useCallback((newMessage: string) => {
@@ -547,6 +585,34 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
     };
 
+    // ✅ 서버에서 공격 애니메이션 패킷 수신
+    const onAttackAnimation = (data: any) => {
+      const { attackerOwner, attackerId, targetType, targetOwner, targetId, eventId } = data;
+
+      // ❶ 공격자 element 찾기
+      const attackerEl = document.getElementById(`card-${attackerId}`);
+      if (!attackerEl) {
+        console.warn("⚠️ attacker element not found:", attackerId);
+        return;
+      }
+
+      // ❷ 타겟 element 찾기
+      let targetEl: HTMLElement | null = null;
+
+      if (targetType === "card" && targetId) {
+        targetEl = document.getElementById(`card-${targetId}`);
+      } else if (targetType === "event" && eventId) {
+        targetEl = document.getElementById(`event-monster-${eventId}`);
+      } else if (targetType === "player") {
+        // ✅ 타깃 소유자 기준으로 내/상대 영역 선택
+        targetEl = document.getElementById(targetOwner === socket.id ? "my-player-target" : "enemy-player-target");
+      } else if (targetType === "field") {
+        targetEl = document.getElementById("enemy-field-target");
+      }
+      // ❸ 애니메이션 실행
+      runAttackAnimation(attackerId, targetId || eventId || undefined, targetType);
+    };
+
     const onCardPlayedEnhanced = (data: any) => {
       if (data.message) {
         addMessageToLog(data.message);
@@ -677,8 +743,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
 
       /* ✅ 8) 이벤트 처리 */
-      if (data.activeEvent) setActiveEvents([data.activeEvent]);
-      else setActiveEvents([]);
+      if (Object.prototype.hasOwnProperty.call(data, "activeEvent")) {
+        if (data.activeEvent) setActiveEvents([data.activeEvent]);
+        else setActiveEvents([]);
+      }
     };
 
     const onCardSummoned = ({ playerId, card, updatedCost, cost }: any) => {
@@ -811,6 +879,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.on("updateGameState", onUpdateGameState);
     socket.on("attackResult", onAttackResult);
     socket.on("directAttack", onDirectAttackEnhanced);
+    socket.on("attackAnimation", onAttackAnimation);
     socket.on("cardPlayed", onCardPlayedEnhanced);
     socket.on("cardSummoned", onCardSummoned);
     socket.on("updateCardHP", onUpdateCardHP);
@@ -831,6 +900,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("updateGameState", onUpdateGameState);
       socket.off("attackResult", onAttackResult);
       socket.off("directAttack", onDirectAttackEnhanced);
+      socket.off("attackAnimation", onAttackAnimation);
       socket.off("cardPlayed", onCardPlayedEnhanced);
       socket.off("cardSummoned", onCardSummoned);
       socket.off("updateCardHP", onUpdateCardHP);
@@ -1157,6 +1227,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   // ===== 패배 연출 =====
   useEffect(() => {
+    if (surrendering) return; // ✅ 항복 중이면 자동 패배 연출 금지
     if (playerHP <= 0) {
       // 1. ✅ 화면 어둡게 (포켓몬 연출)
       addMessageToLog("내 체력이 0이 되었습니다!");
@@ -1214,30 +1285,56 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const iWon = me === winnerId;
     const iLost = me === loserId;
 
-    console.log("🎮 gameOver 수신:", { winnerId, loserId, me });
+    const MESSAGE_TIME = 3500;
+    const BANNER_TIME = 3000;
 
-    if (iWon) {
-      setGameOverMessage(reason === "surrender" ? "상대가 항복했습니다!" : "승리하였습니다!");
-      setIsVictory(true);
+    const now = Date.now();
+    const start = window.__surrenderMessageStart ?? now;
 
-      setTimeout(() => setShowVictoryBanner(true), 300);
+    // ✅ 남은 메시지박스 유지 시간 계산
+    const remain = Math.max(0, MESSAGE_TIME - (now - start));
+    console.log("⏱ 남은 메시지박스 시간:", remain);
+
+    // ✅ 내가 항복했을 때
+    if (iLost) {
+      showMessageBox("항복하였습니다...", remain);
+      setGameOverMessage("항복하였습니다...");
+      setIsVictory(false);
+
+      // ✅ 메시지박스가 완전히 끝난 후 배너 실행
       setTimeout(() => {
-        setShowVictoryBanner(false);
-        setShowGameOver(true);
-        setFadeInGameOver(true);
-      }, 3000);
+        setShowDefeatBanner(true);
+
+        setTimeout(() => {
+          setShowDefeatBanner(false);
+          setFadeInGameOver(true);
+          setShowGameOver(true);
+        }, BANNER_TIME);
+      }, remain);
+
+      return;
     }
 
-    if (iLost) {
-      setGameOverMessage(reason === "surrender" ? "항복하였습니다..." : "패배하였습니다...");
-      setIsVictory(false);
-      setIsDimming(true);
+    // ✅ 상대가 항복했을 때
+    // ✅ 상대가 항복한 경우 (내가 이김)
+    if (iWon) {
+      // ✅ 메시지박스 무조건 5초 유지
+      showMessageBox("상대가 항복했습니다!", MESSAGE_TIME, true);
 
-      setTimeout(() => setShowDefeatBanner(true), 500);
+      setGameOverMessage("상대가 항복했습니다!");
+      setIsVictory(true);
+
+      // ✅ 배너는 메시지박스가 끝난 후 실행
       setTimeout(() => {
-        setShowGameOver(true);
-        setFadeInGameOver(true);
-      }, 3500);
+        setShowVictoryBanner(true);
+
+        // ✅ 배너는 항상 3초 유지
+        setTimeout(() => {
+          setShowVictoryBanner(false);
+          setFadeInGameOver(true);
+          setShowGameOver(true);
+        }, BANNER_TIME);
+      }, MESSAGE_TIME); // <<< remain 절대 쓰면 안됨
     }
   };
 
@@ -1263,28 +1360,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const confirmSurrender = () => {
     setShowSurrenderConfirm(false);
 
-    // ✅ 서버에 항복 이벤트 송신 (정확한 playerId = socket.id)
+    // ✅ 메시지박스 시작 시간 기록
+    window.__surrenderMessageStart = Date.now();
+
+    // ✅ 5초 유지
+    showMessageBox("항복했습니다...", 5000, true);
+
     socket.emit("surrender", { roomCode, playerId: socket.id });
-
-    // ✅ 1) 메시지 출력
-    showMessageBox("항복했습니다...");
-
-    // ✅ 화면 어둡게
-    setIsDimming(true);
-
-    // ✅ 2초 뒤 DEFEAT 표시
-    setTimeout(() => {
-      setShowDefeatBanner(true);
-
-      // ✅ 3초 뒤 GameOverScreen 페이드인
-      setTimeout(() => {
-        setShowDefeatBanner(false);
-        setIsVictory(false); // 패배 상태
-        setGameOverMessage("항복하였습니다...");
-        setFadeInGameOver(true);
-        setShowGameOver(true);
-      }, 3000);
-    }, 2000);
   };
 
   // ✅ 항복 취소
@@ -1564,6 +1646,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               <div
                 key={event.id}
                 className="event-drop-wrapper"
+                id={`event-monster-${event.id}`}
                 onDragOver={(e) => {
                   if (!isMyTurn) return;
                   e.preventDefault(); // 드롭 허용
@@ -1593,7 +1676,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           </button>
         </div>
 
-        <div className={`player-info ${isMyTurn ? "isMyTurn" : ""}`}>
+        <div id="my-player-target" className={`player-info ${isMyTurn ? "isMyTurn" : ""}`}>
           {" "}
           {/* [수정] 턴 라이트 클래스 */}
           <div className="player-avatar" />

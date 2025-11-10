@@ -52,7 +52,7 @@
   background-color: rgba(255, 255, 255, 0.1);
   border-bottom: 1px solid #444;
   user-select: none; /* 텍스트 선택 방지 */
-  flex-shrink: 0; 
+  flex-shrink: 0;
 }
 
 .chat-log-toggle {
@@ -83,7 +83,7 @@
   /* 스크롤을 위에서부터 (최신 메시지부터) */
   display: flex;
   flex-direction: column-reverse;
-  min-height: 0; 
+  min-height: 0;
 }
 
 .chat-log-history::-webkit-scrollbar {
@@ -107,10 +107,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex-shrink: 0; 
+  flex-shrink: 0;
 }
 .chat-log-message:first-child {
-  color: #61dafb; 
+  color: #61dafb;
   font-weight: bold;
 }
 .chat-log-message.placeholder {
@@ -118,7 +118,6 @@
   font-style: italic;
 }
 /* ▲▲▲ 채팅 로그 스타일 ▲▲▲ */
-
 
 .Top-Line {
   position: relative;
@@ -752,7 +751,6 @@
   opacity: 0;
 }
 
-
 .right-container {
   height: 100vh;
   width: 10vw;
@@ -776,49 +774,53 @@
   box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
   border-bottom: 2px solid #333;
   position: relative;
-  overflow: hidden; 
+  overflow: hidden;
 }
 
 .enemy-info::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #00AFFF, transparent);
-  box-shadow: 0 0 10px #00AFFF;
-  opacity: 0.2; 
+  background: linear-gradient(90deg, transparent, #00afff, transparent);
+  box-shadow: 0 0 10px #00afff;
+  opacity: 0.2;
   transition: opacity 0.3s ease-in-out;
 }
 
 .player-info::before {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #FF4136, transparent);
-  box-shadow: 0 0 10px #FF4136;
-  opacity: 0.2; 
+  background: linear-gradient(90deg, transparent, #ff4136, transparent);
+  box-shadow: 0 0 10px #ff4136;
+  opacity: 0.2;
   transition: opacity 0.3s ease-in-out;
 }
 
 .enemy-info.isEnemyTurn::before {
-  opacity: 1; 
+  opacity: 1;
   animation: neonPulse 1.5s infinite alternate;
-  --neon-color: #00AFFF; /* 애니메이션을 위한 CSS 변수 */
+  --neon-color: #00afff; /* 애니메이션을 위한 CSS 변수 */
 }
 .player-info.isMyTurn::before {
-  opacity: 1; 
+  opacity: 1;
   animation: neonPulse 1.5s infinite alternate;
-  --neon-color: #FF4136; /* 애니메이션을 위한 CSS 변수 */
+  --neon-color: #ff4136; /* 애니메이션을 위한 CSS 변수 */
 }
 
 @keyframes neonPulse {
-  from { box-shadow: 0 0 10px var(--neon-color), 0 0 15px var(--neon-color); }
-  to { box-shadow: 0 0 15px var(--neon-color), 0 0 25px var(--neon-color); }
+  from {
+    box-shadow: 0 0 10px var(--neon-color), 0 0 15px var(--neon-color);
+  }
+  to {
+    box-shadow: 0 0 15px var(--neon-color), 0 0 25px var(--neon-color);
+  }
 }
 
 /* ====================================== */
@@ -875,7 +877,7 @@
 /* ====================================== */
 
 .player-info {
-  border-bottom: none; 
+  border-bottom: none;
 }
 
 .surrender-button {
@@ -883,10 +885,10 @@
   padding: 10px 15px;
   background-color: #222;
   z-index: 1000;
-  border-radius: 5px; 
+  border-radius: 5px;
   align-items: center;
-  border: 2px solid #FF4136; 
-  color: #FF4136;
+  border: 2px solid #ff4136;
+  color: #ff4136;
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.9rem;
@@ -894,9 +896,9 @@
 }
 
 .surrender-button:hover:not(.disabled) {
-  background-color: #FF4136;
+  background-color: #ff4136;
   color: #fff;
-  box-shadow: 0 0 15px #FF4136;
+  box-shadow: 0 0 15px #ff4136;
   transform: scale(1.05);
 }
 
@@ -952,15 +954,15 @@
 }
 
 .hp-bar {
-  width: 90%; 
-  height: 25px; 
-  background-color: #111; 
+  width: 90%;
+  height: 25px;
+  background-color: #111;
   border-radius: 4px;
   position: relative;
   overflow: hidden;
   margin: 10px 0;
   border: 1px solid #444;
-  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); 
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .hp-bar-inner {
@@ -970,15 +972,15 @@
   left: 0;
   transition: width 0.5s linear;
   border-radius: 2px;
-  background-image: linear-gradient(to bottom, rgba(255,255,255,0.3), rgba(255,255,255,0.05));
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
 }
 
 .enemy-info .hp-bar-inner {
-  background-color: #00AFFF; 
+  background-color: #00afff;
 }
 
 .player-info .hp-bar-inner {
-  background-color: #FF4136; 
+  background-color: #ff4136;
 }
 
 .hp-text {
@@ -988,7 +990,7 @@
   transform: translate(-50%, -50%);
   color: #ffffff;
   font-weight: bold;
-  font-family: "Jua", sans-serif; 
+  font-family: "Jua", sans-serif;
   font-size: 1rem;
   text-shadow: 1px 1px 3px #000;
 }
@@ -1002,22 +1004,20 @@
   background-position: center;
   margin-bottom: 15px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
-  background-color: #222; 
-  border: 3px solid #444; 
+  background-color: #222;
+  border: 3px solid #444;
   transition: all 0.3s ease;
 }
 
 .enemy-avatar {
   background-image: url("../../assets/images/enemyavata.png");
-  border-color: #00AFFF; 
+  border-color: #00afff;
 }
 
 .player-avatar {
-  background-image: url("../../assets/images/default.png"); 
-  border-color: #FF4136; 
+  background-image: url("../../assets/images/default.png");
+  border-color: #ff4136;
 }
-
-
 
 .card-cost {
   position: absolute;
@@ -1120,6 +1120,17 @@
   filter: brightness(1.3);
   transition: all 0.2s ease;
   z-index: 1000;
+}
+
+.event-drop-wrapper {
+  display: inline-block;
+}
+
+.event-zone.drag-active,
+.event-monster-wrapper.drag-active {
+  outline: 2px dashed #ff4444;
+  background: rgba(255, 0, 0, 0.12);
+  cursor: crosshair;
 }
 
 .drag-preview {

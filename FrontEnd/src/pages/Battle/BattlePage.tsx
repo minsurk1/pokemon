@@ -1021,28 +1021,45 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     handleAttack(targetId);
   };
 
-  const handleEventAttack = (eventId: number) => {
+  // 기존: const handleEventAttack = (eventId: number) => {
+  const handleEventAttack = (eventId: number, attackerIdParam?: string) => {
     if (!isMyTurn) {
       addMessageToLog("상대방 턴입니다!");
       return;
     }
-    if (!selectedAttacker) {
-      addMessageToLog("먼저 공격할 내 카드를 선택하세요!");
+
+    // 드래그로 전달된 attackerId 우선, 없으면 선택된 공격자 사용
+    const attackerId = attackerIdParam || selectedAttacker;
+    if (!attackerId) {
+      addMessageToLog("먼저 공격할 내 카드를 선택하거나, 카드를 드래그하여 놓으세요!");
       return;
     }
-    const attacker = myCardsInZone.find((c) => c.id === selectedAttacker);
-    if (!attacker) return;
+
+    const attacker = myCardsInZone.find((c) => c.id === attackerId);
+    if (!attacker) {
+      console.warn("handleEventAttack: attacker not found", attackerId);
+      addMessageToLog("공격할 카드 정보를 찾을 수 없습니다.");
+      return;
+    }
+
     if (!attacker.canAttack) {
       addMessageToLog(`${attacker.name}은(는) 이미 공격했습니다!`);
       return;
     }
+
     addMessageToLog(`⚔️ ${attacker.name}이(가) 이벤트를 공격합니다!`);
+    // 애니메이션
     runAttackAnimation(attacker.id, String(eventId), "event");
+
+    // 서버로 공격 전송
     socket.emit("attackEvent", { roomCode, attackerId: attacker.id, eventId });
+
+    // 공격 적용 (로컬)
     setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
     setSelectedAttacker(null);
+
+    // UI 낙관적 업데이트: 이벤트 HP 바로 감소 표시 (서버확인 전)
     setActiveEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, hp: Math.max(0, e.hp - (attacker.attack ?? 0)), temp: true } : e)));
-    setTimeout(() => {}, 500);
   };
 
   const handleEndTurn = useCallback(() => {
@@ -1508,9 +1525,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           id="enemy-player-target"
           className={`enemy-info ${
             !isMyTurn ? "isEnemyTurn" : "" // [수정] 턴 라이트 클래스
-          } ${
-            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
-          }`}
+          } ${isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""}`}
           onClick={() => handleDirectAttackOnEnemy()}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
@@ -1532,15 +1547,41 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="event-zone">
           <div className="event-items-container">
             {activeEvents.map((event) => (
-              <EventItem key={event.id} event={event} onClick={() => handleEventAttack(event.id)} />
+              <div
+                key={event.id}
+                className="event-drop-wrapper"
+                onDragOver={(e) => {
+                  if (!isMyTurn) return;
+                  e.preventDefault(); // 드롭 허용
+                }}
+                onDrop={(e) => {
+                  if (!isMyTurn) return;
+                  e.preventDefault();
+                  const attackerId = e.dataTransfer.getData("attackerId");
+                  if (attackerId) {
+                    handleEventAttack(event.id, attackerId); // 드래그 공격 — attackerId 전달
+                  } else {
+                    // 드롭했는데 attackerId가 없으면 시도 로그 (디버그용)
+                    console.warn("drop without attackerId", e.dataTransfer);
+                    // 여전히 클릭 방식으로 공격하려면 selectedAttacker가 있으면 호출
+                    handleEventAttack(event.id);
+                  }
+                  setIsDragActive(false); // 드래그 상태 정리
+                }}
+              >
+                <EventItem event={event} onClick={() => handleEventAttack(event.id)} />
+              </div>
             ))}
           </div>
+
           <button className="endturn-button" onClick={handleEndTurn}>
             턴 종료 <CiClock1 size={24} />
           </button>
         </div>
 
-        <div className={`player-info ${isMyTurn ? "isMyTurn" : ""}`}> {/* [수정] 턴 라이트 클래스 */}
+        <div className={`player-info ${isMyTurn ? "isMyTurn" : ""}`}>
+          {" "}
+          {/* [수정] 턴 라이트 클래스 */}
           <div className="player-avatar" />
           <div className="hp-bar">
             <div className="hp-bar-inner" style={{ width: `${(playerHP / MAX_HP) * 100}%` }} />

@@ -1,8 +1,7 @@
 // FrontEnd/src/components/battle/Eventitem.tsx
 
-import type React from "react"; // React 타입 임포트
+import type React from "react";
 
-// ✅ Event 인터페이스 (gameTypes.ts와 동일)
 interface Event {
   id: number;
   type: number;
@@ -12,13 +11,11 @@ interface Event {
   maxHp: number;
 }
 
-// ✅ Props 수정: updateEventHP 대신 onClick 받기
 interface EventItemProps {
   event: Event;
-  onClick: () => void; // ✅ 1번 파일의 공격 방식(클릭)과 통일
+  onClick?: () => void;
 }
 
-// 이벤트 아이템 컴포넌트
 function EventItem({ event, onClick }: EventItemProps) {
   const baseStyle: React.CSSProperties = {
     backgroundImage: `url(${event.image})`,
@@ -45,9 +42,19 @@ function EventItem({ event, onClick }: EventItemProps) {
         e.currentTarget.style.transform = "scale(1.05)";
       }}
       onMouseLeave={(e) => {
-        // 원래 상태로
         e.currentTarget.style.filter = "brightness(1)";
         e.currentTarget.style.transform = "scale(1)";
+      }}
+      /* ✅ 드래그 공격을 이 컴포넌트도 직접 받도록 처리 */
+      onDragOver={(e) => {
+        e.preventDefault();
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        const attackerId = e.dataTransfer.getData("attackerId");
+        if (attackerId) {
+          onClick?.(); // 드래그 공격 트리거
+        }
       }}
       style={{
         display: "inline-block",
@@ -56,7 +63,8 @@ function EventItem({ event, onClick }: EventItemProps) {
         transition: "0.2s",
       }}
     >
-      <div id={`event-monster-${event.id}`} data-event-id={event.id} className="event-item" style={baseStyle} />
+      {/* ✅ 반드시 문자열 변환! */}
+      <div id={`event-monster-${String(event.id)}`} data-event-id={event.id} className="event-item" style={baseStyle} />
 
       <div className="event-hp-container">
         <div className="card-hp-bar">

@@ -170,6 +170,8 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
     cardsInZone: game.cardsInZone,
     activeEvent: game.activeEvent,
     timeLeft: TURN_TIME,
+
+    serverTime: Date.now(),
   });
 
   console.log(`🔁 턴 전환 → ${nextTurn}, 턴: ${game.turnCount}`);
@@ -272,6 +274,8 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     cardsInZone: game.cardsInZone,
     activeEvent: game.activeEvent,
     timeLeft: room.timeLeft,
+
+    serverTime: Date.now(),
   });
 
   // ✅ 타이머 시작
@@ -408,6 +412,8 @@ export default function battleHandler(io: Server, socket: Socket) {
         cardsInZone: g.cardsInZone,
         activeEvent: g.activeEvent, // ✅ [추가] 이벤트 상태 전송
         timeLeft: room.timeLeft,
+
+        serverTime: Date.now(),
       });
 
       // ✅ 타이머 동기화
@@ -438,6 +444,8 @@ export default function battleHandler(io: Server, socket: Socket) {
       cardsInZone: g.cardsInZone,
       activeEvent: g.activeEvent, // ✅ [추가] 이벤트 상태 전송
       timeLeft: room.timeLeft,
+
+      serverTime: Date.now(),
     });
 
     console.log(`🔁 ${socket.id} 요청 → 현재 게임 상태 재전송 완료`);
@@ -499,6 +507,8 @@ export default function battleHandler(io: Server, socket: Socket) {
           cardsInZone: game.cardsInZone,
           activeEvent: game.activeEvent,
           timeLeft: room.timeLeft,
+
+          serverTime: Date.now(),
         });
       }
 
@@ -575,6 +585,8 @@ export default function battleHandler(io: Server, socket: Socket) {
       cardsInZone: game.cardsInZone,
       activeEvent: game.activeEvent,
       timeLeft: room.timeLeft,
+
+      serverTime: Date.now(),
     });
   });
 
@@ -960,6 +972,8 @@ if (isValidObjectId) {
       turnCount: game.turnCount,
       activeEvent: game.activeEvent, // ✅ 핵심
       timeLeft: room.timeLeft,
+
+      serverTime: Date.now(),
     });
   });
 
@@ -1093,6 +1107,8 @@ if (isValidObjectId) {
         cardsInZone: game.cardsInZone,
         activeEvent: game.activeEvent,
         timeLeft: room.timeLeft,
+
+        serverTime: Date.now(),
       });
     }, 50); // 30~50ms 사이면 충분
 
@@ -1208,6 +1224,8 @@ if (isValidObjectId) {
         cardsInZone: game.cardsInZone,
         activeEvent: game.activeEvent,
         timeLeft: room.timeLeft,
+
+        serverTime: Date.now(),
       });
     }
   });

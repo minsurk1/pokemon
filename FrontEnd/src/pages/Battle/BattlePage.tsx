@@ -2,6 +2,7 @@
 "use client";
 
 import type React from "react";
+import { useUser } from "../../context/UserContext";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSocket } from "../../context/SocketContext";
@@ -20,6 +21,8 @@ import EventItem from "../../components/battle/Eventitem";
 import { detectTypeByName } from "../../utils/detectTypeByName";
 
 import { motion, AnimatePresence } from "framer-motion";
+
+import DraggableChat from "../../components/common/DraggableChat";
 
 // ===================== 인터페이스 =====================
 interface TurnPayload {
@@ -176,6 +179,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const roomCode: string = location?.state?.roomCode || "defaultRoomCode";
 
   // === 상태 ===
+  const { userInfo } = useUser();
+
   const [mySocketId, setMySocketId] = useState<string | null>(null);
   const [currentTurnId, setCurrentTurnId] = useState<string | null>(null);
   const [isMyTurn, setIsMyTurn] = useState(false);
@@ -1665,6 +1670,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           <img src={dragPreview.image} alt="drag-preview" />
         </div>
       )}
+
+      {/* ✅ FC온라인 스타일 채팅 버튼 + 패널 */}
+      <DraggableChat socket={socket} roomCode={roomCode} myUserId={socket.id} myName={userInfo?.nickname ?? "Player"} />
     </div>
   );
 }

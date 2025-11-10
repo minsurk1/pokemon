@@ -235,6 +235,24 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [activeEvents, setActiveEvents] = useState<Event[]>([]);
   // +++++++++++++++++++++++++++++++++++++++++++++++++++
 
+  // ✅ 항복 재확인 팝업
+  const [showSurrenderConfirm, setShowSurrenderConfirm] = useState(false);
+  // ✅ 항복 연타 방지
+  const [canClickSurrender, setCanClickSurrender] = useState(true);
+
+  // ======================================== 게임오버 상태 ========================================
+  // ✅ VICTORY 애니메이션 컨트롤용
+  const [showVictoryBanner, setShowVictoryBanner] = useState(false);
+  const [showFireworks, setShowFireworks] = useState(false);
+
+  // ✅ DEFEAT 애니메이션 컨트롤용
+  const [showDefeatBanner, setShowDefeatBanner] = useState(false);
+
+  // ✅ GameOverScreen 페이드인 전환용
+  const [fadeInGameOver, setFadeInGameOver] = useState(false);
+
+  const [isDimming, setIsDimming] = useState(false);
+  // ======================================== 함수들 ========================================
   // (useEffect ref 동기화 - 변경 없음)
   useEffect(() => {
     isMyTurnRef.current = isMyTurn;
@@ -525,7 +543,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   useEffect(() => {
     console.log("🌐 socket listeners registered once");
 
-    if (!socket.connected) return;
+    if (!socket) return;
 
     // ✅ 상성 메시지 수신 (calcDamage.ts 연동)
     const onAttackResult = ({
@@ -779,16 +797,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
     };
 
-    // ✅ onGameOver 핸들러 수정
-    const onGameOver = ({ winnerId }: any) => {
-      const myId = socket.id ?? null;
-      const didIWin = myId === winnerId; // ✅ 승리 여부 계산
-
-      setIsVictory(didIWin); // ✅ 승패 상태 설정
-      setGameOverMessage(didIWin ? "🎉 승리했습니다!" : "💀 패배했습니다...");
-      setShowGameOver(true);
-    };
-
     // ✅ 서버에서 타이머 공유값 수신
     const onTimeUpdate = (time: number) => {
       if (typeof time !== "number") return;
@@ -906,6 +914,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setShowMessage(true);
     };
 
+    // ✅ 게임오버 이벤트 수신
+    const onGameOver = ({ winnerId, loserId, reason }: { winnerId: string; loserId: string; reason?: string }) => {
+      handleGameOver({ winnerId, loserId, reason });
+    };
+
     socket.on("error", onError);
     socket.on("gameStart", onGameStart);
     socket.on("turnChanged", onTurnChanged);
@@ -915,7 +928,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.on("cardPlayed", onCardPlayedEnhanced);
     socket.on("cardSummoned", onCardSummoned);
     socket.on("updateCardHP", onUpdateCardHP);
-    socket.on("gameOver", onGameOver);
     socket.on("timeUpdate", onTimeUpdate);
     socket.on("turnTimeout", onTurnTimeout);
     // ++++++++++++++++ [추가된 Event 리스너 등록] ++++++++++++++++
@@ -926,6 +938,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.on("cardDrawn", onCardDrawn);
     socket.on("cardDestroyed", onCardDestroyedWithGrave);
     socket.on("graveyardShuffled", onGraveyardShuffled);
+    socket.on("gameOver", onGameOver);
 
     return () => {
       socket.off("error", onError);
@@ -937,7 +950,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("cardPlayed", onCardPlayedEnhanced);
       socket.off("cardSummoned", onCardSummoned);
       socket.off("updateCardHP", onUpdateCardHP);
-      socket.off("gameOver", onGameOver);
       socket.off("timeUpdate", onTimeUpdate);
       socket.off("turnTimeout", onTurnTimeout);
       // ++++++++++++++++ [추가된 Event 리스너 해제] ++++++++++++++++
@@ -948,6 +960,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("cardDrawn", onCardDrawn);
       socket.off("cardDestroyed", onCardDestroyedWithGrave);
       socket.off("graveyardShuffled", onGraveyardShuffled);
+      socket.off("gameOver", onGameOver);
     };
   }, [roomCode]);
 
@@ -1393,15 +1406,152 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     window.addEventListener("keydown", onKey);
 
     return () => window.removeEventListener("keydown", onKey);
-  }, [handleEndTurn]); // ✅ 이건 맞다
+  }, [handleEndTurn]);
+
+  // ===== 패배 연출 =====
+  useEffect(() => {
+    if (playerHP <= 0) {
+      // ✅ 1. 즉시 메시지박스 출력
+      setMessage("내 체력이 0이 되었습니다!");
+      setShowMessage(true);
+
+      // ✅ 화면 어둡게 (포켓몬 연출)
+      setIsDimming(true);
+
+      // ✅ 2초 뒤 DEFEAT 표시
+      setTimeout(() => {
+        setShowMessage(false); // 메시지박스 닫기
+        setShowDefeatBanner(true);
+
+        // ✅ 3초 뒤 패배 배너 제거 → GameOverScreen 페이드인 시작
+        setTimeout(() => {
+          setShowDefeatBanner(false);
+          setIsVictory(false);
+          setGameOverMessage("패배하였습니다...");
+          setFadeInGameOver(true);
+
+          setShowGameOver(true);
+        }, 3000);
+      }, 2000);
+    }
+  }, [playerHP]);
+
+  // ===== 승리 연출 =====
+  useEffect(() => {
+    if (enemyHP <= 0) {
+      setMessage("상대 체력이 0이 되었습니다!");
+      setShowMessage(true);
+
+      // 화면 전환
+      setIsDimming(true);
+
+      // ✅ 폭죽 활성화
+      setShowFireworks(true);
+
+      // 2초 후 승리 카드 표시
+      setTimeout(() => {
+        setShowMessage(false);
+        setShowVictoryBanner(true);
+
+        // 3초 뒤 종료 화면
+        setTimeout(() => {
+          setShowVictoryBanner(false);
+          setIsVictory(true);
+          setGameOverMessage("승리하였습니다...");
+          setFadeInGameOver(true);
+          setShowGameOver(true);
+
+          // ✅ 승리 카드 등장 끝날 때 폭죽 끄기
+          setShowFireworks(false);
+        }, 3000);
+      }, 2000);
+    }
+  }, [enemyHP]);
+
+  const handleGameOver = ({ winnerId, loserId, reason }: { winnerId: string; loserId: string; reason?: string }) => {
+    const me = socket.id;
+    const iWon = me === winnerId;
+    const iLost = me === loserId;
+
+    console.log("🎮 gameOver 수신:", { winnerId, loserId, me });
+
+    if (iWon) {
+      setGameOverMessage(reason === "surrender" ? "상대가 항복했습니다!" : "승리하였습니다!");
+      setIsVictory(true);
+
+      setTimeout(() => setShowVictoryBanner(true), 300);
+      setTimeout(() => {
+        setShowVictoryBanner(false);
+        setShowGameOver(true);
+        setFadeInGameOver(true);
+      }, 3000);
+    }
+
+    if (iLost) {
+      setGameOverMessage(reason === "surrender" ? "항복하였습니다..." : "패배하였습니다...");
+      setIsVictory(false);
+      setIsDimming(true);
+
+      setTimeout(() => setShowDefeatBanner(true), 500);
+      setTimeout(() => {
+        setShowGameOver(true);
+        setFadeInGameOver(true);
+      }, 3500);
+    }
+  };
 
   // ✅ 항복 처리 함수 추가
-  const handleSurrender = () => {
-    setIsVictory(false); // 항복은 항상 패배
-    setGameOverMessage("🏳️ 항복했습니다.");
-    setShowGameOver(true);
-    // (선택 사항) 서버에 항복 사실을 알려 상대방에게 승리 화면을 보여줄 수 있습니다.
-    // socket.emit("surrender", { roomCode });
+  // ✅ 항복 버튼 클릭 (재확인 + 5턴 조건 + 연타 방지)
+  const handleSurrenderClick = () => {
+    // ✅ 5턴 이전 항복 불가
+    if (turn < 5) {
+      setMessage("5턴 이후부터 항복할 수 있습니다!");
+      setShowMessage(true);
+      return;
+    }
+
+    // ✅ 연타 방지 (1초 쿨타임)
+    if (!canClickSurrender) return;
+    setCanClickSurrender(false);
+    setTimeout(() => setCanClickSurrender(true), 1000);
+
+    // ✅ 항복 재확인 팝업 띄우기
+    setShowSurrenderConfirm(true);
+  };
+
+  // ✅ 항복 확정
+  const confirmSurrender = () => {
+    setShowSurrenderConfirm(false);
+
+    // ✅ 서버에 항복 이벤트 송신 (정확한 playerId = socket.id)
+    socket.emit("surrender", { roomCode, playerId: socket.id });
+
+    // ✅ 1) 메시지 출력
+    setMessage("항복했습니다...");
+    setShowMessage(true);
+
+    // ✅ 화면 어둡게
+    setIsDimming(true);
+
+    // ✅ 2초 뒤 DEFEAT 표시
+    setTimeout(() => {
+      setShowMessage(false);
+      setShowDefeatBanner(true);
+
+      // ✅ 3초 뒤 GameOverScreen 페이드인
+      setTimeout(() => {
+        setShowDefeatBanner(false);
+        setIsVictory(false); // 패배 상태
+        setGameOverMessage("항복하였습니다...");
+        setFadeInGameOver(true);
+        setShowGameOver(true);
+      }, 3000);
+    }, 2000);
+  };
+
+  // ✅ 항복 취소
+  const cancelSurrender = () => {
+    setShowSurrenderConfirm(false);
   };
 
   // ✅ socket이 없을 때 — return 직전에 배치
@@ -1444,6 +1594,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           {message}
         </MessageBox>
       )}
+
+      {/* ✅ 패배 시 화면 어두워지는 오버레이 (포켓몬 스타일) */}
+      {isDimming && <div className="battle-dim-overlay" />}
 
       {/* === 전장 === */}
       <div className="field-container">
@@ -1716,20 +1869,60 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             </div>
           </div>
           {/* ✅ onClick 이벤트 수정 */}
-          <div className="surrender-button" onClick={handleSurrender}>
+          <div className={`surrender-button ${turn >= 5 ? "" : "disabled"}`} onClick={handleSurrenderClick}>
             항복 <CiFlag1 />
           </div>
         </div>
       </div>
 
-      {/* ✅ isVictory prop 전달 */}
+      {/* ✅ 항복 재확인 팝업 */}
+      {showSurrenderConfirm && (
+        <div className="surrender-popup">
+          <div className="surrender-popup-content">
+            <p>정말 항복하시겠습니까?</p>
+            <button className="confirm" onClick={confirmSurrender}>
+              예
+            </button>
+            <button className="cancel" onClick={cancelSurrender}>
+              아니오
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ 포켓몬 카드게임 스타일 DEFEAT 카드 */}
+      {showDefeatBanner && (
+        <div className="defeat-card-banner">
+          <div className="defeat-card">
+            <span className="defeat-text">DEFEAT</span>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ 포켓몬 스타일 VICTORY 카드 */}
+      {showVictoryBanner && (
+        <div className="victory-card-banner">
+          <div className="victory-card">
+            <span className="victory-text">VICTORY</span>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ 폭죽 애니메이션 */}
+      {showFireworks && (
+        <div className="fireworks-container">
+          <div className="firework"></div>
+          <div className="firework"></div>
+          <div className="firework"></div>
+          <div className="firework"></div>
+        </div>
+      )}
+
+      {/* ✅ GameOverScreen 페이드-in 적용 */}
       {showGameOver && (
-        <GameOverScreen
-          message={gameOverMessage}
-          isVictory={isVictory}
-          onRestart={() => window.location.reload()}
-          onGoToMainMenu={() => navigate("/")}
-        />
+        <div className={`gameover-fade-wrapper ${fadeInGameOver ? "fade-in" : ""}`}>
+          <GameOverScreen message={gameOverMessage} isVictory={isVictory} onGoToMainMenu={() => navigate("/main")} />
+        </div>
       )}
 
       {dragPreview && (

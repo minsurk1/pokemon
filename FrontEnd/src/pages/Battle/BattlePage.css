@@ -706,7 +706,6 @@
   position: relative;
   border-left: solid 2px white;
   margin-right: 0px;
-  
 }
 
 .player-info {
@@ -721,6 +720,7 @@
   overflow: hidden;
 }
 
+/* 항복 버튼 스타일 */
 .surrender-button {
   margin-top: 30px;
   padding: 15px 15px;
@@ -730,6 +730,48 @@
   align-items: center;
   border: solid gold 2px;
   cursor: pointer; /* ✅ 클릭 가능하도록 커서 추가 */
+}
+
+.surrender-button.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.surrender-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+
+.surrender-popup-content {
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  color: white;
+  min-width: 240px;
+}
+
+.surrender-popup-content button {
+  margin: 10px;
+  padding: 8px 14px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.surrender-popup-content .confirm {
+  background: #ff4444;
+  color: white;
+}
+
+.surrender-popup-content .cancel {
+  background: #555;
+  color: white;
 }
 
 .game-info {
@@ -1294,4 +1336,219 @@
 .game-over-panel.defeat .game-over-message {
   color: #ff4d4d; /* 붉은색 텍스트 */
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ================ 🔥 승리 배너 애니메이션 ================*/
+/* ✅ 승리 카드 래퍼 */
+.victory-card-banner {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+/* ✅ 포켓몬카드 스타일 승리 카드 */
+.victory-card {
+  width: 340px;
+  height: 470px;
+  background: linear-gradient(135deg, #fff7c0, #ffe47a);
+  border: 8px solid #ffeb3b;
+  border-radius: 16px;
+  box-shadow: 0 0 30px rgba(255, 235, 59, 0.9), 0 0 60px rgba(255, 220, 60, 0.8) inset;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: victoryCardFade 3s ease forwards;
+  transform: rotate(2deg);
+}
+
+.victory-text {
+  font-size: 52px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 150, 1), 0 0 20px rgba(255, 240, 100, 1);
+  letter-spacing: 4px;
+}
+
+@keyframes victoryCardFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(2deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1) rotate(2deg);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1) rotate(2deg);
+  }
+}
+
+/* 🔥 패배 배너 애니메이션 */
+
+@keyframes defeatFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.gameover-fade-wrapper {
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.gameover-fade-wrapper.fade-in {
+  opacity: 1;
+}
+
+.battle-dim-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  animation: dimFade 0.7s ease forwards;
+  pointer-events: none;
+  z-index: 9998;
+}
+
+@keyframes dimFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.defeat-card-banner {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.defeat-card {
+  width: 320px;
+  height: 450px;
+  background: linear-gradient(135deg, #222, #111);
+  border: 8px solid #d4af37;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.6), 0 0 60px rgba(0, 0, 0, 0.7) inset;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: defeatCardFade 3s ease forwards;
+  transform: rotate(-2deg);
+}
+
+.defeat-text {
+  font-size: 54px;
+  font-weight: 900;
+  color: #ff5252;
+  text-shadow: 0 0 10px rgba(255, 80, 80, 0.9), 0 0 20px rgba(255, 0, 0, 0.9);
+  letter-spacing: 4px;
+}
+
+@keyframes defeatCardFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-2deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1) rotate(-2deg);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1) rotate(-2deg);
+  }
+}
+
+/* ======================================
+   🎆 Fireworks Animation (포켓몬 승리 버전)
+   ====================================== */
+.fireworks-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 99998;
+}
+
+.firework {
+  position: absolute;
+  bottom: -20px;
+  width: 4px;
+  height: 4px;
+  background-color: transparent;
+  border-radius: 50%;
+  animation: shoot 1.2s ease-out infinite;
+}
+
+.firework:nth-child(1) {
+  left: 25%;
+  animation-delay: 0s;
+}
+.firework:nth-child(2) {
+  left: 50%;
+  animation-delay: 0.3s;
+}
+.firework:nth-child(3) {
+  left: 70%;
+  animation-delay: 0.6s;
+}
+.firework:nth-child(4) {
+  left: 40%;
+  animation-delay: 0.9s;
+}
+
+/* 1단계: 위로 날아가는 모션 */
+@keyframes shoot {
+  0% {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+  40% {
+    transform: translateY(-200px);
+    opacity: 1;
+  }
+  41% {
+    opacity: 1;
+  }
+  45% {
+    opacity: 0;
+  }
+  46% {
+    opacity: 1;
+    transform: translateY(-200px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-200px) scale(3);
+    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252, -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740, 30px 0 #ffd600;
+  }
 }

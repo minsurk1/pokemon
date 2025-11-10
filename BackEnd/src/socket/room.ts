@@ -229,6 +229,16 @@ export default function roomHandler(io: Server, socket: Socket) {
   });
 
   /**
+   * ✅ userMap 요청 처리 (WaitPage에서 opponentJoined 후 닉네임 갱신용)
+   */
+  socket.on("getUserMap", ({ roomCode }) => {
+    const room = rooms[roomCode];
+    if (!room) return;
+
+    socket.emit("userMap", room.userMap); // ✅ 프론트로 전체 userMap 전송
+  });
+
+  /**
    * 📦 덱 전달 받기
    */
   socket.on("sendDeck", ({ roomCode, deck }) => {

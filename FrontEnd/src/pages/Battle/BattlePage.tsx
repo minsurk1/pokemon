@@ -1507,6 +1507,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div
           id="enemy-player-target"
           className={`enemy-info ${
+            !isMyTurn ? "isEnemyTurn" : "" // [수정] 턴 라이트 클래스
+          } ${
             isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
           }`}
           onClick={() => handleDirectAttackOnEnemy()}
@@ -1538,7 +1540,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           </button>
         </div>
 
-        <div className="player-info">
+        <div className={`player-info ${isMyTurn ? "isMyTurn" : ""}`}> {/* [수정] 턴 라이트 클래스 */}
           <div className="player-avatar" />
           <div className="hp-bar">
             <div className="hp-bar-inner" style={{ width: `${(playerHP / MAX_HP) * 100}%` }} />
@@ -1546,7 +1548,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               {playerHP}/{MAX_HP}
             </div>
           </div>
-          {/* ✅ onClick 이벤트 수정 */}
           <div className={`surrender-button ${turn >= 5 ? "" : "disabled"}`} onClick={handleSurrenderClick}>
             항복 <CiFlag1 />
           </div>

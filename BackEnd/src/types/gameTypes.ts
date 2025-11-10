@@ -52,5 +52,8 @@ export interface RoomInfo {
   // ✅ 타이머 공유용 필드 추가
   timeLeft?: number; // 남은 시간(초)
   timer?: NodeJS.Timeout | null; // setInterval 핸들 (NodeJS 전용)
-  userMap?: Record<string, string>; // ✅ 추가
+  userMap: Record<string, string>; // ✅ 추가
+  inGame: boolean;
+  // ✅ 방 마지막 활동 시간
+  lastActivity: number; // timestamp(ms)
 }

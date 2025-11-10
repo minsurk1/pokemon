@@ -12,6 +12,8 @@ import storeRoutes from "./routes/storeRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
 import userCardRoutes from "./routes/userCardRoutes";
 import userDeckRoutes from "./routes/userDeckRoutes";
+import roomListRoutes from "./routes/roomListRoutes";
+import { startRoomCleaner } from "./utils/roomCleaner";
 import { setupSocketHandlers } from "./socket";
 
 dotenv.config();
@@ -43,6 +45,9 @@ app.use("/api/store", storeRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/usercard", userCardRoutes);
 app.use("/api/userdeck", userDeckRoutes);
+app.use("/api/rooms", roomListRoutes);
+
+startRoomCleaner();
 
 // ✅ 이미지 정적 파일 (CloudType 절대경로 호환)
 const imagePath = path.resolve(__dirname, "../public/images");

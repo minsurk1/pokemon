@@ -1,3 +1,5 @@
+// BackEnd/src/socket/room.ts
+
 import { Server, Socket } from "socket.io";
 import { initializeBattle } from "./battle"; // ✅ 전투 초기화 연결
 import { RoomInfo } from "../types/gameTypes"; // ✅ 공통 타입 사용
@@ -28,6 +30,11 @@ export default function roomHandler(io: Server, socket: Socket) {
       turnIndex: 0, // 턴 순서 인덱스
       timeLeft: TURN_TIME, // 기본 타이머 설정
       gameState: null, // 전투 시작 전까지 null
+
+      // ✅ 추가해야 하는 필드 2개
+      userMap: { [socket.id]: socket.id }, // 기본은 자기 자신
+      lastActivity: Date.now(),
+      inGame: false, // ✅ 대기 상태
     };
 
     socket.join(roomCode);
@@ -48,6 +55,8 @@ export default function roomHandler(io: Server, socket: Socket) {
       console.log(`❌ 존재하지 않는 방: ${roomCode}`);
       return;
     }
+    room.lastActivity = Date.now(); // ✅ 활동 갱신
+
     // ✅ 재접속 처리 (게임 진행 중 + room.players에 oldId 있으면 교체)
     if (room.gameState !== null && !room.players.includes(socket.id)) {
       for (const oldId of room.players) {
@@ -82,6 +91,9 @@ export default function roomHandler(io: Server, socket: Socket) {
             room.gameState.graveyards[socket.id] = room.gameState.graveyards[oldId];
             delete room.gameState.graveyards[oldId];
           }
+
+          room.userMap[socket.id] = oldId;
+          delete room.userMap[oldId];
 
           socket.emit("roomJoined", { roomCode, isHost: room.hostId === socket.id });
 
@@ -192,6 +204,9 @@ export default function roomHandler(io: Server, socket: Socket) {
 
     console.log(`🔄 현재 방 ${roomCode}의 소켓 갱신:`, room.players);
     console.log(`🎯 ${roomCode} - 전투 시작! 플레이어 목록: ${room.players.join(", ")}`);
+
+    // ✅ 게임 중 상태로 변경
+    room.inGame = true;
 
     // ✅ 전투 초기화 호출
     initializeBattle(io, roomCode, room);

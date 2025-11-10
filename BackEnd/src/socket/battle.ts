@@ -1226,6 +1226,30 @@ if (isValidObjectId) {
     switchTurnAndRestartTimer(io, roomCode, room);
   });
 
+  // ==================== 🏳️ 항복 ====================
+  socket.on("surrender", ({ roomCode, playerId }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+
+    const game = room.gameState;
+    const surrenderingId = socket.id;
+    const opponentId = room.players.find((id) => id !== surrenderingId);
+    if (!opponentId) return;
+
+    console.log(`🏳️ ${surrenderingId} 항복 → ${opponentId} 승리`);
+
+    // ✅ gameOver 이벤트 브로드캐스트
+    io.to(roomCode).emit("gameOver", {
+      winnerId: opponentId,
+      loserId: surrenderingId,
+      reason: "surrender",
+    });
+
+    // ✅ 타이머 정지 + 게임 상태 초기화
+    stopSharedTimer(room);
+    room.gameState = null;
+  });
+
   // ==================== 🚪 연결 해제 ====================
   socket.on("disconnecting", () => {
     for (const roomCode in rooms) {

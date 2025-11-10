@@ -1231,6 +1231,17 @@ if (isValidObjectId) {
   });
   // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+  // 배틀 내 채팅 기능
+  socket.on("roomChat", ({ roomCode, id, userId, name, text, ts }) => {
+    io.to(roomCode).emit("roomChat", {
+      id,
+      userId,
+      name,
+      text,
+      ts,
+    });
+  });
+
   // ==================== 🔁 턴 종료 ====================
   socket.on("endTurn", ({ roomCode }) => {
     const room = rooms[roomCode];

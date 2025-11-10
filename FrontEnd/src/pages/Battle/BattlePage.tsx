@@ -190,6 +190,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [showMessage, setShowMessage] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [gameOverMessage, setGameOverMessage] = useState("");
+  const [isVictory, setIsVictory] = useState(false); // ✅ 승패 여부 상태 추가
 
   const [lastPlayedCardId, setLastPlayedCardId] = useState<string | null>(null);
   const [lastEnemyCardId, setLastEnemyCardId] = useState<string | null>(null);
@@ -778,10 +779,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
     };
 
+    // ✅ onGameOver 핸들러 수정
     const onGameOver = ({ winnerId }: any) => {
       const myId = socket.id ?? null;
+      const didIWin = myId === winnerId; // ✅ 승리 여부 계산
+
+      setIsVictory(didIWin); // ✅ 승패 상태 설정
+      setGameOverMessage(didIWin ? "🎉 승리했습니다!" : "💀 패배했습니다...");
       setShowGameOver(true);
-      setGameOverMessage(myId === winnerId ? "🎉 승리했습니다!" : "💀 패배했습니다...");
     };
 
     // ✅ 서버에서 타이머 공유값 수신
@@ -1390,6 +1395,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [handleEndTurn]); // ✅ 이건 맞다
 
+  // ✅ 항복 처리 함수 추가
+  const handleSurrender = () => {
+    setIsVictory(false); // 항복은 항상 패배
+    setGameOverMessage("🏳️ 항복했습니다.");
+    setShowGameOver(true);
+    // (선택 사항) 서버에 항복 사실을 알려 상대방에게 승리 화면을 보여줄 수 있습니다.
+    // socket.emit("surrender", { roomCode });
+  };
+
   // ✅ socket이 없을 때 — return 직전에 배치
   if (!socket) {
     return <div style={{ color: "white", padding: 20 }}>서버 연결 중... 잠시만 기다려주세요.</div>;
@@ -1701,14 +1715,21 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               {playerHP}/{MAX_HP}
             </div>
           </div>
-          <div className="surrender-button" onClick={() => setShowGameOver(true)}>
+          {/* ✅ onClick 이벤트 수정 */}
+          <div className="surrender-button" onClick={handleSurrender}>
             항복 <CiFlag1 />
           </div>
         </div>
       </div>
 
+      {/* ✅ isVictory prop 전달 */}
       {showGameOver && (
-        <GameOverScreen message={gameOverMessage} onRestart={() => window.location.reload()} onGoToMainMenu={() => navigate("/")} />
+        <GameOverScreen
+          message={gameOverMessage}
+          isVictory={isVictory}
+          onRestart={() => window.location.reload()}
+          onGoToMainMenu={() => navigate("/")}
+        />
       )}
 
       {dragPreview && (

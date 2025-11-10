@@ -636,6 +636,7 @@
   background-position: center;
   z-index: 1000;
   border-right: solid 3px rgb(196, 191, 191);
+  align-items: center;
 }
 .enemy-grave {
   position: absolute;
@@ -728,6 +729,7 @@
   border-radius: 15px;
   align-items: center;
   border: solid gold 2px;
+  cursor: pointer; /* ✅ 클릭 가능하도록 커서 추가 */
 }
 
 .game-info {
@@ -1038,21 +1040,27 @@
 }
 
 .game-over-panel {
-  background-color: #4e4343;
-  border: 2px solid #ff0000;
+  /*
+  이 .game-over-panel의 기본 스타일은
+  아래의 .defeat 또는 .victory 클래스가 
+  구체적으로 덮어쓰게 됩니다.
+  */
   border-radius: 15px;
   padding: 40px;
   text-align: center;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
   color: white;
   font-family: "Do Hyeon", serif;
 }
 
 .game-over-message {
-  color: white;
+  /*
+  이 .game-over-message의 기본 스타일은
+  아래의 .victory .game-over-message 또는 
+  .defeat .game-over-message가 
+  구체적으로 덮어쓰게 됩니다.
+  */
   font-size: 3rem;
   margin-bottom: 30px;
-  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
 }
 
 .game-over-buttons {
@@ -1254,4 +1262,36 @@
   box-shadow: 0 0 8px rgba(255, 0, 0, 0.3) inset;
   outline: 2px dashed rgba(255, 80, 80, 0.25);
   transition: none !important; /* ✅ 부드러운 이동 제거 */
+}
+
+/*
+  ======================================
+  ✅ [추가된 코드] 승/패 별 게임 오버 화면
+  ======================================
+*/
+
+/* ✅ 패배/항복 시 패널 스타일 */
+.game-over-panel.defeat {
+  background-color: #4e4343;
+  border: 2px solid #ff0000; /* 기존 붉은색 테두리 */
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.5); /* 붉은색 빛 */
+}
+
+/* ✅ 승리 시 패널 스타일 */
+.game-over-panel.victory {
+  background-color: #4a5a7e; /* 밝은 파란/회색 계열 */
+  border: 2px solid #ffd700; /* 금색 테두리 */
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); /* 금색 빛 */
+}
+
+/* ✅ 승리 시 메시지 색상 (선택 사항) */
+.game-over-panel.victory .game-over-message {
+  color: #ffd700; /* 금색 텍스트 */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ✅ 패배/항복 시 메시지 색상 (선택 사항) */
+.game-over-panel.defeat .game-over-message {
+  color: #ff4d4d; /* 붉은색 텍스트 */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }

@@ -10,7 +10,7 @@
     "@tweenjs/tween.js": "^25.0.0",
     "axios": "^1.8.4",
     "cra-template": "1.2.0",
-    "framer-motion": "^12.23.6",
+    "framer-motion": "^12.23.24",
     "react": "^19.0.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
@@ -50,7 +50,6 @@
   "devDependencies": {
     "@types/react": "^18.3.24",
     "@types/react-dom": "^18.3.7",
-    "@types/socket.io-client": "^1.4.36",
     "@types/styled-components": "^5.1.34"
   }
 }

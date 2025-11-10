@@ -13,6 +13,7 @@ router.get("/list", (req, res) => {
       roomCode,
       players: room.players?.length ?? 0,
       inGame: room.inGame, // ✅ room.ts 구조에 맞게 수정됨
+      nicknames: room.players.map((pid) => room.userMap[pid] ?? "Unknown"),
       lastActivity: room.lastActivity, // ✅ 프론트에서 유령방 표시할 때 유용 (선택)
     }));
 

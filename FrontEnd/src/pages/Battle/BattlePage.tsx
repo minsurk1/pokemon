@@ -8,7 +8,7 @@ import { useSocket } from "../../context/SocketContext";
 import { CiClock1 } from "react-icons/ci";
 
 import "./BattlePage.css";
-// import MessageBox from "../../components/common/MessageBox"; // 1. MessageBox 제거
+import MessageBox from "../../components/common/MessageBox";
 import GameOverScreen from "../../components/battle/GameOverScreen";
 import CircularTimer from "../../components/battle/CircularTimer";
 import BurnLineComponent from "../../components/battle/BurnLineComponent";
@@ -191,6 +191,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [playerCostIcons, setPlayerCostIcons] = useState<number>(1);
   const [opponentCostIcons, setOpponentCostIcons] = useState<number>(1);
 
+  const [messageBox, setMessageBox] = useState<string | null>(null);
   const [messageHistory, setMessageHistory] = useState<string[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -250,6 +251,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   useEffect(() => {
     if (isMyTurn) setHasShuffledThisTurn(false);
   }, [isMyTurn]);
+
+  const showMessageBox = (msg: string) => {
+    setMessageBox(msg);
+    setTimeout(() => setMessageBox(null), 2000);
+  };
 
   const addMessageToLog = useCallback((newMessage: string) => {
     if (!newMessage) return;
@@ -427,7 +433,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   const drawCard = useCallback(() => {
     if (!isMyTurn) {
-      addMessageToLog("지금은 당신의 턴이 아닙니다!");
+      showMessageBox("지금은 당신의 턴이 아닙니다!");
       return;
     }
     if (hasDrawnThisTurn) {
@@ -894,12 +900,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const cardCost = Number(normalizedCard.cost) || 0;
 
     if (cardCost > playerCostIcons) {
-      addMessageToLog("코스트가 부족합니다!");
+      showMessageBox("코스트가 부족합니다!");
       return;
     }
 
     if (myCardsInZone.length >= 5) {
-      addMessageToLog("카드 존이 가득 찼습니다! (최대 5장)");
+      showMessageBox("카드 존이 가득 찼습니다! (최대 5장)");
       return;
     }
 
@@ -1071,7 +1077,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const handleDirectAttackOnEnemy = useCallback(
     (attackerIdParam?: string) => {
       if (!isMyTurn) {
-        addMessageToLog("지금은 당신의 턴이 아닙니다!");
+        showMessageBox("지금은 당신의 턴이 아닙니다!");
         return;
       }
       if (enemyCardsInZone.length > 0) {
@@ -1235,7 +1241,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const handleSurrenderClick = () => {
     // ✅ 5턴 이전 항복 불가
     if (turn < 5) {
-      addMessageToLog("5턴 이후부터 항복할 수 있습니다!");
+      showMessageBox("5턴 이후부터 항복할 수 있습니다!");
       return;
     }
 
@@ -1256,7 +1262,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.emit("surrender", { roomCode, playerId: socket.id });
 
     // ✅ 1) 메시지 출력
-    addMessageToLog("항복했습니다...");
+    showMessageBox("항복했습니다...");
 
     // ✅ 화면 어둡게
     setIsDimming(true);
@@ -1288,6 +1294,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // ===== 렌더 =====
   return (
     <div className="battle-container" onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
+      {/* ✅ 메시지박스 표시 */}
+      {messageBox && <MessageBox onClose={() => setMessageBox(null)}>{messageBox}</MessageBox>}
+
       <div className={`chat-log-container ${isChatOpen ? "chat-open" : "chat-unopen"}`}>
         <div className="chat-log-header" onClick={() => setIsChatOpen(!isChatOpen)}>
           <span className="chat-log-toggle">{isChatOpen ? "▼" : "►"}</span>
@@ -1499,15 +1508,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           className={`player-grave clickable-grave ${hasShuffledThisTurn ? "disabled" : ""}`}
           onClick={() => {
             if (!isMyTurn) {
-              addMessageToLog("지금은 당신의 턴이 아닙니다!");
+              showMessageBox("지금은 당신의 턴이 아닙니다!");
               return;
             }
             if (graveCount === 0) {
-              addMessageToLog("묘지가 비어 있습니다!");
+              showMessageBox("묘지가 비어 있습니다!");
               return;
             }
             if (hasShuffledThisTurn) {
-              addMessageToLog("이번 턴에는 이미 묘지를 섞었습니다!");
+              showMessageBox("이번 턴에는 이미 묘지를 섞었습니다!");
               return;
             }
             console.log("🧩 묘지 셔플 요청 전송:", roomCode);

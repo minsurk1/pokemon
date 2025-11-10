@@ -164,8 +164,14 @@ export default function roomHandler(io: Server, socket: Socket) {
       userMap: room.userMap,
     });
 
-    // ✅ 상대방에게 알림
-    socket.to(roomCode).emit("opponentJoined", { opponentId: socket.id });
+    // ✅ 정상 입장 처리 이후(emit 들 사이)에 추가
+    io.to(roomCode).emit("userMap", room.userMap);
+
+    // ✅ 상대방에게 알림 (호스트 등 방에 있던 사람들에게 전달)
+    socket.to(roomCode).emit("opponentJoined", {
+      opponentId: socket.id,
+      nickname: room.userMap[socket.id] ?? "Unknown", // ✅ 닉네임 함께 전송
+    });
 
     console.log(`👥 ${socket.id} → 방 ${roomCode} 입장 완료`);
     console.log(`📊 현재 방 상태: ${room.players.length}명 (${room.players.join(", ")})`);

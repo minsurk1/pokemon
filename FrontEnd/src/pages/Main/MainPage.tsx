@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { motion } from "framer-motion";
 import "./MainPage.css";
+import RoomLobbyModal from "../../components/room/RoomLobbyModal";
 
 import { FaBook } from "react-icons/fa6";
 import { GiBattleGear } from "react-icons/gi";
@@ -54,11 +55,9 @@ function MainPage() {
   const socket = useSocket();
   const { userInfo, loading, refreshUser, logout, selectedDeck } = useUser();
 
-  const [showRoomTab, setShowRoomTab] = useState(false);
   const [showCardTab, setShowCardTab] = useState(false);
-  const [roomCode, setRoomCode] = useState("");
-  const [serverError, setServerError] = useState("");
-  const [serverResponse, setServerResponse] = useState("");
+
+  const [showRoomLobbyModal, setShowRoomLobbyModal] = useState(false);
 
   // ✅ 랜덤 배경
   const [randomVideo] = useState(() => {
@@ -97,22 +96,6 @@ function MainPage() {
     }
   }, [loading, userInfo, refreshUser]);
 
-  // ✅ 소켓 리스너 등록
-  useEffect(() => {
-    if (!socket) return;
-
-    const onMessage = (data: string) => setServerResponse(data);
-    const onError = (err: string) => setServerError(err);
-
-    socket.on("message", onMessage);
-    socket.on("error", onError);
-
-    return () => {
-      socket.off("message", onMessage);
-      socket.off("error", onError);
-    };
-  }, [socket]);
-
   // ✅ 핸들러들
   const handleLogout = useCallback(() => {
     logout(); // Context 내부 상태 초기화
@@ -134,49 +117,7 @@ function MainPage() {
   const handleRule = useCallback(() => navigate("/rule"), [navigate]);
   const handleProfile = useCallback(() => navigate("/profile"), [navigate]);
 
-  const toggleRoomTab = useCallback(() => {
-    setShowRoomTab((prev) => !prev);
-    setServerError("");
-  }, []);
-
   const toggleCardTab = useCallback(() => setShowCardTab((prev) => !prev), []);
-
-  // ✅ 방 생성
-  const handleCreateRoom = useCallback(() => {
-    if (!socket) return setServerError("서버 연결이 되어있지 않습니다.");
-    setServerError("");
-
-    socket.emit("createRoom");
-
-    socket.once("roomCreated", ({ roomCode }) => {
-      navigate(`/wait/${roomCode}`, { state: { isHost: true } });
-    });
-
-    socket.once("error", (err: string) => setServerError(err));
-  }, [socket, navigate]);
-
-  // ✅ 방 입장
-  const handleJoinRoom = useCallback(() => {
-    if (!socket) return setServerError("서버 연결이 되어있지 않습니다.");
-    const trimmedCode = roomCode.trim().toUpperCase();
-
-    if (trimmedCode.length !== 6) {
-      return setServerError("올바른 방 코드를 입력해주세요.");
-    }
-
-    setServerError("");
-    socket.emit("joinRoom", trimmedCode);
-
-    socket.once("roomJoined", (data: { roomCode: string }) => {
-      navigate(`/wait/${data.roomCode}`, { state: { isHost: false } });
-    });
-
-    socket.once("error", (err: string) => setServerError(err));
-  }, [roomCode, socket, navigate]);
-
-  const onRoomCodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleJoinRoom();
-  };
 
   // ✅ 애니메이션 설정
   const list = {
@@ -213,8 +154,8 @@ function MainPage() {
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleInventory} marginBottom="3.3rem">
-            인벤토리 <GiBattleGear />
-          </MenuButton>
+              인벤토리 <GiBattleGear />
+            </MenuButton>
           </motion.li>
           <motion.li variants={item}>
             <MenuButton onClick={handleRule} marginBottom="3.3rem" cursor="help">
@@ -222,8 +163,9 @@ function MainPage() {
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton onClick={toggleRoomTab} marginBottom="3.3rem" disabled={loading || !userInfo}>
-              {showRoomTab ? "탭 닫기" : "방 만들기/입장"}<MdMeetingRoom />
+            <MenuButton onClick={() => setShowRoomLobbyModal(true)} marginBottom="3.3rem" disabled={loading || !userInfo}>
+              방 만들기/입장
+              <MdMeetingRoom />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
@@ -280,30 +222,10 @@ function MainPage() {
             로그아웃
           </button>
         </div>
-
-        {showRoomTab && (
-          <div className="room-tab">
-            <h3>방 만들기/입장</h3>
-            <button className="create-room" onClick={handleCreateRoom}>
-              방 만들기
-            </button>
-            <div className="join-room">
-              <input
-                type="text"
-                placeholder="방 코드 입력"
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                maxLength={6}
-                onKeyDown={onRoomCodeKeyDown}
-              />
-              <button onClick={handleJoinRoom}>방 입장</button>
-            </div>
-
-            {serverError && <div className="error-message">{serverError}</div>}
-            {serverResponse && <div className="server-response">{serverResponse}</div>}
-          </div>
-        )}
       </div>
+
+      {/* ✅ 여기! RoomLobbyModal은 반드시 return 내부에 있어야 렌더링됨 */}
+      {showRoomLobbyModal && <RoomLobbyModal onClose={() => setShowRoomLobbyModal(false)} />}
     </div>
   );
 }

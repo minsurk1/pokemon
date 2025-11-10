@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./RoomLobbyModal.css";
 import { useSocket } from "../../context/SocketContext";
+import { useUser } from "../../context/UserContext";
 
 interface RoomListItem {
   roomCode: string;
   players: number;
   inGame: boolean;
+  nicknames: string[];
 }
 
 interface Props {
@@ -19,6 +21,8 @@ export default function RoomLobbyModal({ onClose }: Props) {
 
   const [rooms, setRooms] = useState<RoomListItem[]>([]);
   const [roomCode, setRoomCode] = useState("");
+
+  const { userInfo } = useUser();
 
   // ✅ 방 목록 불러오기
   useEffect(() => {
@@ -69,7 +73,14 @@ export default function RoomLobbyModal({ onClose }: Props) {
 
         <h2 className="modal-title">배틀 대기실</h2>
 
-        <button className="create-btn" onClick={() => socket.emit("createRoom")}>
+        <button
+          className="create-btn"
+          onClick={() =>
+            socket.emit("createRoom", {
+              nickname: userInfo?.nickname ?? "Guest",
+            })
+          }
+        >
           방 만들기
         </button>
 
@@ -95,6 +106,11 @@ export default function RoomLobbyModal({ onClose }: Props) {
               <div className="room-info">
                 <span className="room-code">{r.roomCode}</span>
                 <span className="room-players">{r.players}/2</span>
+                <div className="room-nicknames">
+                  {r.nicknames.map((name) => (
+                    <span key={name}>{name}</span>
+                  ))}
+                </div>
               </div>
 
               {r.inGame ? (

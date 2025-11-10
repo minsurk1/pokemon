@@ -56,7 +56,7 @@ function EventItem({ event, onClick }: EventItemProps) {
         transition: "0.2s",
       }}
     >
-      <div className="event-item" style={baseStyle} />
+      <div id={`event-monster-${event.id}`} data-event-id={event.id} className="event-item" style={baseStyle} />
 
       <div className="event-hp-container">
         <div className="card-hp-bar">

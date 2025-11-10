@@ -449,43 +449,63 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   }, [drawCard]);
 
   // 애니메이션 + emit 담당 (BattlePage 내부)
-  const runAttackAnimation = (attackerId: string, targetId?: string) => {
-    const attackerEl = document.getElementById(`card-${attackerId}`);
+  // 수정
+  const runAttackAnimation = (
+    attackerInstanceId: string,
+    targetInstanceId?: string, // 카드 id 또는 이벤트 id
+    attackType: "card" | "player" | "event" | "field" = "card"
+  ) => {
+    const attackerEl = document.getElementById(`card-${attackerInstanceId}`);
     if (!attackerEl) return;
 
-    // ✅ 공격 상태 적용
     attackerEl.classList.add("attacking");
 
-    // ✅ 공격할 위치 계산
-    let targetEl = targetId ? document.getElementById(`card-${targetId}`) : null;
+    let targetEl: HTMLElement | null = null;
+
+    if (attackType === "card" && targetInstanceId) {
+      targetEl = document.getElementById(`card-${targetInstanceId}`);
+    } else if (attackType === "event") {
+      // 이벤트는 고유 id로 지정
+      targetEl =
+        (targetInstanceId && document.getElementById(`event-monster-${targetInstanceId}`)) ||
+        document.getElementById("event-monster") || // (하위호환)
+        null;
+    } else if (attackType === "player") {
+      // 적 플레이어(오른쪽 아바타)를 타깃
+      targetEl = document.getElementById("enemy-player-target");
+    } else if (attackType === "field") {
+      // 적 플레이어(필드)를 타깃
+      targetEl = document.getElementById("enemy-field-target");
+    }
 
     const attackerRect = attackerEl.getBoundingClientRect();
 
-    // ✅ 상대 카드가 있으면 그 좌표로, 없으면 중앙 위로 공격 (직접 공격용)
-    const targetX = targetEl ? targetEl.getBoundingClientRect().left + targetEl.getBoundingClientRect().width / 2 : window.innerWidth / 2;
+    let targetX: number;
+    let targetY: number;
 
-    const targetY = targetEl ? targetEl.getBoundingClientRect().top : window.innerHeight * 0.25;
+    if (targetEl) {
+      const tRect = targetEl.getBoundingClientRect();
+      targetX = tRect.left + tRect.width / 2;
+      targetY = tRect.top + tRect.height / 2;
+    } else {
+      // 타깃 엘리먼트가 없으면 화면 상단 중앙으로
+      targetX = window.innerWidth / 2;
+      targetY = window.innerHeight * 0.15;
+    }
 
     const dx = targetX - (attackerRect.left + attackerRect.width / 2);
     const dy = targetY - (attackerRect.top + attackerRect.height / 2);
 
-    // ✅ 실제 애니메이션
     attackerEl.animate(
       [
         { transform: "translate(0, 0) scale(1)" },
-        { transform: `translate(${dx * 0.7}px, ${dy * 0.7}px) scale(1.15)` },
+        { transform: `translate(${dx * 0.65}px, ${dy * 0.65}px) scale(1.15)` },
         { transform: "translate(0, 0) scale(1)" },
       ],
-      {
-        duration: 450,
-        easing: "ease-out",
-      }
+      { duration: 430, easing: "ease-out" }
     );
 
-    // ✅ 상태 원복
-    setTimeout(() => {
-      attackerEl.classList.remove("attacking");
-    }, 450);
+    setTimeout(() => attackerEl.classList.remove("attacking"), 430);
   };
 
   useEffect(() => {
@@ -499,6 +519,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       addMessageToLog(`${attacker} ➤ ${defender} ${message} (x${multiplier})`);
     };
     const onDirectAttackEnhanced = (data: any) => {
+      runAttackAnimation(data.attackerId, undefined, "player");
       const { attackerName, damage, newHP, multiplier, message } = data;
       const iAmAttacker = currentTurnIdRef.current === socket.id;
       if (damage < 0) {
@@ -514,6 +535,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         );
       }
     };
+
     const onCardPlayedEnhanced = (data: any) => {
       if (data.message) {
         addMessageToLog(data.message);
@@ -711,6 +733,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       addMessageToLog(`🚨 ${eventData.message}`);
     };
     const onEventHPUpdate = ({ eventId, newHP }: { eventId: number; newHP: number }) => {
+      if (selectedAttacker) {
+        runAttackAnimation(selectedAttacker, undefined, "event");
+      }
       setActiveEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, hp: newHP } : e)));
     };
     const onEventEnded = ({ eventId }: { eventId: number }) => {
@@ -946,7 +971,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       addMessageToLog(`💥 ${attacker.name}이(가) 상대 플레이어를 직접 공격합니다!`);
 
       // ✅ 직접 공격 애니메이션
-      runAttackAnimation(attacker.id);
+      runAttackAnimation(attacker.id, undefined, "player");
 
       // ✅ 서버에 직접 공격 알림
       socket.emit("directAttack", { roomCode, attackerId });
@@ -1012,6 +1037,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       return;
     }
     addMessageToLog(`⚔️ ${attacker.name}이(가) 이벤트를 공격합니다!`);
+    runAttackAnimation(attacker.id, String(eventId), "event");
     socket.emit("attackEvent", { roomCode, attackerId: attacker.id, eventId });
     setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
     setSelectedAttacker(null);
@@ -1054,6 +1080,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       // ✅ (추가) 서버가 updateGameState를 늦게 보낼 때 옛 HP로 덮이지 않도록 잠시 억제
       suppressSyncUntilRef.current = Date.now() + 700;
 
+      runAttackAnimation(attacker.id, undefined, "field");
       socket.emit("directAttack", { roomCode, attackerId });
       addMessageToLog(`💥 ${attacker.name}이(가) 상대 플레이어를 직접 공격합니다!`);
       setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
@@ -1294,6 +1321,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         </div>
 
         <div
+          id="enemy-field-target"
           className={`enemy-card-zone ${
             isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
           }`}
@@ -1477,6 +1505,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       {/* === 오른쪽 사이드 영역 === */}
       <div className="right-container">
         <div
+          id="enemy-player-target"
           className={`enemy-info ${
             isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
           }`}

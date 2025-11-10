@@ -1231,23 +1231,25 @@ if (isValidObjectId) {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
-    const game = room.gameState;
-    const surrenderingId = socket.id;
+    const surrenderingId = playerId ?? socket.id;
     const opponentId = room.players.find((id) => id !== surrenderingId);
     if (!opponentId) return;
 
     console.log(`🏳️ ${surrenderingId} 항복 → ${opponentId} 승리`);
 
-    // ✅ gameOver 이벤트 브로드캐스트
+    // ✅ 즉시 브로드캐스트
     io.to(roomCode).emit("gameOver", {
       winnerId: opponentId,
       loserId: surrenderingId,
       reason: "surrender",
     });
 
-    // ✅ 타이머 정지 + 게임 상태 초기화
-    stopSharedTimer(room);
-    room.gameState = null;
+    // ✅ gameState 즉시 초기화 금지!!
+    //    -> 이벤트가 먼저 클라이언트에 안전하게 전달되어야 함
+    setTimeout(() => {
+      stopSharedTimer(room);
+      room.gameState = null;
+    }, 300); // 0~300ms 사이면 충분 (전송 안정)
   });
 
   // ==================== 🚪 연결 해제 ====================

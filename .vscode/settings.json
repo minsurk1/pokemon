@@ -1,5 +1,0 @@
-{
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "prettier.printWidth": 145,
-  "editor.wordWrapColumn": 80
-}

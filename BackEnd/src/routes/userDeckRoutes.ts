@@ -64,7 +64,6 @@ router.get("/single", isAuthenticated, async (req, res) => {
 });
 
 // ✅ 덱 저장
-// ✅ 덱 저장
 router.post("/single/save", isAuthenticated, async (req, res) => {
   try {
     const user = (req as AuthenticatedRequest).user;
@@ -85,7 +84,7 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
 
     // --- 코스트 합 계산 ---
     const costSum = cards.reduce((sum: number, c: any) => sum + Number(c.cost ?? c.tier ?? 1), 0);
-    const COST_LIMIT = 80;
+    const COST_LIMIT = 105;
 
     // --- 티어 개수 카운트 ---
     const tierCount: Record<number, number> = {};
@@ -122,7 +121,7 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
       });
     }
 
-    // ✅ RULE 4: 총 코스트 ≤ 80
+    // ✅ RULE 4: 총 코스트 ≤ 105
     if (costSum > COST_LIMIT) {
       return res.status(400).json({
         message: `덱 코스트 초과: ${costSum}/${COST_LIMIT}`,

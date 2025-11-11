@@ -78,6 +78,7 @@
   box-shadow: 0 0 12px #ffd803, 0 0 30px #232946 inset;
   text-shadow: 0 0 8px #ffd803;
   transition: box-shadow 0.2s, color 0.2s;
+  white-space: nowrap; /* 줄바꿈 금지 */
 }
 
 .nav-button:hover,
@@ -96,7 +97,6 @@
   z-index: 100;
 }
 /* ▲▲▲ [수정됨] sticky-deck-row를 세로 방향 Flex로 변경 ▲▲▲ */
-
 
 /* ▼▼▼ [추가됨] 버튼 + 필터 래퍼 ▼▼▼ */
 .deck-controls {
@@ -144,11 +144,9 @@
 }
 /* ▲▲▲ [추가됨] 버튼 + 필터 래퍼 ▲▲▲ */
 
-
 /* ▼▼▼ [제거됨] .button-deck-sidebar (deck-controls로 대체) ▼▼▼ */
 /* .button-deck-sidebar { ... } */
 /* ▲▲▲ [제거됨] .button-deck-sidebar (deck-controls로 대체) ▲▲▲ */
-
 
 /* ▼▼▼ [수정됨] selected-cards-container의 불필요한 속성 제거 ▼▼▼ */
 .selected-cards-container {
@@ -291,4 +289,30 @@
 }
 .card.unowned {
   pointer-events: none;
+}
+
+/* 덱 저장 현황 박스 */
+.deck-small-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  background: rgba(0, 0, 0, 0.45);
+  padding: 8px 14px; /* 조금 넓혀서 안정감 */
+  border-radius: 8px;
+
+  font-family: "Do Hyeon";
+  color: #fff;
+  font-size: 1.05rem; /* ✅ 기존보다 약간 큰 사이즈 */
+  white-space: nowrap;
+}
+
+.deck-small-stats span {
+  padding: 0 4px;
+}
+
+.stat-bad {
+  color: #ff5252;
+  font-weight: bold;
 }

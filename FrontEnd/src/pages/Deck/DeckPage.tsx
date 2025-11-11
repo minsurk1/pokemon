@@ -25,6 +25,30 @@ interface UserCardDTO {
   cost?: number;
 }
 
+interface DeckSaveCard {
+  id: string;
+  name: string;
+  cardType: string;
+  attack: number;
+  hp: number;
+  maxhp: number;
+  cost: number;
+  tier: number;
+  image2D: string;
+  image: string;
+}
+
+const DeckSmallStats: React.FC<{ stats: any }> = ({ stats }) => {
+  return (
+    <div className="deck-small-stats">
+      <span className={stats.tier8 > 2 ? "stat-bad" : ""}>전설: {stats.tier8}/2</span>
+      <span className={stats.tier1_2 < 7 ? "stat-bad" : ""}>1~2티어: {stats.tier1_2}/7</span>
+      <span className={stats.tier6_7 > 3 ? "stat-bad" : ""}>6~7티어: {stats.tier6_7}/3</span>
+      <span className={stats.totalTier > 105 ? "stat-bad" : ""}>티어 합: {stats.totalTier}/105</span>
+    </div>
+  );
+};
+
 const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [userCards, setUserCards] = useState<UserCardDTO[]>([]);
@@ -36,7 +60,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
 
   const [filterType, setFilterType] = useState("all");
   // ▼▼▼ [버그 수정] setFilterType -> setFilterCost로 변경 ▼▼▼
-  const [filterCost, setFilterCost] = useState("all"); 
+  const [filterCost, setFilterCost] = useState("all");
   // ▲▲▲ [버그 수정] setFilterType -> setFilterCost로 변경 ▲▲▲
 
   const maxSelectedCards = 30;
@@ -46,6 +70,50 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
   const userStr = localStorage.getItem("user");
   const token = localStorage.getItem("token");
   const user = userStr ? JSON.parse(userStr) : null;
+
+  // ✅ 덱 검증 함수
+  function validateDeck(cards: DeckSaveCard[]) {
+    const totalTier = cards.reduce((sum, c) => sum + Number(c.tier ?? 1), 0);
+
+    const tierCount: Record<number, number> = {};
+    cards.forEach((c) => {
+      const t = Number(c.tier ?? 1);
+      tierCount[t] = (tierCount[t] || 0) + 1;
+    });
+
+    const tier1_2 = (tierCount[1] ?? 0) + (tierCount[2] ?? 0);
+    const tier6_7 = (tierCount[6] ?? 0) + (tierCount[7] ?? 0);
+    const tier8 = tierCount[8] ?? 0;
+
+    const errors: string[] = [];
+
+    if (cards.length < 12) errors.push("덱은 최소 12장이 필요합니다.");
+    if (cards.length > 30) errors.push("덱은 최대 30장까지 가능합니다.");
+
+    if (tier8 > 2) errors.push("8티어(전설)는 최대 2장까지 가능");
+    if (tier1_2 < 7) errors.push("1~2티어는 최소 7장 필요");
+    if (tier6_7 > 3) errors.push("6~7티어는 합쳐서 최대 3장까지 가능");
+    if (totalTier > 105) errors.push(`총 티어 합계 초과: ${totalTier}/105`);
+
+    return errors;
+  }
+
+  function getDeckStats(cards: DeckSaveCard[]) {
+    const totalTier = cards.reduce((sum, c) => sum + Number(c.tier ?? 1), 0);
+
+    const tierCount: Record<number, number> = {};
+    cards.forEach((c) => {
+      const t = Number(c.tier ?? 1);
+      tierCount[t] = (tierCount[t] || 0) + 1;
+    });
+
+    return {
+      totalTier,
+      tier1_2: (tierCount[1] ?? 0) + (tierCount[2] ?? 0),
+      tier6_7: (tierCount[6] ?? 0) + (tierCount[7] ?? 0),
+      tier8: tierCount[8] ?? 0,
+    };
+  }
 
   // ✅ 유저 카드 + 덱 불러오기
   useEffect(() => {
@@ -147,19 +215,40 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
     setUserCards(allUserCards);
   };
 
+  const liveDeck: DeckSaveCard[] = selectedCards
+    .map((cardId) => {
+      const card = allUserCards.find((c) => c.cardId === cardId);
+      if (!card) return null;
+      return {
+        id: card._id ?? card.cardId,
+        name: card.name,
+        cardType: card.cardType ?? "normal",
+        attack: card.attack ?? 0,
+        hp: card.hp ?? 0,
+        maxhp: card.hp ?? 0,
+        cost: card.cost ?? card.tier ?? 1,
+        tier: card.tier ?? 1,
+        image2D: card.image2D || card.image,
+        image: card.image,
+      };
+    })
+    .filter((c): c is DeckSaveCard => c !== null);
+
+  const stats = getDeckStats(liveDeck);
+
   // ✅ 덱 저장
   const saveDeck = async () => {
     if (!token) return;
 
-    const formattedDeck = selectedCards
+    const formattedDeck: DeckSaveCard[] = selectedCards
       .map((cardId) => {
         const card = allUserCards.find((c) => c.cardId === cardId);
         if (!card) return null;
 
         return {
-          id: card._id,
+          id: card._id ?? card.cardId,
           name: card.name,
-          cardType: card.cardType,
+          cardType: card.cardType ?? "normal",
           attack: card.attack ?? 0,
           hp: card.hp ?? 0,
           maxhp: card.hp ?? 0,
@@ -169,29 +258,33 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
           image: card.image,
         };
       })
-      .filter(Boolean);
+      .filter((c): c is DeckSaveCard => c !== null);
+
+    // ✅ 덱 검증 추가!
+    const errors = validateDeck(formattedDeck);
+
+    if (errors.length > 0) {
+      setMessage(`덱 제한 위반:\n${errors.join("\n")}`);
+      setShowMessage(true);
+      return;
+    }
 
     try {
-      await axios.post(
-        `${API_URL}/userdeck/single/save`,
-        { cards: formattedDeck },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      console.log("🔥 formattedDeck before save:", formattedDeck);
+      await axios.post(`${API_URL}/userdeck/single/save`, { cards: formattedDeck }, { headers: { Authorization: `Bearer ${token}` } });
+
       setMessage("덱 저장 완료!");
       setShowMessage(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error("덱 저장 실패:", err);
-      setMessage("덱 저장 실패");
+      setMessage(err.response?.data?.message || "덱 저장 실패");
       setShowMessage(true);
     }
   };
 
   return (
     // ▼▼▼ [수정 1] .deck-page가 배경을 갖도록 CSS에서 수정할 예정 ▼▼▼
-    <div className="deck-page"> 
-
-      {/* <div className="deck-header"/> */} 
+    <div className="deck-page">
+      {/* <div className="deck-header"/> */}
 
       <div className="navigation-section">
         <button className="nav-button" onClick={() => navigate("/main")}>
@@ -206,10 +299,14 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
       <div className="sticky-deck-row">
         <div className="deck-controls">
           <div className="button-group">
-            <button className="deck-new-button" onClick={createNewDeck}>new</button>
-            <button className="deck-save-button" onClick={saveDeck}>save</button>
+            <button className="deck-new-button" onClick={createNewDeck}>
+              new
+            </button>
+            <button className="deck-save-button" onClick={saveDeck}>
+              save
+            </button>
           </div>
-
+          <DeckSmallStats stats={stats} /> {/* ✅ 덱 현황 박스 추가 */}
           <div className="filter-group">
             <span style={{ color: "white", fontFamily: "Do Hyeon", marginRight: "5px" }}>속성:</span>
             <select
@@ -275,7 +372,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
           </div>
         </div>
       </div>
-      
+
       {showMessage && (
         <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1" onClose={() => setShowMessage(false)}>
           {message}
@@ -284,10 +381,10 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
 
       <div className="card-list">
         {userCards
-          .filter(card => {
+          .filter((card) => {
             return filterType === "all" ? true : card.cardType === filterType;
           })
-          .filter(card => {
+          .filter((card) => {
             const cardCost = card.cost ?? card.tier;
             return filterCost === "all" ? true : String(cardCost) === filterCost;
           })
@@ -306,7 +403,7 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
                 <p>보유 수량: {card.count}</p>
               </div>
             </div>
-        ))}
+          ))}
       </div>
     </div>
   );

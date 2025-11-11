@@ -1,3 +1,6 @@
 node_modules/
 **/node_modules/
-**/Dockerfile
+**/[Dd]ockerfile
+**/[Dd]ockerfile.*
+Dockerfile
+dockerfile

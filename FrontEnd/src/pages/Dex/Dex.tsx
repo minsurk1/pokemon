@@ -5,12 +5,7 @@ import { AiFillHome } from "react-icons/ai";
 import { motion } from "framer-motion";
 import { Canvas } from "@react-three/fiber";
 import { GLTF } from "three-stdlib";
-import {
-  useGLTF,
-  OrbitControls,
-  Environment,
-  ContactShadows,
-} from "@react-three/drei";
+import { useGLTF, OrbitControls, Environment, ContactShadows } from "@react-three/drei";
 import dexVideo from "../../assets/videos/dexvideo.mp4";
 import BackgroundVideo from "../../components/common/global";
 import { HomeButton } from "../../components/common/button";
@@ -28,81 +23,92 @@ import electricimage from "../../assets/images/electric.png";
 import esperimage from "../../assets/images/esper.png";
 import legendimage from "../../assets/images/legend.png";
 
+import * as THREE from "three";
+
+const GrayShader = {
+  uniforms: {
+    colorTexture: { value: null },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    varying vec2 vUv;
+    uniform sampler2D colorTexture;
+
+    void main() {
+      vec4 color = texture2D(colorTexture, vUv);
+      float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+      gl_FragColor = vec4(vec3(gray), color.a);
+    }
+  `,
+};
+
 // 타입별 모델 경로 정의
 const typeModels = {
-  fire: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/firetier${i + 1}.glb`
-  ),
-  electric: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/electrictier${i + 1}.glb`
-  ),
-  esper: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/espertier${i + 1}.glb`
-  ),
-  water: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/watertier${i + 1}.glb`
-  ),
-  forest: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/foresttier${i + 1}.glb`
-  ),
-  electirc: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/electrictier${i + 1}.glb`
-  ),
-  fly: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/flytier${i + 1}.glb`
-  ),
-  worm: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/wormtier${i + 1}.glb`
-  ),
-  normal: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/normaltier${i + 1}.glb`
-  ),
-  poison: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/poisontier${i + 1}.glb`
-  ),
-  land: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/landtier${i + 1}.glb`
-  ),
-  ice: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/icetier${i + 1}.glb`
-  ),
-  legend: Array.from(
-    { length: 7 },
-    (_, i) => `/assets/models/legendtier${i + 1}.glb`
-  ),
+  fire: Array.from({ length: 7 }, (_, i) => `/assets/models/firetier${i + 1}.glb`),
+  electric: Array.from({ length: 7 }, (_, i) => `/assets/models/electrictier${i + 1}.glb`),
+  esper: Array.from({ length: 7 }, (_, i) => `/assets/models/espertier${i + 1}.glb`),
+  water: Array.from({ length: 7 }, (_, i) => `/assets/models/watertier${i + 1}.glb`),
+  forest: Array.from({ length: 7 }, (_, i) => `/assets/models/foresttier${i + 1}.glb`),
+  fly: Array.from({ length: 7 }, (_, i) => `/assets/models/flytier${i + 1}.glb`),
+  worm: Array.from({ length: 7 }, (_, i) => `/assets/models/wormtier${i + 1}.glb`),
+  normal: Array.from({ length: 7 }, (_, i) => `/assets/models/normaltier${i + 1}.glb`),
+  poison: Array.from({ length: 7 }, (_, i) => `/assets/models/poisontier${i + 1}.glb`),
+  land: Array.from({ length: 7 }, (_, i) => `/assets/models/landtier${i + 1}.glb`),
+  ice: Array.from({ length: 7 }, (_, i) => `/assets/models/icetier${i + 1}.glb`),
+  legend: Array.from({ length: 7 }, (_, i) => `/assets/models/legendtier${i + 1}.glb`),
 };
 
 type PokemonType = keyof typeof typeModels;
 
 interface PokemonModelProps {
   modelPath: string;
+  isOwned: boolean;
 }
 
-function PokemonModel({ modelPath }: PokemonModelProps) {
+function PokemonModel({ modelPath, isOwned }: PokemonModelProps) {
   const gltf = useGLTF(modelPath) as GLTF;
+  const ref = useRef<THREE.Group>(null);
 
-  return (
-    <>
-      <primitive
-        object={gltf.scene}
-        scale={2.0}
-        position={[-0.6, -0, 0]}
-        rotation={[0, Math.PI / 3, 0]}
-      />
-    </>
-  );
+  useEffect(() => {
+    if (!ref.current) return;
+
+    ref.current.traverse((obj: any) => {
+      if (obj.isMesh) {
+        console.log("🔍 mesh:", obj.name, obj.material);
+        console.log("🎨 map:", obj.material.map);
+
+        if (isOwned) {
+          console.log("✅ 컬러 렌더링됨:", modelPath);
+          return;
+        }
+
+        const texture = obj.material.map;
+
+        if (texture) {
+          console.log("⚫ Shader 흑백 처리됨:", modelPath);
+          obj.material = new THREE.ShaderMaterial({
+            uniforms: { colorTexture: { value: texture } },
+            vertexShader: GrayShader.vertexShader,
+            fragmentShader: GrayShader.fragmentShader,
+          });
+          obj.material.needsUpdate = true;
+        } else {
+          console.warn(`⚠ map 없음 → color desaturation 적용: ${modelPath}`);
+          obj.material = obj.material.clone();
+          obj.material.color = new THREE.Color(0.4, 0.4, 0.4); // 회색
+          obj.material.needsUpdate = true;
+        }
+      }
+    });
+  }, [isOwned, modelPath]);
+
+  return <primitive ref={ref} object={gltf.scene} scale={2.0} position={[-0.6, 0, 0]} rotation={[0, Math.PI / 3, 0]} />;
 }
 
 function Dex() {
@@ -112,6 +118,44 @@ function Dex() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [selectedType, setSelectedType] = useState<PokemonType>("fire");
   const [models, setModels] = useState(typeModels.fire);
+
+  const [ownedCards, setOwnedCards] = useState<{ cardType: string; tier: number }[]>([]);
+
+  useEffect(() => {
+    console.log("✅ 서버에서 받은 ownedCards:", ownedCards);
+    ownedCards.forEach((c) => console.log(` • 보유 → type=${c.cardType}, tier=${c.tier}`));
+  }, [ownedCards]);
+
+  useEffect(() => {
+    async function loadOwned() {
+      try {
+        const token = localStorage.getItem("token"); // ✅ 로그인 시 저장된 토큰
+
+        if (!token) {
+          console.log("❌ Dex: 토큰 없음 → 인증 실패");
+          return;
+        }
+
+        const res = await fetch("https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/dex/owned-cards", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          console.log("❌ owned-cards 요청 실패:", res.status);
+          return;
+        }
+
+        const data = await res.json();
+        console.log("🎉 ownedCards 로드됨:", data);
+        setOwnedCards(data.ownedCards || []);
+      } catch (e) {
+        console.error("유저 보유 카드 목록 로딩 실패", e);
+      }
+    }
+    loadOwned();
+  }, []);
 
   const handleMain = (): void => {
     navigate("/main");
@@ -199,15 +243,15 @@ function Dex() {
       });
   }, []);
 
+  const normalize = (s: string) => s.toLowerCase().replace(/tier/g, "").replace(/[0-9]/g, "").trim();
+
   return (
     <div className="dex-page">
       <div className="dex-header">
         {typeButtons.map((button) => (
           <button
             key={button.type}
-            className={`dex-header-button ${
-              selectedType === button.type ? "active" : ""
-            }`}
+            className={`dex-header-button ${selectedType === button.type ? "active" : ""}`}
             onClick={() => handleTypeChange(button.type)}
           >
             <img src={button.src || "/placeholder.svg"} alt={button.alt} />
@@ -229,11 +273,7 @@ function Dex() {
       <div className="dex-container">
         <BackgroundVideo src={dexVideo} opacity={1} zIndex={-1} />
         <div className="dex-card-container">
-          <button
-            className="card-nav-button"
-            onClick={handlePrev}
-            disabled={currentIndex === 0 || isAnimating || models.length === 0}
-          >
+          <button className="card-nav-button" onClick={handlePrev} disabled={currentIndex === 0 || isAnimating || models.length === 0}>
             ◀
           </button>
 
@@ -249,54 +289,58 @@ function Dex() {
                 }}
                 onAnimationComplete={handleAnimationComplete}
               >
-                {models.map((modelPath, index) => (
-                  <motion.div
-                    key={index}
-                    className={`dex-card ${
-                      index >= currentIndex && index < currentIndex + 3
-                        ? "visible"
-                        : "hidden"
-                    }`}
-                    initial={false}
-                    animate={{
-                      scale:
-                        index >= currentIndex && index < currentIndex + 3
-                          ? 1
-                          : 0.8,
-                      opacity:
-                        index >= currentIndex && index < currentIndex + 3
-                          ? 1
-                          : 0.3,
-                    }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="glb-card-wrapper">
-                      <Canvas
-                        className="canvas"
-                        style={{ width: "23vw", height: "450px" }}
-                      >
-                        <ambientLight intensity={0.5} />
-                        <directionalLight position={[2, 2, 2]} intensity={1} />
-                        <Suspense fallback={null}>
-                          <PokemonModel modelPath={modelPath} />
-                          <Environment preset="city" />
-                          <ContactShadows
-                            position={[0, -2.8, 0]}
-                            opacity={0.4}
-                            scale={5}
-                            blur={2.4}
-                          />
-                          <OrbitControls
-                            enableZoom={false}
-                            enablePan={false}
-                            minPolarAngle={Math.PI / 4}
-                            maxPolarAngle={Math.PI / 2}
-                          />
-                        </Suspense>
-                      </Canvas>
-                    </div>
-                  </motion.div>
-                ))}
+                {models.map((modelPath, index) => {
+                  // ✅ glb 파일명 파싱
+                  const file = modelPath.split("/").pop() || "";
+                  const match = file.match(/([a-z]+)tier(\d+)\.glb/i);
+
+                  const modelType = normalize(match ? match[1] : "");
+                  let modelTier = match ? Number(match[2]) : 1;
+
+                  // ✅ glb 모델 tier는 1~7까지만 존재 → 8 이상은 7로 통일
+                  modelTier = Math.min(modelTier, 7);
+
+                  // ✅ owned 카드 매칭
+                  const isOwned = ownedCards.some((c) => {
+                    const cardType = normalize(c.cardType);
+
+                    // ✅ DB의 tier도 8 이상이면 7로 통일 (중요)
+                    const cardTier = Math.min(c.tier, 7);
+
+                    return cardType === modelType && cardTier === modelTier;
+                  });
+
+                  // ✅ ✅ ✅ 디버그 로그 추가
+                  console.log(`🎨 모델 렌더링: type=${modelType}, tier=${modelTier}, isOwned=${isOwned}`);
+
+                  return (
+                    <motion.div
+                      key={index}
+                      className={`dex-card ${index >= currentIndex && index < currentIndex + 3 ? "visible" : "hidden"}`}
+                      initial={false}
+                      animate={{
+                        scale: index >= currentIndex && index < currentIndex + 3 ? 1 : 0.8,
+                        opacity: index >= currentIndex && index < currentIndex + 3 ? 1 : 0.3,
+                      }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="glb-card-wrapper">
+                        <Canvas className="canvas" style={{ width: "23vw", height: "450px" }}>
+                          <ambientLight intensity={0.5} />
+                          <directionalLight position={[2, 2, 2]} intensity={1} />
+                          <Suspense fallback={null}>
+                            {/* ✅ 여기서 isOwned 전달 */}
+                            <PokemonModel modelPath={modelPath} isOwned={isOwned} />
+
+                            <Environment preset="city" />
+                            <ContactShadows position={[0, -2.8, 0]} opacity={0.4} scale={5} blur={2.4} />
+                            <OrbitControls enableZoom={false} enablePan={false} minPolarAngle={Math.PI / 4} maxPolarAngle={Math.PI / 2} />
+                          </Suspense>
+                        </Canvas>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             ) : (
               <div className="no-models-message">
@@ -305,15 +349,7 @@ function Dex() {
             )}
           </div>
 
-          <button
-            className="card-nav-button"
-            onClick={handleNext}
-            disabled={
-              currentIndex >= models.length - 3 ||
-              isAnimating ||
-              models.length === 0
-            }
-          >
+          <button className="card-nav-button" onClick={handleNext} disabled={currentIndex >= models.length - 3 || isAnimating || models.length === 0}>
             ▶
           </button>
         </div>

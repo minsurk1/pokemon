@@ -40,12 +40,12 @@ function Inventory() {
       setOpenedCards(
         drawnCards.map((c: any) => ({
           id: c.id,
-          name: c.name, 
+          name: c.name,
           type: packType as CardPack["type"],
           quantity: 1,
           isOpened: true,
-          packImage: c.image, 
-          tier: c.tier, 
+          packImage: c.image,
+          tier: c.tier,
         }))
       );
 
@@ -67,7 +67,7 @@ function Inventory() {
       console.error("카드팩 개봉 실패:", err);
       if (err.response?.status === 400) {
         alert(err.response?.data?.message || "재고가 없습니다.");
-        setShowModal(false); 
+        setShowModal(false);
       } else {
         alert(err.response?.data?.message || "카드팩 개봉 실패");
       }
@@ -106,11 +106,7 @@ function Inventory() {
                       <p className="pack-name">{pack.name}</p>
                       <span className="pack-quantity">재고: {pack.quantity}개</span>
                     </div>
-                    <button
-                      className="open-button"
-                      onClick={() => openCardPack(pack.id, pack.type)}
-                      disabled={pack.quantity <= 0}
-                    >
+                    <button className="open-button" onClick={() => openCardPack(pack.id, pack.type)} disabled={pack.quantity <= 0}>
                       {pack.quantity <= 0 ? "재고 없음" : "카드팩 개봉"}
                     </button>
                   </div>
@@ -129,7 +125,7 @@ function Inventory() {
               {/* --- ▼ [수정됨] key에 index를 추가하여 '이어뽑기' 버그 해결 --- */}
               {openedCards.map((card, index) => (
                 <div key={`${card.id}-${index}`} className="modal-card">
-              {/* --- ▲ [수정됨] --- */}
+                  {/* --- ▲ [수정됨] --- */}
                   {card.packImage ? (
                     <img
                       src={`${IMAGE_URL}/images/${card.packImage}`}
@@ -151,9 +147,7 @@ function Inventory() {
             </div>
 
             {(() => {
-              const currentPack = userInfo.inventory.find(
-                (p) => p.type === lastOpenedPack?.type
-              );
+              const currentPack = userInfo.inventory.find((p) => p.type === lastOpenedPack?.type);
               const hasMorePacks = currentPack && currentPack.quantity > 0;
 
               return (
@@ -167,9 +161,7 @@ function Inventory() {
                     }}
                     disabled={!hasMorePacks}
                   >
-                    {hasMorePacks
-                      ? `계속 뽑기 (남은 재고: ${currentPack.quantity}개)`
-                      : "재고 없음"}
+                    {hasMorePacks ? `계속 뽑기 (남은 재고: ${currentPack.quantity}개)` : "재고 없음"}
                   </button>
                 </div>
               );
@@ -182,11 +174,14 @@ function Inventory() {
         </div>
       )}
       <div>
-        <Link to="/store" className="back-button">
-          상점페이지
-        </Link>
         <Link to="/main" className="inv-main-button">
           메인 페이지
+        </Link>
+        <Link to="/deck" className="inv-deck-button">
+          덱 페이지
+        </Link>
+        <Link to="/store" className="back-button">
+          상점 페이지
         </Link>
       </div>
     </div>

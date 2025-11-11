@@ -60,6 +60,7 @@ function App() {
             image: c.image,
             attack: c.attack,
             hp: c.hp,
+            maxhp: c.maxhp,
             cost: c.cost,
             tier: c.tier,
           }));
@@ -100,7 +101,7 @@ function App() {
               path="/deck"
               element={
                 <DeckPage
-                  selectedDeck={selectedDeck.map((c) => c.image)}
+                  selectedDeck={selectedDeck.map((c) => c.image ?? "").filter(Boolean)}
                   onDeckChange={(imgs) =>
                     setSelectedDeck((prev) =>
                       imgs.map((img, i) => ({

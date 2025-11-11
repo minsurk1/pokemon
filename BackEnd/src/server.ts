@@ -12,6 +12,9 @@ import storeRoutes from "./routes/storeRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
 import userCardRoutes from "./routes/userCardRoutes";
 import userDeckRoutes from "./routes/userDeckRoutes";
+import roomListRoutes from "./routes/roomListRoutes";
+import userDexRoutes from "./routes/userDexRoutes";
+import { startRoomCleaner } from "./utils/roomCleaner";
 import { setupSocketHandlers } from "./socket";
 
 dotenv.config();
@@ -43,15 +46,20 @@ app.use("/api/store", storeRoutes);
 app.use("/api/inventory", inventoryRoutes);
 app.use("/api/usercard", userCardRoutes);
 app.use("/api/userdeck", userDeckRoutes);
+app.use("/api/rooms", roomListRoutes);
+app.use("/api/dex", userDexRoutes);
 
-// ✅ 이미지 정적 파일
-app.use("/images", express.static(path.join(__dirname, "../public/images")));
+startRoomCleaner();
+
+// ✅ 이미지 정적 파일 (CloudType 절대경로 호환)
+const imagePath = path.resolve(__dirname, "../public/images");
+app.use("/images", express.static(imagePath));
 
 // ✅ React 정적 빌드 연결
-const frontPath = path.join(__dirname, "../../FrontEnd/dist");
+const frontPath = path.resolve(__dirname, "../FrontEnd/dist");
 app.use(express.static(frontPath));
 
-// ✅ React Router fallback (404 전에 위치해야 함)
+// ✅ React Router fallback
 app.get("*", (req, res) => {
   res.sendFile(path.join(frontPath, "index.html"));
 });

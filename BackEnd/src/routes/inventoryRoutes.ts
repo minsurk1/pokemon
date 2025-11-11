@@ -20,6 +20,7 @@ function getProbabilities(packType: string): { [key: number]: number } {
     case "S":
       return { 1: 0.18, 2: 0.16, 3: 0.15, 4: 0.14, 5: 0.12, 6: 0.1, 7: 0.08, 8: 0.07 };
     default:
+      // 기본값 (B팩 확률)
       return { 1: 0.28, 2: 0.24, 3: 0.2, 4: 0.15, 5: 0.08, 6: 0.05 };
   }
 }
@@ -35,7 +36,7 @@ function getRandomTier(probabilities: { [key: number]: number }) {
     if (rand <= cumulative) return +tier;
   }
   const tiers = Object.keys(probabilities).map(Number);
-  return tiers[tiers.length - 1];
+  return tiers[tiers.length - 1]; // 만약의 경우 마지막 등급 반환
 }
 
 /**
@@ -71,44 +72,57 @@ router.post("/open-pack", isAuthenticated, async (req, res: Response) => {
 
     // ✅ 카드팩 수량 차감
     userData.inventory[packIndex].quantity -= 1;
+    // [수정] 수량이 0이 되면 배열에서 제거
     if (userData.inventory[packIndex].quantity <= 0) {
       userData.inventory.splice(packIndex, 1);
     }
     await userData.save();
 
-    // ✅ 전체 카드 목록 로드
-    const allCards: ICard[] = await Card.find();
+    // ✅ 전체 카드 목록 로드 (필요한 필드만 선택적으로 로드하여 최적화)
+    const allCards = await Card.find().select("cardName attack hp maxhp tier cost cardType image2D").lean();
+
     const probabilities = getProbabilities(type);
     const drawnCards: Record<string, any>[] = [];
 
-    // ✅ 카드 5장 랜덤 추첨
-    for (let i = 0; i < 5; i++) {
+    // --- ▼ [수정됨] 5장 보장을 위해 for 루프를 while 루프로 변경 ---
+    while (drawnCards.length < 5) {
       const tier = getRandomTier(probabilities);
       const tierCards = allCards.filter((card) => card.tier === tier);
-      if (tierCards.length === 0) continue;
+
+      // ⚠️ 해당 등급의 카드가 없으면, 루프의 다음 턴으로 넘어가서 다시 시도
+      if (tierCards.length === 0) {
+        console.warn(`[open-pack] 경고: ${tier}등급의 카드가 DB에 없습니다. 재시도합니다.`);
+        continue; // 카드를 뽑지 않고 다시 while 루프 조건 검사
+      }
 
       const randomCard = tierCards[Math.floor(Math.random() * tierCards.length)];
 
       // ✅ UserCard upsert (존재하면 +1, 없으면 새로 생성)
+      // _id가 mongoose.Types.ObjectId 객체일 수 있으므로 ._id 사용
       await UserCard.findOneAndUpdate(
         { user: userId, card: randomCard._id },
         {
           $inc: { count: 1 },
-          $setOnInsert: { createdAt: new Date(), updatedAt: new Date() },
+          $set: { owned: true }, // [수정] owned 플래그도 true로 설정
+          $setOnInsert: { createdAt: new Date() },
         },
-        { upsert: true }
+        { upsert: true, new: true } // new: true는 upsert 시 생성된 문서를 반환 (여기선 불필요)
       );
 
       // ✅ 프론트엔드 전달용 데이터
       drawnCards.push({
         id: randomCard._id.toString(),
         name: randomCard.cardName,
-        damage: randomCard.attack,
+        attack: randomCard.attack,
         hp: randomCard.hp,
+        maxhp: randomCard.maxhp,
         tier: randomCard.tier,
+        cost: randomCard.cost,
+        cardType: randomCard.cardType,
         image: randomCard.image2D || "default.png",
       });
     }
+    // --- ▲ [수정됨] 루프가 끝나면 drawnCards는 무조건 5장 ---
 
     // ✅ 최신 인벤토리 정보 재구성
     const userPacks = userData.inventory.map((p) => {

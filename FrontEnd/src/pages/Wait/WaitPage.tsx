@@ -6,12 +6,23 @@ import waitVideo from "../../assets/videos/waitvideo.mp4";
 import BackgroundVideo from "../../components/common/global";
 import MessageBox from "../../components/common/MessageBox";
 import { useSocket } from "../../context/SocketContext";
+import { useUser } from "../../context/UserContext"; // ✅ 실제 너의 경로에 맞게
+
+type RoomJoinedPayload = {
+  roomCode: string;
+  isHost: boolean;
+  userMap?: Record<string, string>;
+};
 
 function WaitPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { roomCode } = useParams<{ roomCode: string }>();
-  const { socket, connected } = useSocket();
+  const socket = useSocket();
+
+  const { userInfo } = useUser(); // user.nickname 사용 가능
+  const [myNickname, setMyNickname] = useState("");
+  const [opponentNickname, setOpponentNickname] = useState("상대방");
 
   const initialHost = (location.state && location.state.isHost) || false;
   const [isHost, setIsHost] = useState(initialHost);
@@ -53,22 +64,41 @@ function WaitPage() {
     if (hasJoined.current) return;
     hasJoined.current = true;
 
-    if (isHost) {
-      console.log("🟢 호스트이므로 joinRoom emit 생략");
-    } else {
-      console.log("▶ joinRoom emit:", roomCode);
-      socket.emit("joinRoom", roomCode);
-    }
+    // ✅ 방장도 joinRoom 호출해야 userMap에 닉네임이 들어감
+    socket.emit("joinRoom", {
+      roomCode,
+      nickname: userInfo?.nickname ?? "Guest",
+    });
 
-    const onRoomJoined = (data: { roomCode: string; isHost: boolean }) => {
+    const onRoomJoined = (data: RoomJoinedPayload) => {
       console.log("◀ roomJoined 수신:", data);
+
+      if (data.userMap && socket.id) {
+        const mine = data.userMap[socket.id] ?? userInfo?.nickname ?? "나";
+        setMyNickname(mine);
+
+        const opponentId = Object.keys(data.userMap).find((id) => id !== socket.id);
+        if (opponentId) {
+          setOpponentNickname(data.userMap[opponentId] ?? "상대방");
+        }
+      }
+
       setIsHost(data.isHost);
       showMsg(`방에 입장했습니다. (코드: ${data.roomCode})`);
     };
 
-    const onOpponentJoined = () => {
+    const onOpponentJoined = (data: { opponentId: string; nickname?: string }) => {
       console.log("👥 상대방 입장 감지");
-      showMsg("상대방이 방에 입장했습니다!");
+
+      if (data.nickname) {
+        // ✅ 서버가 닉네임을 같이 보내면 즉시 반영
+        setOpponentNickname(data.nickname);
+      } else {
+        // ✅ 닉네임이 없으면 최신 userMap 요청
+        socket.emit("getUserMap", { roomCode });
+      }
+
+      showMsg("상대방이 입장했습니다!");
     };
 
     const onOpponentReady = (readyState: boolean) => {
@@ -82,16 +112,25 @@ function WaitPage() {
       setOpponentReady(false);
     };
 
-    const onGameStart = (data: { roomCode: string; currentTurn: string }) => {
+    const onGameStart = (data: { roomCode: string; currentTurn: string; timeLeft?: number }) => {
       console.log("🎮 gameStart 수신:", data);
+
       navigate(`/battle/${data.roomCode}`, {
-        state: { roomCode: data.roomCode, isHost },
+        state: {
+          roomCode: data.roomCode,
+          initialTurn: data.currentTurn, // ✅ 첫 턴 socket.id 함께 전달
+          timeLeft: data.timeLeft ?? 30, // ✅ 남은 시간(없으면 기본 30초)
+          isHost,
+        },
       });
     };
 
     const onReconnect = () => {
       console.log("🔄 재연결 발생 — 다시 방 참여:", roomCode);
-      socket.emit("joinRoom", roomCode);
+      socket.emit("joinRoom", {
+        roomCode,
+        nickname: userInfo?.nickname ?? "Guest",
+      });
     };
 
     socket.on("roomJoined", onRoomJoined);
@@ -111,6 +150,30 @@ function WaitPage() {
       hasJoined.current = false;
     };
   }, [socket, roomCode, navigate, isHost]);
+
+  // ✅ 서버에서 userMap 최신 상태 받아서 닉네임 갱신
+  useEffect(() => {
+    if (!socket) return;
+
+    const onUserMap = (userMap: Record<string, string>) => {
+      if (!socket.id) return;
+
+      // 내 닉네임
+      setMyNickname(userMap[socket.id] || "나");
+
+      // 상대 닉네임
+      const opponentId = Object.keys(userMap).find((id) => id !== socket.id);
+      if (opponentId) {
+        setOpponentNickname(userMap[opponentId] || "상대방");
+      }
+    };
+
+    socket.on("userMap", onUserMap);
+
+    return () => {
+      socket.off("userMap", onUserMap);
+    };
+  }, [socket]);
 
   const handleReady = () => {
     if (!socket || !roomCode) return;
@@ -141,7 +204,7 @@ function WaitPage() {
     navigate("/main");
   };
 
-  if (!connected) {
+  if (!socket.connected) {
     return (
       <div className="wait-body">
         <div className="wait-page">
@@ -195,11 +258,11 @@ function WaitPage() {
 
         <div className="players">
           <div className="player">
-            <p>나</p>
+            <p>{myNickname || "나"}</p>
             <p>{isReady ? "준비 완료" : "준비 중"}</p>
           </div>
           <div className="player">
-            <p>상대방</p>
+            <p>{opponentNickname}</p>
             <p>{opponentReady ? "준비 완료" : "대기 중"}</p>
           </div>
         </div>
@@ -209,12 +272,7 @@ function WaitPage() {
             {isReady ? "준비 완료" : "준비하기"}
           </button>
 
-          <button
-            className="start-button"
-            onClick={handleStart}
-            disabled={!isHost}
-            title={!isHost ? "방장만 게임을 시작할 수 있습니다." : ""}
-          >
+          <button className="start-button" onClick={handleStart} disabled={!isHost} title={!isHost ? "방장만 게임을 시작할 수 있습니다." : ""}>
             시작하기
           </button>
 

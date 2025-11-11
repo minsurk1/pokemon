@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@types/node": "^24.9.2"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "socket.io": "^4.8.1"
+  }
+}

@@ -49,7 +49,7 @@ function StorePage() {
 
       <div className="store-header">
         <div className="store-currency">
-          {userInfo ? `${userInfo.nickname} - ${userInfo.money}G` : "로딩 중..."}
+          {userInfo ? `${userInfo.nickname}님 - ${userInfo.money}G` : "로딩 중..."}
         </div>
         <div>
           <button className="inventory-button" onClick={() => navigate("/inventory")}>

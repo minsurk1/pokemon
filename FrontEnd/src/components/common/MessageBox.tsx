@@ -1,15 +1,15 @@
-import React from "react"
-import styled from "styled-components"
+import React from "react";
+import styled from "styled-components";
 
 interface MessageBoxProps {
-  bgColor?: string
-  textColor?: string
-  borderColor?: string
-  closeborderColor?: string 
+  bgColor?: string;
+  textColor?: string;
+  borderColor?: string;
+  closeborderColor?: string;
 }
 
 interface MessageCloseProps {
-  closeborderColor?: string
+  closeborderColor?: string;
 }
 
 const Box = styled.div<MessageBoxProps>`
@@ -17,10 +17,7 @@ const Box = styled.div<MessageBoxProps>`
   top: 70px;
   left: 50%;
   transform: translateX(-50%);
-  background: ${(props) =>
-    props.bgColor?.startsWith("linear-gradient")
-      ? props.bgColor
-      : props.bgColor || "#ffffff"};
+  background: ${(props) => (props.bgColor?.startsWith("linear-gradient") ? props.bgColor : props.bgColor || "#ffffff")};
   border: 2px solid ${(props) => props.borderColor || "#9c27b0"};
   padding: 15px 30px;
   border-radius: 10px;
@@ -31,7 +28,7 @@ const Box = styled.div<MessageBoxProps>`
   animation: slideDown 0.5s ease-out;
   min-width: 300px;
   font-family: "Do Hyeon", sans-serif;
-`
+`;
 
 const CloseButton = styled.button<MessageCloseProps>`
   position: absolute;
@@ -49,7 +46,7 @@ const CloseButton = styled.button<MessageCloseProps>`
     transform: scale(1.1);
     transition: transform 0.4s;
   }
-`
+`;
 
 export default function MessageBox({
   bgColor = "#ffffff",
@@ -77,5 +74,5 @@ export default function MessageBox({
         </CloseButton>
       )}
     </Box>
-  )
+  );
 }

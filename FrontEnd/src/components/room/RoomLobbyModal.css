@@ -1,0 +1,316 @@
+/* 전체 화면 어둡게 + 테마 분위기 추가 */
+.lobby-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* 메인 영상 위에 어울리는 다크 글라스 효과 */
+  backdrop-filter: blur(10px) brightness(0.55);
+  background: rgba(0, 0, 0, 0.45);
+
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 모달 본체 */
+.lobby-modal {
+  width: 460px;
+  max-height: 80vh;
+  overflow-y: auto;
+
+  background: rgba(20, 20, 20, 0.92);
+  border-radius: 18px;
+
+  /* ✅ 테마 컬러 프레임 */
+  border: 2px solid var(--theme-accent-color);
+  box-shadow: 0 0 20px var(--theme-accent-color), 0 0 40px rgba(0, 0, 0, 0.6);
+
+  padding: 32px;
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(25px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 닫기 버튼 */
+.close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+
+  background: transparent;
+  color: var(--theme-accent-color);
+  font-size: 32px;
+  border: none;
+  cursor: pointer;
+
+  transition: 0.25s;
+}
+
+.close-btn:hover {
+  transform: rotate(90deg) scale(1.2);
+  text-shadow: 0 0 10px var(--theme-accent-color);
+}
+
+/* 제목 */
+.modal-title {
+  font-size: 26px;
+  font-weight: bold;
+  text-align: center;
+
+  color: var(--theme-accent-color);
+  margin-bottom: 22px;
+
+  text-shadow: 0 0 15px var(--theme-accent-color);
+}
+
+/* ✅ 방 만들기 버튼 */
+.create-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+
+  /* 테마 기반 그라데이션 */
+  background: linear-gradient(135deg, var(--theme-color), var(--theme-accent-color));
+  color: white;
+
+  transition: 0.25s;
+}
+
+.create-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 18px var(--theme-accent-color);
+}
+
+/* 코드 입력 박스 */
+.join-box {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.join-box input {
+  flex: 1;
+  padding: 12px;
+
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+
+  border-radius: 8px;
+  border: 2px solid var(--theme-color);
+
+  font-size: 17px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+
+  outline: none;
+  transition: 0.25s;
+}
+
+.join-box input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ✅ 포커스 시 테마글로우 */
+.join-box input:focus {
+  border-color: var(--theme-accent-color);
+  box-shadow: 0 0 16px var(--theme-accent-color);
+  transform: scale(1.03);
+}
+
+/* 입장 버튼 */
+.join-box button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+
+  background: var(--theme-color);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.join-box button:hover {
+  background: var(--theme-accent-color);
+  box-shadow: 0 0 14px var(--theme-accent-color);
+  transform: translateY(-2px);
+}
+
+/* 방 리스트 */
+.sub-title {
+  color: #bbb;
+  margin-bottom: 10px;
+}
+
+.room-list {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.room-item {
+  padding: 14px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.06);
+  border-left: 3px solid var(--theme-color);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  transition: 0.2s;
+}
+
+.room-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-3px);
+}
+
+/* 방 정보 */
+.room-code {
+  color: white;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.room-players {
+  color: #bbb;
+  font-size: 13px;
+}
+
+/* ✅ 방 목록 닉네임 표시 */
+.room-nicknames {
+  font-size: 14px;
+  color: #444;
+  margin-left: 10px;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ✅ 닉네임 강조 효과 */
+.room-nicknames span {
+  margin-right: 4px;
+  padding: 2px 6px;
+  background: #eef5ff;
+  border-radius: 6px;
+  color: #1a3d8f;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+/* ✅ 방이 꽉 찼을 때 살짝 회색톤 */
+.room-item.full .room-nicknames span {
+  background: #f0f0f0;
+  color: #777;
+}
+
+.room-status {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.room-status.ingame {
+  background: #e53935;
+  color: white;
+}
+
+.room-status.waiting {
+  background: #43a047;
+  color: white;
+}
+
+/* 방 입장 버튼 */
+.join-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+
+  background: var(--theme-color);
+  border: none;
+  color: white;
+  font-weight: bold;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.join-btn:hover:not(.disabled) {
+  background: var(--theme-accent-color);
+  box-shadow: 0 0 12px var(--theme-accent-color);
+  transform: scale(1.05);
+}
+
+.join-btn.disabled {
+  background: #555;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 리스트 비었을 때 */
+.empty-text {
+  color: #aaa;
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* =================================================== */
+/* 3D 안에 들어갈 HTML */
+.lobby-html-container {
+  width: 420px;
+  height: auto;
+  padding: 20px;
+  border-radius: 14px;
+  backdrop-filter: blur(15px);
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid var(--theme-accent-color);
+  color: white;
+  overflow-y: auto;
+}
+
+/* ✅ 닫기 버튼 */
+.close-btn3d {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 40px;
+  border: none;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  z-index: 999999;
+  transition: 0.2s;
+}
+
+.close-btn3d:hover {
+  color: var(--theme-accent-color);
+  transform: scale(1.2) rotate(90deg);
+}

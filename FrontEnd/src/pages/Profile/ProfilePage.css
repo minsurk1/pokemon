@@ -1,0 +1,128 @@
+@import url("https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Jua&display=swap");
+
+.profile-page {
+  /* background-size: 90%; */ /* 프로필 페이지에서는 배경 이미지를 제거하거나 다른 것으로 교체 */
+  background-color: #f0f2f5; /* 깔끔한 배경색 */
+  font-family: "Do hyeon", serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  position: relative;
+}
+
+.profile-page h1 {
+  font-size: 2.8rem;
+  color: #333;
+  margin-bottom: 2rem;
+}
+
+.profile-page .home-button {
+  position: absolute;
+  top: 1vh;
+  right: 1vw;
+  font-family: "Do Hyeon", serif;
+  font-weight: bold;
+  margin-top: 1rem;
+  padding: 1vw 2vh;
+  font-size: 1.0rem;
+  background: linear-gradient(to right,#00ffff,#18d8d8,#11cfcc);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: none;
+  color: #000000;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+  font-weight: 500;
+  z-index: 10;
+}
+
+.profile-page .home-button:hover {
+  background-color: #4fa3e2;
+  transform: translateY(-2px);
+}
+
+.profile-page form {
+  opacity: 0.95;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 450px; /* 폼 크기 살짝 키움 */
+  padding: 2.5rem;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.profile-page label {
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.profile-page input {
+  font-family: "Do Hyeon", serif;
+  margin-bottom: 1.5rem;
+  padding: 12px 15px;
+  font-size: 1.4rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+/* 🔥 수정 불가능한 필드 스타일 */
+.profile-page input[readOnly] {
+  background-color: #eee;
+  color: #777;
+  cursor: not-allowed;
+}
+
+.profile-page input:focus {
+  border-color: #61dafb;
+  box-shadow: 0 0 0 2px rgba(97, 218, 251, 0.3);
+  outline: none;
+}
+
+.profile-page form button {
+  font-family: "Do Hyeon", serif;
+  margin-top: 1.5rem;
+  padding: 12px;
+  font-size: 1.4rem;
+  background-color: #61dafb; /* 기본 버튼 색상 */
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
+  font-weight: 500;
+}
+
+.profile-page form button:hover {
+  background-color: #4fa3e2;
+  transform: translateY(-2px);
+}
+
+/* 비밀번호 눈 아이콘 */
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem; /* input의 margin-bottom을 이곳으로 이동 */
+}
+
+.password-container input {
+  flex: 1;
+  padding-right: 40px;
+  margin-bottom: 0; /* 컨테이너가 margin을 가지므로 제거 */
+}
+
+.password-container span {
+  position: absolute;
+  right: 10px;
+  cursor: pointer;
+  color: #666;
+  font-size: 1.4rem;
+}

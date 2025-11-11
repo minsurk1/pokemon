@@ -40,6 +40,7 @@ const CardSchema = new mongoose_1.Schema({
     tier: { type: Number, required: true },
     attack: { type: Number, required: true },
     hp: { type: Number, required: true },
+    maxhp: { type: Number, required: true },
     cost: { type: Number, required: true },
     image2D: { type: String, required: true },
 });

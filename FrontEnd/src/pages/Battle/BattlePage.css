@@ -13,6 +13,169 @@
   position: relative;
 }
 
+.chat-log-container {
+  position: absolute;
+  left: 1vw;
+  top: 2vh;
+  width: 20vw;
+  min-width: 250px;
+  background-color: rgba(0, 0, 0, 0.75);
+  border: 1px solid #444;
+  border-radius: 8px;
+  z-index: 1200;
+  color: white;
+  font-family: "Jua", sans-serif;
+  transition: all 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.chat-log-container.chat-unopen {
+  height: 4vh;
+  min-height: 30px;
+}
+
+.chat-log-container.chat-open {
+  height: 25vh;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-log-header {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  cursor: pointer;
+  height: 4vh;
+  min-height: 30px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #444;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.chat-log-toggle {
+  font-size: 0.8rem;
+  margin-right: 8px;
+}
+
+.chat-log-title {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.chat-log-latest {
+  padding: 0 10px;
+  font-size: 0.9rem;
+  line-height: 4vh;
+  min-height: 30px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ccc;
+}
+
+.chat-log-history {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column-reverse;
+  min-height: 0;
+}
+
+.chat-log-history::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-log-history::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+.chat-log-history::-webkit-scrollbar-track {
+  background: #222;
+}
+
+.chat-log-message {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed #333;
+  color: #eee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+.chat-log-message:first-child {
+  color: #61dafb;
+  font-weight: bold;
+}
+.chat-log-message.placeholder {
+  color: #777;
+  font-style: italic;
+}
+
+.Top-Line {
+  position: relative;
+  width: 76.5vw;
+  height: 2px;
+  background-color: rgb(255, 255, 255);
+  z-index: 1001;
+  top: 19.3vh;
+  left: 9vw;
+}
+.Bottom-Line {
+  position: relative;
+  width: 76.5vw;
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top: 79.8vh;
+  left: 9vw;
+}
+.TopLeft-Dia {
+  position: relative;
+  width: 10vw;
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top: 26.8vh;
+  transform: rotate(-26deg);
+  transform-origin: 0 0;
+}
+.BottomLeft-Dia {
+  position: relative;
+  width: 10vw;
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top: 71.7vh;
+  transform: rotate(26deg);
+  transform-origin: 0 0;
+}
+.TopRight-Dia {
+  position: relative;
+  left: 85.5vw;
+  width: 13vw;
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top: 18.8vh;
+  transform: rotate(69deg);
+  transform-origin: 0 0;
+}
+.BottomRight-Dia {
+  position: relative;
+  left: 85.4vw;
+  width: 12.8vw;
+  height: 2px;
+  background-color: white;
+  z-index: 1001;
+  top: 79.35vh;
+  transform: rotate(-68.9deg);
+  transform-origin: 0 0;
+}
 .animating-card-overlay {
   position: fixed;
   top: 0;
@@ -73,10 +236,13 @@
 
 .horizontal-line {
   width: 100%;
-  height: 0.4vh;
+  height: 0.8vh;
   background-size: 100% 100%;
   background-repeat: no-repeat;
-  z-index: 20;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 300;
   opacity: 0.8;
   transition: background 0.3s ease;
 }
@@ -84,21 +250,22 @@
 .enemy-field {
   width: 86vw;
   height: 49.9vh;
-  background-image: url("../../assets/images/BattleTopBlue.png");
-  background-size: contain;
+  background-image: url("../../assets/images/BattleTop.png");
+  background-size: cover;
   clip-path: polygon(0 0, 100% 0, 100% 80%, 95% 44%, 10% 44%, 0 55%);
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   z-index: 10;
+  pointer-events: none;
 }
 
 .player-field {
   width: 86vw;
   height: 49.9vh;
-  background-image: url("../../assets/images/BattleBottomBlue.png");
-  background-size: contain;
+  background-image: url("../../assets/images/BattleBottom.png");
+  background-size: cover;
   background-position: bottom;
   clip-path: polygon(0 100%, 100% 100%, 100% 20%, 95% 56%, 10% 56%, 0 45%);
   display: flex;
@@ -111,16 +278,20 @@
 
 .enemy-card-zone {
   position: absolute;
-  top: 0vh;
+  top: 26vh;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateZ(0);
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 13px;
+  gap: 50px;
   padding: 20px;
   min-height: 150px;
-  z-index: 500; /* ✅ 카드가 항상 위 */
+  z-index: 900;
+  pointer-events: auto;
+  outline: none;
+  user-select: none;
+  transition: none !important;
 }
 
 .player-card-zone {
@@ -140,6 +311,7 @@
   border-radius: 15px;
   z-index: 600;
 }
+
 .player-card-bg {
   position: absolute;
   bottom: 0vh;
@@ -152,8 +324,9 @@
   align-items: center;
   z-index: 200;
   clip-path: polygon(0 0%, 100% 0%, 100% 20%, 95% 61%, 10% 61%, 0 45%);
-  background-image: url("../../assets/images/BottomGrass.png");
-  background-size: cover;
+  background-image: url("../../assets/images/fieldBottom.png");
+  /* background: linear-gradient(to right, #1b0367, #5514cf,#592690,#592690,#2c074b ,#000000); */
+  background-size: 90vw 49.9vh;
   background-position: center;
   background-repeat: no-repeat;
 }
@@ -169,23 +342,28 @@
   align-items: center;
   z-index: 200;
   clip-path: polygon(0 100%, 100% 100%, 100% 80%, 95% 39%, 10% 39%, 0 55%);
-  background-image: url("../../assets/images/TopGrass.png");
-  background-size: cover;
+  background-image: url("../../assets/images/fieldTop.png");
+  /* background: linear-gradient(to right, #1b0367, #5514cf,#592690,#592690,#2c074b ,#000000); */
+  background-size: 90vw 49.9vh;
   background-position: center;
   background-repeat: no-repeat;
 }
 
-/* ▼▼▼ 여기서부터 카드 사이즈/이미지 비율 수정 반영 ▼▼▼ */
 .enemy-card-slot,
 .card-slot {
-  width: 100px; /* 기존 80px → 100px */
-  height: 140px; /* 기존 120px → 140px */
+  width: 100px;
+  height: 140px;
   flex-shrink: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden; /* 이미지 넘침 방지 */
+  overflow: visible !important;
   position: relative;
+  z-index: 10;
+}
+
+.enemy-card-slot {
+  pointer-events: auto;
 }
 
 .my-card {
@@ -196,15 +374,14 @@
   transition: transform 0.5s ease-in-out, z-index 0.5s;
 }
 
-/* 카드 이미지 비율 유지(손패/적 카드 공통) */
 .my-card img,
 .enemy-card-slot img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* ✅ 비율 유지하며 축소 */
+  object-fit: contain;
   border-radius: 8px;
   transition: transform 0.2s ease-in-out;
-  pointer-events: none; /* 이미지 드래그 방지 */
+  pointer-events: none;
 }
 
 .my-card:hover:not(.in-zone) {
@@ -212,25 +389,23 @@
   z-index: 10;
 }
 
-/* 필드에 올라간 카드 크기 */
 .my-card.in-zone,
 .enemy-card.in-zone {
-  width: 110px; /* 기존 120px → 110px */
-  height: 155px; /* 기존 165px → 155px */
+  width: 110px;
+  height: 155px;
 }
 
 .my-card.in-zone img,
 .enemy-card.in-zone img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* ✅ 전장 카드도 비율 유지 */
+  object-fit: contain;
   border-radius: 8px;
 }
-/* ▲▲▲ 카드 이미지/사이즈 수정 끝 ▲▲▲ */
 
 .time-zone {
   position: absolute;
-  height: 27vh;
+  height: 24vh;
   clip-path: polygon(0 0, 100% 22.6%, 100% 100%, 0 100%);
   background-color: transparent;
   z-index: 100;
@@ -243,7 +418,6 @@
   color: white;
 }
 
-/* 수정된 타이머 스타일 */
 .timer-container {
   display: flex;
   justify-content: center;
@@ -286,7 +460,7 @@
   display: flex;
   gap: 20px;
   align-items: flex-end;
-  z-index: 150;
+  z-index: 3000;
 }
 
 .deck-card {
@@ -296,7 +470,7 @@
   background-size: cover;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform 0.15s, box-shadow 0.3s;
   position: relative;
   display: flex;
   align-items: center;
@@ -313,12 +487,14 @@
 .deck-card:hover:not(:disabled) {
   transform: scale(1.05);
   box-shadow: 0 0 15px rgba(74, 144, 226, 0.5);
+  cursor: pointer;
 }
 
 .deck-card:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   border-color: #666;
+  cursor: not-allowed;
 }
 
 .deck-count {
@@ -332,20 +508,170 @@
   font-size: 0.9rem;
 }
 
-.hand-cards {
+.hand-cards-wrapper {
+  position: relative;
   display: flex;
+  align-items: flex-end;
+  cursor: pointer;
+  height: 17vh;
+  transition: width 0.3s ease, transform 0.3s ease;
+  box-sizing: content-box;
+}
+
+.hand-cards-wrapper.collapsed {
+  width: 7vw;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.hand-cards-wrapper.expanded {
+  width: auto;
   gap: 10px;
-  flex-wrap: wrap;
-  max-width: 60vw;
-  max-height: 30vh;
-  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.hand-cards-wrapper.collapsed .card-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 7vw;
+  height: 17vh;
+}
+
+.hand-cards-wrapper.collapsed .card-slot:not(:first-child) {
+  transform: translate(2px, 2px);
+}
+
+.hand-cards-wrapper.collapsed .card-slot .my-card {
+  transform: scale(1);
+}
+
+.hand-cards-wrapper.expanded .card-slot {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100px;
+  height: 140px;
+  transition: transform 0.3s ease, margin 0.3s ease;
+}
+
+.hand-cards-wrapper.expanded .card-slot .my-card {
+  cursor: pointer;
+}
+
+.hand-count-overlay {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: rgba(135, 206, 235, 0.8);
+  color: rgb(255, 255, 255);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 100;
+  border: 1px solid #ffffff;
+}
+
+.hand-count-overlay.no-cards {
+  background: rgba(128, 128, 128, 0.8);
+  color: #fff;
+}
+
+.toggle-hand-button {
+  position: absolute;
+  top: -30px;
+  right: 0;
+  padding: 5px 10px;
+  border: 1px solid white;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  font-family: "Do Hyeon", serif;
+  cursor: pointer;
+  z-index: 100;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-hand-button.expand-button {
+  background: linear-gradient(to right, #8e9eab, #eef2f3);
+  color: white;
+}
+
+.toggle-hand-button.collapse-button {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+.toggle-hand-button:hover {
+  filter: brightness(1.2);
+}
+
+.enemy-hand-zone {
+  position: absolute;
+  top: 3vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4vw;
+  z-index: 650;
+  pointer-events: none;
+}
+
+.enemy-hand-card {
+  width: 85px;
+  height: 115px;
+  background-image: url("../../assets/images/default.png");
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+  opacity: 0.85;
+  filter: brightness(0.8);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+.enemy-hand-card:nth-child(1) {
+  transform: translateY(3px) rotate(-8deg);
+}
+.enemy-hand-card:nth-child(2) {
+  transform: translateY(-2px) rotate(-5deg);
+}
+.enemy-hand-card:nth-child(3) {
+  transform: translateY(1px) rotate(-3deg);
+}
+.enemy-hand-card:nth-child(4) {
+  transform: translateY(-1px) rotate(2deg);
+}
+.enemy-hand-card:nth-child(5) {
+  transform: translateY(2px) rotate(4deg);
+}
+.enemy-hand-card:nth-child(6) {
+  transform: translateY(-3px) rotate(6deg);
+}
+.enemy-hand-card:nth-child(7) {
+  transform: translateY(2px) rotate(-2deg);
+}
+.enemy-hand-card:nth-child(8) {
+  transform: translateY(-2px) rotate(5deg);
+}
+
+.enemy-hand-card:hover {
+  transform: scale(1.1);
+  opacity: 1;
+  filter: brightness(1);
 }
 
 .player-cost-zone {
   position: absolute;
   height: 37.3vh;
   clip-path: polygon(0 45%, 100% 0%, 100% 100%, 0% 100%);
-  /* background-color: transparent; */
+  background: url("../../assets/images/mainbg.jpg");
   background-color: #2d2d2d;
   z-index: 100;
   width: 4.4vw;
@@ -355,13 +681,14 @@
   flex-direction: column-reverse;
   align-items: center;
   padding: 10px 0;
+  border-left: solid 2px white;
 }
 
 .enemy-cost-zone {
   position: absolute;
   height: 37.3vh;
   clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 55%);
-  /* background-color: transparent; */
+  background: url("../../assets/images/mainbg.jpg");
   background-color: #2d2d2d;
   z-index: 100;
   width: 4.4vw;
@@ -371,6 +698,42 @@
   flex-direction: column;
   align-items: center;
   padding: 10px 0;
+  border-left: solid 2px white;
+}
+
+.player-grave {
+  position: absolute;
+  top: 50.3vh;
+  width: 9vw;
+  height: 30.4vh;
+  left: 0;
+  clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 74%);
+  /* background: url(../../assets/images/grave1.png); */
+  background-size: cover;
+  background-position: center;
+  z-index: 1000;
+  border-right: solid 3px rgb(196, 191, 191);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  
+}
+.enemy-grave {
+  position: absolute;
+  top: 19.31vh;
+  width: 9vw;
+  height: 30.4vh;
+  left: 0;
+  clip-path: polygon(0 26%, 100% 0%, 100% 100%, 0 100%);
+  /* background: url(../../assets/images/grave1.png); */
+  background-size: cover;
+  background-position: center;
+  z-index: 1000;
+  border-right: solid 3px rgb(196, 191, 191);
+  /* filter: blur(5px);
+  mask-image: linear-gradient(to right, black 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 60%, transparent 100%); */
 }
 
 .cost-icon {
@@ -380,28 +743,134 @@
   border-radius: 50px;
   height: 25px;
   width: 25px;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
+
+.cost-icon.fade-out {
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.cost-icon.removed {
+  transform: scale(0.2);
+  opacity: 0;
+}
+
+/* =========================================== */
+/* ▼▼▼ GigaChad 턴 라이트 수정 ▼▼▼ */
+/* =========================================== */
 
 .right-container {
   height: 100vh;
   width: 10vw;
-  background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+  background: #111;
   display: flex;
   flex-direction: column;
-  border-left: 2px solid #444;
+  border-left: 2px solid #333;
+  box-shadow: -8px 0 20px rgba(0, 0, 0, 0.5);
 }
 
-.enemy-info {
+.enemy-info,
+.player-info {
   height: 40vh;
-  background: linear-gradient(135deg, #4a90e2, #0b0b39);
+  background: transparent;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: 15px;
   color: white;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+  border-bottom: 2px solid #333;
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease-in-out;
 }
 
+/* [수정] ::before를 '상단' 라인으로 유지 */
+.enemy-info::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #00afff, transparent);
+  box-shadow: 0 0 10px #00afff;
+  opacity: 0.2;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* [추가] ::after를 '왼쪽' 라인으로 추가 */
+.enemy-info::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, #00afff, transparent);
+  box-shadow: 0 0 10px #00afff;
+  opacity: 0.2;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* [수정] ::before를 '하단' 라인으로 유지 */
+.player-info::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #ff4136, transparent);
+  box-shadow: 0 0 10px #ff4136;
+  opacity: 0.2;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* [추가] ::after를 '왼쪽' 라인으로 추가 */
+.player-info::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: linear-gradient(180deg, transparent, #ff4136, transparent);
+  box-shadow: 0 0 10px #ff4136;
+  opacity: 0.2;
+  transition: opacity 0.3s ease-in-out;
+}
+
+
+/* [수정] 턴 활성화 시 ::before와 ::after 둘 다 켠다 */
+.enemy-info.isEnemyTurn::before,
+.enemy-info.isEnemyTurn::after {
+  opacity: 1;
+  animation: neonPulse 1.5s infinite alternate;
+  --neon-color: #00afff; 
+}
+.player-info.isMyTurn::before,
+.player-info.isMyTurn::after {
+  opacity: 1;
+  animation: neonPulse 1.5s infinite alternate;
+  --neon-color: #ff4136; 
+}
+
+@keyframes neonPulse {
+  from {
+    box-shadow: 0 0 10px var(--neon-color), 0 0 15px var(--neon-color);
+  }
+  to {
+    box-shadow: 0 0 15px var(--neon-color), 0 0 25px var(--neon-color);
+  }
+}
+
+/* ====================================== */
+/* ▼▼▼ 이벤트 존/버튼 (수정 금지) ▼▼▼ */
+/* ====================================== */
 .event-zone {
   height: 20vh;
   background: linear-gradient(135deg, #ffffff, #3e3b3b, #ffffff);
@@ -411,77 +880,9 @@
   align-items: center;
   padding: 10px;
   position: relative;
-}
-
-.player-info {
-  height: 40vh;
-  background: linear-gradient(135deg, #480c0c, #ff0000);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  color: white;
-}
-
-.game-info {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 15px;
-  text-align: center;
-}
-
-.turn-indicator {
-  margin-top: 50px;
-  font-size: 1.1rem;
-  font-weight: bold;
-}
-
-.hp-bar {
-  width: 140px;
-  height: 20px;
-  background: #ddd;
-  border-radius: 5px;
-  position: relative;
-  overflow: hidden;
-  margin: 10px 0;
-}
-
-.hp-bar-inner {
-  background: rgb(255, 0, 0);
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  transition: width 0.5s linear;
-}
-
-.hp-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #ffffff;
-  font-weight: bold;
-  font-family: "Do Hyeon", serif;
-}
-
-.player-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background-color: #4a90e2;
-  margin-bottom: 10px;
-}
-
-.enemy-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background-image: url("../../assets/images/enemyavata.png");
-  background-size: cover;
-  margin-bottom: 10px;
+  border-left: solid 2px white;
+  margin-right: 0px;
+  border-bottom: 2px solid #333;
 }
 
 .endturn-button {
@@ -490,7 +891,10 @@
   border-radius: 20%;
   color: #ffffff;
   background: radial-gradient(#000000, #000000, #270834);
-  border: 2px solid rgb(255, 255, 255);
+  border-left: 2px solid rgb(255, 255, 255);
+  border-top: 2px solid rgb(255, 255, 255);
+  border-bottom: 2px solid rgb(255, 255, 255);
+  border-right: 0.5px solid rgb(255, 255, 255);
   font-weight: 900;
   cursor: pointer;
   position: absolute;
@@ -511,6 +915,153 @@
   gap: 10px;
   width: 100%;
   flex-wrap: wrap;
+  min-height: 60px;
+}
+/* ====================================== */
+/* ▲▲▲ 이벤트 존/버튼 (수정 금지) ▲▲▲ */
+/* ====================================== */
+
+.player-info {
+  border-bottom: none;
+}
+
+.surrender-button {
+  margin-top: 20px;
+  padding: 10px 15px;
+  background-color: #222;
+  z-index: 1000;
+  border-radius: 5px;
+  align-items: center;
+  border: 2px solid #ff4136;
+  color: #ff4136;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.surrender-button:hover:not(.disabled) {
+  background-color: #ff4136;
+  color: #fff;
+  box-shadow: 0 0 15px #ff4136;
+  transform: scale(1.05);
+}
+
+.surrender-button.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.surrender-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+}
+.surrender-popup-content {
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  color: white;
+  min-width: 240px;
+}
+.surrender-popup-content button {
+  margin: 10px;
+  padding: 8px 14px;
+  border: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.surrender-popup-content .confirm {
+  background: #ff4444;
+  color: white;
+}
+.surrender-popup-content .cancel {
+  background: #555;
+  color: white;
+}
+
+.game-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+  text-align: center;
+}
+
+.turn-indicator {
+  margin-top: 50px;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.hp-bar {
+  width: 90%;
+  height: 25px;
+  background-color: #111;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  margin: 10px 0;
+  border: 1px solid #444;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.hp-bar-inner {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: width 0.5s linear;
+  border-radius: 2px;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
+}
+
+.enemy-info .hp-bar-inner {
+  background-color: #00afff;
+}
+
+.player-info .hp-bar-inner {
+  background-color: #ff4136;
+}
+
+.hp-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-weight: bold;
+  font-family: "Jua", sans-serif;
+  font-size: 1rem;
+  text-shadow: 1px 1px 3px #000;
+}
+
+.player-avatar,
+.enemy-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 15px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
+  background-color: #222;
+  border: 3px solid #444;
+  transition: all 0.3s ease;
+}
+
+.enemy-avatar {
+  background-image: url("../../assets/images/enemyavata.png");
+  border-color: #00afff;
+}
+
+.player-avatar {
+  background-image: url("../../assets/images/default.png");
+  border-color: #ff4136;
 }
 
 .card-cost {
@@ -578,13 +1129,81 @@
   height: 165px;
 }
 
+.my-card.in-zone {
+  cursor: pointer;
+  transition: transform 0.25s ease-in-out, z-index 0.25s;
+  transform-origin: center bottom;
+}
+
 .my-card.in-zone:hover {
-  transform: none;
+  filter: brightness(1.1);
+  z-index: 50;
+}
+
+.my-card.in-zone:active {
+  transform: scale(1.2);
+  opacity: 0.8;
+}
+
+.enemy-clickable {
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.enemy-clickable:hover {
+  z-index: 40;
 }
 
 .my-card.dragging {
   opacity: 0.5;
   cursor: grabbing;
+}
+
+.enemy-card-slot.drag-over:not(.attacking) {
+  transform: scale(1.1);
+  filter: brightness(1.3);
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.event-drop-wrapper {
+  display: inline-block;
+}
+
+.event-zone.drag-active,
+.event-monster-wrapper.drag-active {
+  outline: 2px dashed #ff4444;
+  background: rgba(255, 0, 0, 0.12);
+  cursor: crosshair;
+}
+
+.drag-preview {
+  position: fixed;
+  width: 100px;
+  height: 140px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.8;
+  transform: rotate(2deg);
+  animation: ghostFloat 0.3s ease-in-out infinite alternate;
+}
+
+.drag-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes ghostFloat {
+  from {
+    transform: translateY(-2px) rotate(2deg);
+  }
+  to {
+    transform: translateY(2px) rotate(-2deg);
+  }
 }
 
 .card-hp-bar {
@@ -667,21 +1286,16 @@
 }
 
 .game-over-panel {
-  background-color: #4e4343;
-  border: 2px solid #ff0000;
   border-radius: 15px;
   padding: 40px;
   text-align: center;
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
   color: white;
   font-family: "Do Hyeon", serif;
 }
 
 .game-over-message {
-  color: white;
   font-size: 3rem;
   margin-bottom: 30px;
-  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.7);
 }
 
 .game-over-buttons {
@@ -721,6 +1335,7 @@
 
   .my-card.in-zone,
   .enemy-card.in-zone {
+    cursor: pointer;
     width: 80px;
     height: 120px;
   }
@@ -738,10 +1353,6 @@
   .player-card-zone {
     width: 90%;
     bottom: 60px;
-  }
-
-  .hand-cards {
-    max-width: 400px;
   }
 
   @keyframes cardToZone {
@@ -777,7 +1388,6 @@
   }
 }
 
-/* 카드 등장 애니메이션 */
 .fade-in-card {
   animation: fadeInCard 0.7s ease-out forwards;
 }
@@ -792,7 +1402,6 @@
   }
 }
 
-/* 🔥 타이머 점멸 효과 */
 @keyframes blink {
   0% {
     opacity: 1;
@@ -816,4 +1425,322 @@
 .turn-timer.low-time {
   color: #ff4d4d;
   animation: blink 1s infinite;
+}
+
+.clickable-grave {
+  cursor: pointer;
+  color: #ff5555;
+  font-weight: bold;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.clickable-grave:hover {
+  color: #ffaaaa;
+  transform: scale(1.05);
+  text-shadow: 0 0 6px #ff5555;
+}
+
+.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.enemy-direct-attack {
+  cursor: crosshair;
+  transition: filter 0.2s ease, background-color 0.2s ease;
+}
+
+.enemy-direct-attack:hover {
+  filter: brightness(1.1);
+  background-color: rgba(255, 0, 0, 0.05);
+}
+
+.enemy-direct-attack.drag-active {
+  cursor: crosshair;
+  outline: 2px dashed #ff3333;
+  background-color: rgba(255, 50, 50, 0.15);
+  transition: none;
+}
+
+.enemy-card-zone.enemy-direct-attack .enemy-card-slot,
+.enemy-card-zone.enemy-direct-attack .empty-zone {
+  pointer-events: none;
+}
+
+.enemy-card-zone.enemy-direct-attack {
+  cursor: crosshair;
+  transition: background-color 0.2s ease, filter 0.2s ease;
+}
+
+.enemy-card-zone.enemy-direct-attack:hover:not(.attacking),
+.enemy-card-zone.enemy-direct-attack.drag-active:not(.attacking) {
+  transform: translateX(-50%) scale(1) !important;
+  background-color: rgba(255, 0, 0, 0.08);
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.3) inset;
+  transition: none !important;
+}
+
+.game-over-panel.defeat {
+  background-color: #4e4343;
+  border: 2px solid #ff0000;
+  box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+}
+
+.game-over-panel.victory {
+  background-color: #4a5a7e;
+  border: 2px solid #ffd700;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.6);
+}
+
+.game-over-panel.victory .game-over-message {
+  color: #ffd700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.game-over-panel.defeat .game-over-message {
+  color: #ff4d4d;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.victory-card-banner {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.victory-card {
+  width: 340px;
+  height: 470px;
+  background: linear-gradient(135deg, #fff7c0, #ffe47a);
+  border: 8px solid #ffeb3b;
+  border-radius: 16px;
+  box-shadow: 0 0 30px rgba(255, 235, 59, 0.9), 0 0 60px rgba(255, 220, 60, 0.8) inset;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: victoryCardFade 3s ease forwards;
+  transform: rotate(2deg);
+}
+
+.victory-text {
+  font-size: 52px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255, 255, 150, 1), 0 0 20px rgba(255, 240, 100, 1);
+  letter-spacing: 4px;
+}
+
+@keyframes victoryCardFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(2deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1) rotate(2deg);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1) rotate(2deg);
+  }
+}
+
+@keyframes defeatFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.gameover-fade-wrapper {
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+
+.gameover-fade-wrapper.fade-in {
+  opacity: 1;
+}
+
+.battle-dim-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  animation: dimFade 0.7s ease forwards;
+  pointer-events: none;
+  z-index: 9998;
+}
+
+@keyframes dimFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.defeat-card-banner {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.defeat-card {
+  width: 320px;
+  height: 450px;
+  background: linear-gradient(135deg, #222, #111);
+  border: 8px solid #d4af37;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(255, 215, 0, 0.6), 0 0 60px rgba(0, 0, 0, 0.7) inset;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: defeatCardFade 3s ease forwards;
+  transform: rotate(-2deg);
+}
+
+.defeat-text {
+  font-size: 54px;
+  font-weight: 900;
+  color: #ff5252;
+  text-shadow: 0 0 10px rgba(255, 80, 80, 0.9), 0 0 20px rgba(255, 0, 0, 0.9);
+  letter-spacing: 4px;
+}
+
+@keyframes defeatCardFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-2deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1) rotate(-2deg);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1) rotate(-2deg);
+  }
+}
+
+.fireworks-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 99998;
+}
+
+.firework {
+  position: absolute;
+  bottom: -20px;
+  width: 4px;
+  height: 4px;
+  background-color: transparent;
+  border-radius: 50%;
+  animation: shoot 1.2s ease-out infinite;
+}
+
+.firework:nth-child(1) {
+  left: 25%;
+  animation-delay: 0s;
+}
+.firework:nth-child(2) {
+  left: 50%;
+  animation-delay: 0.3s;
+}
+.firework:nth-child(3) {
+  left: 70%;
+  animation-delay: 0.6s;
+}
+.firework:nth-child(4) {
+  left: 40%;
+  animation-delay: 0.9s;
+}
+
+@keyframes shoot {
+  0% {
+    transform: translateY(0);
+    opacity: 0.9;
+  }
+  40% {
+    transform: translateY(-200px);
+    opacity: 1;
+  }
+  41% {
+    opacity: 0;
+  }
+  46% {
+    opacity: 1;
+    transform: translateY(-200px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-200px) scale(3);
+    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252, -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740, 30px 0 #ffd600;
+  }
+}
+
+.card-motion-wrapper {
+  will-change: transform;
+}
+
+.my-card.attacking,
+.enemy-card.attacking {
+  transition: none !important;
+  transform-origin: center center !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+.enemy-card-zone.enemy-direct-attack.attacking,
+.enemy-card-zone.enemy-direct-attack.attacking:hover {
+  transform: none !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.draggable-chat-button {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  z-index: 9999;
+  cursor: pointer;
+}
+
+.draggable-chat-panel {
+  position: fixed;
+  width: 260px;
+  height: 380px;
+  border-radius: 14px;
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
 }

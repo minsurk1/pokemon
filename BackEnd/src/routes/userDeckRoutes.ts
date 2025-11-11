@@ -64,6 +64,7 @@ router.get("/single", isAuthenticated, async (req, res) => {
 });
 
 // ✅ 덱 저장
+// ✅ 덱 저장
 router.post("/single/save", isAuthenticated, async (req, res) => {
   try {
     const user = (req as AuthenticatedRequest).user;
@@ -77,6 +78,60 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
     if (!Array.isArray(cards)) {
       return res.status(400).json({ message: "잘못된 카드 데이터 형식입니다." });
     }
+
+    /* =====================================================
+     ✅ 1) 덱 검증 RULES
+     ===================================================== */
+
+    // --- 코스트 합 계산 ---
+    const costSum = cards.reduce((sum: number, c: any) => sum + Number(c.cost ?? c.tier ?? 1), 0);
+    const COST_LIMIT = 80;
+
+    // --- 티어 개수 카운트 ---
+    const tierCount: Record<number, number> = {};
+    cards.forEach((card: any) => {
+      const t = Number(card.tier ?? 1);
+      tierCount[t] = (tierCount[t] || 0) + 1;
+    });
+
+    const tier1 = tierCount[1] ?? 0;
+    const tier2 = tierCount[2] ?? 0;
+    const tier1_2 = tier1 + tier2;
+
+    const tier6_7 = (tierCount[6] ?? 0) + (tierCount[7] ?? 0);
+    const tier8 = tierCount[8] ?? 0;
+
+    // ✅ RULE 1: 8티어(전설) 최대 2장
+    if (tier8 > 2) {
+      return res.status(400).json({
+        message: `8티어(전설) 카드는 최대 2장까지 가능합니다. 현재: ${tier8}`,
+      });
+    }
+
+    // ✅ RULE 2: 1~2티어 최소 7장
+    if (tier1_2 < 7) {
+      return res.status(400).json({
+        message: `1~2티어 카드는 최소 7장이 필요합니다. 현재: ${tier1_2}`,
+      });
+    }
+
+    // ✅ RULE 3: 6~7티어 최대 3장
+    if (tier6_7 > 3) {
+      return res.status(400).json({
+        message: `6~7티어 카드는 합쳐서 최대 3장까지 가능합니다. 현재: ${tier6_7}`,
+      });
+    }
+
+    // ✅ RULE 4: 총 코스트 ≤ 80
+    if (costSum > COST_LIMIT) {
+      return res.status(400).json({
+        message: `덱 코스트 초과: ${costSum}/${COST_LIMIT}`,
+      });
+    }
+
+    /* =====================================================
+     ✅ 2) 검증 통과 → 덱 저장 로직
+     ===================================================== */
 
     const formattedCards = cards.map((c: any) => ({
       card: new mongoose.Types.ObjectId(String(c.id || c.cardId)),
@@ -102,7 +157,8 @@ router.post("/single/save", isAuthenticated, async (req, res) => {
     }
 
     await deck.save();
-    res.status(200).json({ message: "덱 저장 완료", deck });
+
+    return res.status(200).json({ message: "덱 저장 완료", deck });
   } catch (err: any) {
     console.error("❌ 덱 저장 실패:", err);
     res.status(500).json({ message: "서버 오류" });

@@ -13,6 +13,7 @@ import inventoryRoutes from "./routes/inventoryRoutes";
 import userCardRoutes from "./routes/userCardRoutes";
 import userDeckRoutes from "./routes/userDeckRoutes";
 import roomListRoutes from "./routes/roomListRoutes";
+import userDexRoutes from "./routes/userDexRoutes";
 import { startRoomCleaner } from "./utils/roomCleaner";
 import { setupSocketHandlers } from "./socket";
 
@@ -46,6 +47,7 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/usercard", userCardRoutes);
 app.use("/api/userdeck", userDeckRoutes);
 app.use("/api/rooms", roomListRoutes);
+app.use("/api/dex", userDexRoutes);
 
 startRoomCleaner();
 

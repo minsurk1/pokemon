@@ -43,6 +43,14 @@ function getCostIncrease(turn: number): number {
   return 5; // 19턴 이후
 }
 
+function getEffectMessage(multiplier: number): string {
+  if (multiplier >= 2.0) return "효과가 굉장하다!";
+  if (multiplier > 1.0) return "효과가 좋다.";
+  if (multiplier === 1.0) return "보통 효과다.";
+  if (multiplier < 1.0 && multiplier > 0.5) return "효과가 별로다...";
+  return "효과가 거의 없다...";
+}
+
 // ✅ 기존 타이머 정지
 function stopSharedTimer(room: RoomInfo) {
   if (room.timer) {
@@ -931,6 +939,20 @@ if (isValidObjectId) {
         targetOwner: opponentId,
         targetId: target.id,
         eventId: null,
+      });
+
+      // ✅ 카드 간 전투 로그 추가
+      const effectMsg = getEffectMessage(multiplier);
+
+      io.to(roomCode).emit("addBattleLog", {
+        type: "card-attack",
+        attackerName: attacker.name,
+        defenderName: target.name,
+        damage,
+        multiplier,
+        effectMsg,
+        prevHP,
+        newHP,
       });
 
       // ✅ 카드 사망 처리

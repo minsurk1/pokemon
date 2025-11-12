@@ -37,6 +37,9 @@
       "react-app/jest"
     ]
   },
+  "resolutions": {
+    "source-map-loader": "3.0.0"
+  },
   "browserslist": {
     "production": [
       ">0.2%",

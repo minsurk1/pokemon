@@ -11,6 +11,7 @@
   background-size: cover;
   background-position: center;
   position: relative;
+  overflow-y: hidden;
 }
 
 .chat-log-container {
@@ -676,7 +677,7 @@
   z-index: 100;
   width: 4.4vw;
   right: 0;
-  top: 60.3vh;
+  top: 60.9vh;
   display: flex;
   flex-direction: column-reverse;
   align-items: center;

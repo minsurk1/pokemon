@@ -34,10 +34,11 @@
 .inventory-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 30px;
+  gap: 50px;
   width: 100%;
   max-width: 80vw;
   padding: 20px;
+  margin-top: 9vh;
 }
 
 /*카드팩 호버 (글래스모피즘 강조)*/

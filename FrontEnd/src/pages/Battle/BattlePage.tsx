@@ -551,6 +551,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     setHasDrawnThisTurn(true);
   }, [socket, isMyTurn, hasDrawnThisTurn, roomCode, addMessageToLog]);
 
+  // ✅ 내 턴이 시작될 때 자동 드로우
+  useEffect(() => {
+    if (isMyTurn && !hasDrawnThisTurn) {
+      console.log("🃏 내 턴 시작 → 자동 드로우 실행");
+      drawCard();
+    }
+  }, [isMyTurn]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "d") {
@@ -2005,7 +2013,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           </div>
 
           <button className="endturn-button" onClick={handleEndTurn}>
-            턴 종료 <CiClock1 size={24} />
+            턴 종료 (E)
+            <CiClock1 size={28} />
           </button>
         </div>
 

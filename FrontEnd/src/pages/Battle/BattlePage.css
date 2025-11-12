@@ -717,7 +717,6 @@
   justify-content: center;
   align-items: center;
   text-align: center;
-  
 }
 .enemy-grave {
   position: absolute;
@@ -844,19 +843,18 @@
   transition: opacity 0.3s ease-in-out;
 }
 
-
 /* [수정] 턴 활성화 시 ::before와 ::after 둘 다 켠다 */
 .enemy-info.isEnemyTurn::before,
 .enemy-info.isEnemyTurn::after {
   opacity: 1;
   animation: neonPulse 1.5s infinite alternate;
-  --neon-color: #00afff; 
+  --neon-color: #00afff;
 }
 .player-info.isMyTurn::before,
 .player-info.isMyTurn::after {
   opacity: 1;
   animation: neonPulse 1.5s infinite alternate;
-  --neon-color: #ff4136; 
+  --neon-color: #ff4136;
 }
 
 @keyframes neonPulse {
@@ -1017,7 +1015,11 @@
   left: 0;
   transition: width 0.5s linear;
   border-radius: 2px;
-  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.3),
+    rgba(255, 255, 255, 0.05)
+  );
 }
 
 .enemy-info .hp-bar-inner {
@@ -1519,7 +1521,8 @@
   background: linear-gradient(135deg, #fff7c0, #ffe47a);
   border: 8px solid #ffeb3b;
   border-radius: 16px;
-  box-shadow: 0 0 30px rgba(255, 235, 59, 0.9), 0 0 60px rgba(255, 220, 60, 0.8) inset;
+  box-shadow: 0 0 30px rgba(255, 235, 59, 0.9),
+    0 0 60px rgba(255, 220, 60, 0.8) inset;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1702,7 +1705,8 @@
   100% {
     opacity: 0;
     transform: translateY(-200px) scale(3);
-    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252, -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740, 30px 0 #ffd600;
+    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252,
+      -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740, 30px 0 #ffd600;
   }
 }
 
@@ -1743,4 +1747,19 @@
   z-index: 9998;
   display: flex;
   flex-direction: column;
+}
+
+/* 카드 기본 스타일 */
+.card-image {
+  width: 100px;
+  height: 140px;
+  border-radius: 8px;
+  object-fit: cover;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+/* 자기 턴이 아닐 때 흑백 처리 */
+.gray-filter {
+  filter: grayscale(100%) brightness(0.7);
+  opacity: 0.8;
 }

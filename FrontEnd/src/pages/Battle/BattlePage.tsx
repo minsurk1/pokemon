@@ -1789,7 +1789,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                       handleCardClick(card.id, true, e);
                     }}
                   >
-                    <img src={getImageUrl(card.image)} alt={card.name} />
+                    <img
+                      src={getImageUrl(card.image)}
+                      alt={card.name}
+                      className={`card-image ${!isMyTurn ? "gray-filter" : ""}`}
+                    />
                     <div className="card-hp-bar">
                       <div
                         className="card-hp-bar-inner"
@@ -1866,7 +1870,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                     }
                   }}
                 >
-                  <img src={getImageUrl(card.image)} alt={card.name} />
+                  <img
+                    src={getImageUrl(card.image)}
+                    alt={card.name}
+                    className={`card-image ${!isMyTurn ? "gray-filter" : ""}`}
+                  />
                 </div>
               </div>
             ))}

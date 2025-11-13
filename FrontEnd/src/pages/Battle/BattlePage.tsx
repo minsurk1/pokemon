@@ -284,6 +284,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [highlightCardId, setHighlightCardId] = useState<string | null>(null);
   // 피격 애니메이션 대상 카드 ID
   const [hitCardId, setHitCardId] = useState<string | null>(null);
+  const [playerHit, setPlayerHit] = useState<string | null>(null);
+  const enemyIdRef = useRef<string | null>(null);
 
   // ======================================== 함수들 ========================================
   // (useEffect ref 동기화 - 변경 없음)
@@ -638,19 +640,20 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     // 🔥 서버 hit 신호 → 피격 애니메이션 실행
-    const onHit = (payload: { targetId: string | number | null }) => {
-      const { targetId } = payload;
-      if (targetId == null) return;
+    const onHit = ({ targetOwner, targetId }: { targetOwner: string | null; targetId: string | number | null }) => {
+      // 🎯 카드 피격 (기존 로직)
+      if (targetId !== null) {
+        const idStr = String(targetId);
+        setHitCardId(idStr);
+        setTimeout(() => setHitCardId(null), 350);
+        return;
+      }
 
-      const idStr = String(targetId);
-      console.log("🎯 hit 수신 targetId:", targetId, "→", idStr);
-
-      setHitCardId(idStr);
-
-      // 잠시 후 원상복귀
-      setTimeout(() => {
-        setHitCardId(null);
-      }, 350);
+      // 🎯 플레이어 직접 공격 (targetId === null)
+      if (targetOwner) {
+        setPlayerHit(targetOwner);
+        setTimeout(() => setPlayerHit(null), 350);
+      }
     };
 
     // ✅ 서버에서 전투 로그 수신
@@ -755,6 +758,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         }
 
         const enemyId = Object.keys(hp).find((id) => id !== myId);
+        if (enemyId) enemyIdRef.current = enemyId;
         if (enemyId && hp[enemyId] !== undefined) {
           setEnemyHP(Number(hp[enemyId]));
         }
@@ -1750,11 +1754,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       {/* === 오른쪽 사이드 영역 === */}
       <div className="right-container">
-        <div
+        <motion.div
           id="enemy-player-target"
-          className={`enemy-info ${
-            !isMyTurn ? "isEnemyTurn" : "" // [수정] 턴 라이트 클래스
-          } ${isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""}`}
+          className={`enemy-info ${!isMyTurn ? "isEnemyTurn" : ""} ${
+            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
+          }`}
           onClick={() => handleDirectAttackOnEnemy()}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
@@ -1763,7 +1767,17 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             if (attackerId) handleDirectAttackOnEnemy(attackerId);
             setIsDragActive(false);
           }}
+          animate={{
+            x: playerHit === enemyIdRef.current ? [-14, 14, -10, 10, 0] : 0,
+          }}
+          transition={{ duration: playerHit ? 0.35 : 0.2 }}
         >
+          {/* 🔥 번쩍 플래시 */}
+          {playerHit === enemyIdRef.current && (
+            <motion.div className="player-hit-flash" initial={{ opacity: 0 }} animate={{ opacity: [0, 0.6, 0] }} transition={{ duration: 0.25 }} />
+          )}
+
+          {/* 기존 내용 그대로 */}
           <div className="enemy-avatar" />
           <div className="hp-bar">
             <div className="hp-bar-inner" style={{ width: `${(enemyHP / MAX_HP) * 100}%` }} />
@@ -1771,7 +1785,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               {enemyHP}/{MAX_HP}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         <div className="event-zone">
           <div className="event-items-container">
@@ -1821,7 +1835,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           </button>
         </div>
 
-        <div id="my-player-target" className={`player-info ${isMyTurn ? "isMyTurn" : ""}`}>
+        <motion.div
+          id="my-player-target"
+          className={`player-info ${isMyTurn ? "isMyTurn" : ""}`}
+          animate={{
+            x: playerHit === socket.id ? [-14, 14, -10, 10, 0] : 0,
+          }}
+          transition={{ duration: playerHit ? 0.35 : 0.2 }}
+        >
           {" "}
           {/* [수정] 턴 라이트 클래스 */}
           <div className="player-avatar" />
@@ -1834,7 +1855,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           <div className={`surrender-button ${turn >= 5 ? "" : "disabled"}`} onClick={handleSurrenderClick}>
             항복 <CiFlag1 />
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* ✅ 항복 재확인 팝업 */}

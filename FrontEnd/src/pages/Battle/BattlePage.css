@@ -1022,11 +1022,7 @@
   left: 0;
   transition: width 0.5s linear;
   border-radius: 2px;
-  background-image: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.3),
-    rgba(255, 255, 255, 0.05)
-  );
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.05));
 }
 
 .enemy-info .hp-bar-inner {
@@ -1528,8 +1524,7 @@
   background: linear-gradient(135deg, #fff7c0, #ffe47a);
   border: 8px solid #ffeb3b;
   border-radius: 16px;
-  box-shadow: 0 0 30px rgba(255, 235, 59, 0.9),
-    0 0 60px rgba(255, 220, 60, 0.8) inset;
+  box-shadow: 0 0 30px rgba(255, 235, 59, 0.9), 0 0 60px rgba(255, 220, 60, 0.8) inset;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1712,8 +1707,7 @@
   100% {
     opacity: 0;
     transform: translateY(-200px) scale(3);
-    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252,
-      -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740, 30px 0 #ffd600;
+    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252, -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740, 30px 0 #ffd600;
   }
 }
 
@@ -1769,4 +1763,27 @@
 .gray-filter {
   filter: grayscale(100%) brightness(0.7);
   opacity: 0.8;
+}
+
+/* 카드 선택 시 강조 효과 */
+.glow-ring {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  width: 85%;
+  height: 18px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(rgba(0, 255, 255, 0.6), rgba(0, 255, 255, 0));
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.9);
+  pointer-events: none;
+}
+
+/* 공격 받았을 때 빨간 플래시 효과 */
+.hit-flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 0, 0, 0.4);
+  border-radius: 12px;
+  pointer-events: none;
 }

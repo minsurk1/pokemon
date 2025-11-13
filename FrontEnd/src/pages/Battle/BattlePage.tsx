@@ -638,10 +638,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     // 🔥 서버 hit 신호 → 피격 애니메이션 실행
-    const onHit = ({ targetId }: { targetId: string | null }) => {
-      if (!targetId) return;
+    const onHit = (payload: { targetId: string | number | null }) => {
+      const { targetId } = payload;
+      if (targetId == null) return;
 
-      setHitCardId(targetId);
+      const idStr = String(targetId);
+      console.log("🎯 hit 수신 targetId:", targetId, "→", idStr);
+
+      setHitCardId(idStr);
 
       // 잠시 후 원상복귀
       setTimeout(() => {
@@ -1536,15 +1540,32 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   if (attackerId) handleAttack(card.id, attackerId);
                 }}
               >
-                <div id={`card-${card.id}`} className="enemy-card in-zone" onMouseDown={(e) => handleCardMouseDown(card, e)}>
+                <motion.div
+                  id={`card-${card.id}`}
+                  className="enemy-card in-zone"
+                  onMouseDown={(e) => handleCardMouseDown(card, e)}
+                  animate={{
+                    // 🔥 피격 애니메이션 (적 카드도 흔들리게)
+                    x: hitCardId === card.id ? [-12, 12, -6, 6, 0] : 0,
+                  }}
+                  transition={{
+                    duration: hitCardId === card.id ? 0.35 : 0.3,
+                  }}
+                >
                   <img src={getImageUrl(card.image)} alt={card.name} />
+
+                  {/* 🔥 피격 Flash 오버레이 (원하면 추가) */}
+                  {hitCardId === card.id && (
+                    <motion.div className="hit-flash" initial={{ opacity: 0 }} animate={{ opacity: [0, 0.7, 0] }} transition={{ duration: 0.25 }} />
+                  )}
+
                   <div className="card-hp-bar">
                     <div className="card-hp-bar-inner" style={{ width: `${(card.hp / card.maxhp) * 100}%` }} />
                     <div className="card-hp-text">
                       {card.hp}/{card.maxhp}
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </div>
             ))
           ) : (
@@ -1598,7 +1619,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                         : { scale: 1, boxShadow: "none" }),
 
                       // 🔥 피격 애니메이션 (shake)
-                      ...(hitCardId === card.id ? { x: [-6, 6, -4, 4, 0] } : { x: 0 }),
+                      ...(hitCardId === card.id ? { x: [-8, 8, -5, 5, 0] } : { x: 0 }),
                     }}
                     transition={{
                       duration: hitCardId === card.id ? 0.35 : 0.8,
@@ -1778,7 +1799,18 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   setIsDragActive(false); // 드래그 상태 정리
                 }}
               >
-                <EventItem event={event} onClick={() => handleEventAttack(event.id)} />
+                <motion.div
+                  id={`event-monster-${event.id}`}
+                  className="event-monster-wrapper"
+                  animate={{
+                    x: hitCardId === String(event.id) ? [-12, 12, -8, 8, 0] : 0,
+                  }}
+                  transition={{
+                    duration: hitCardId === String(event.id) ? 0.35 : 0.3,
+                  }}
+                >
+                  <EventItem event={event} onClick={() => handleEventAttack(event.id)} />
+                </motion.div>
               </div>
             ))}
           </div>

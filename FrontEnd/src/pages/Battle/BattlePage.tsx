@@ -527,7 +527,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   // 수정
   const runAttackAnimation = (
     attackerInstanceId: string,
-    targetInstanceId?: string, // 카드 id 또는 이벤트 id
+    targetInstanceId?: string, // "my-player" | "enemy-player" | 카드ID | 이벤트ID
     attackType: "card" | "player" | "event" | "field" = "card"
   ) => {
     const attackerEl = document.getElementById(`card-${attackerInstanceId}`);
@@ -537,22 +537,31 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
     let targetEl: HTMLElement | null = null;
 
+    // 🎯 1) 카드 공격
     if (attackType === "card" && targetInstanceId) {
       targetEl = document.getElementById(`card-${targetInstanceId}`);
-    } else if (attackType === "event") {
-      // 이벤트는 고유 id로 지정
-      targetEl =
-        (targetInstanceId && document.getElementById(`event-monster-${targetInstanceId}`)) ||
-        document.getElementById("event-monster") || // (하위호환)
-        null;
-    } else if (attackType === "player") {
-      // 적 플레이어(오른쪽 아바타)를 타깃
-      targetEl = document.getElementById("enemy-player-target");
-    } else if (attackType === "field") {
-      // 적 플레이어(필드)를 타깃
+    }
+
+    // 🎯 2) 이벤트 공격
+    else if (attackType === "event" && targetInstanceId) {
+      targetEl = document.getElementById(`event-monster-${targetInstanceId}`);
+    }
+
+    // 🎯 3) 직접 공격 (수정된 핵심 부분)
+    else if (attackType === "player") {
+      if (targetInstanceId === "my-player") {
+        targetEl = document.getElementById("my-player-target");
+      } else {
+        targetEl = document.getElementById("enemy-player-target");
+      }
+    }
+
+    // 🎯 4) 기본 - 필드
+    else if (attackType === "field") {
       targetEl = document.getElementById("enemy-field-target");
     }
 
+    // ======== 좌표 계산 ========
     const attackerRect = attackerEl.getBoundingClientRect();
 
     let targetX: number;
@@ -563,7 +572,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       targetX = tRect.left + tRect.width / 2;
       targetY = tRect.top + tRect.height / 2;
     } else {
-      // 타깃 엘리먼트가 없으면 화면 상단 중앙으로
       targetX = window.innerWidth / 2;
       targetY = window.innerHeight * 0.15;
     }
@@ -617,44 +625,59 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const onAttackAnimation = (data: any) => {
       const { attackerOwner, attackerId, targetType, targetOwner, targetId, eventId } = data;
 
-      // ❶ 공격자 element 찾기
-      const attackerEl = document.getElementById(`card-${attackerId}`);
-      if (!attackerEl) {
-        console.warn("⚠️ attacker element not found:", attackerId);
-        return;
-      }
+      const isAttackerMe = attackerOwner === socket.id;
+      const isTargetMe = targetOwner === socket.id;
 
-      // ❷ 타겟 element 찾기
-      let targetEl: HTMLElement | null = null;
+      let finalTargetId: string | undefined = undefined;
+      let finalType = targetType;
 
+      // 카드 공격
       if (targetType === "card" && targetId) {
-        targetEl = document.getElementById(`card-${targetId}`);
-      } else if (targetType === "event" && eventId) {
-        targetEl = document.getElementById(`event-monster-${eventId}`);
-      } else if (targetType === "player") {
-        // ✅ 타깃 소유자 기준으로 내/상대 영역 선택
-        targetEl = document.getElementById(targetOwner === socket.id ? "my-player-target" : "enemy-player-target");
-      } else if (targetType === "field") {
-        targetEl = document.getElementById("enemy-field-target");
+        finalTargetId = targetId;
       }
-      // ❸ 애니메이션 실행
-      runAttackAnimation(attackerId, targetId || eventId || undefined, targetType);
+
+      // 이벤트 공격
+      else if (targetType === "event" && eventId) {
+        finalTargetId = String(eventId);
+      }
+
+      // 직접 공격
+      else if (targetType === "player") {
+        finalType = "player";
+
+        // ⭐ 여기 핵심 포인트
+        finalTargetId = isTargetMe ? "my-player" : "enemy-player";
+      }
+
+      runAttackAnimation(attackerId, finalTargetId, finalType);
     };
 
     // 🔥 서버 hit 신호 → 피격 애니메이션 실행
     const onHit = ({ targetOwner, targetId }: { targetOwner: string | null; targetId: string | number | null }) => {
-      // 🎯 카드 피격 (기존 로직)
-      if (targetId !== null) {
+      const me = socket.id;
+      const enemy = enemyIdRef.current;
+
+      // 🔥 카드 공격일 때만 카드 흔들림 처리
+      if (targetId !== null && targetId !== undefined) {
         const idStr = String(targetId);
         setHitCardId(idStr);
         setTimeout(() => setHitCardId(null), 350);
         return;
       }
 
-      // 🎯 플레이어 직접 공격 (targetId === null)
-      if (targetOwner) {
-        setPlayerHit(targetOwner);
+      // 🔥 여기서부터는 직접 공격일 때만 실행
+      // 내가 맞으면 player-info만 흔들림
+      if (targetOwner === me) {
+        setPlayerHit("me");
         setTimeout(() => setPlayerHit(null), 350);
+        return;
+      }
+
+      // 적이 맞으면 enemy-info만 흔들림
+      if (enemy && targetOwner === enemy) {
+        setPlayerHit("enemy");
+        setTimeout(() => setPlayerHit(null), 350);
+        return;
       }
     };
 
@@ -1255,7 +1278,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       // ✅ (추가) 서버가 updateGameState를 늦게 보낼 때 옛 HP로 덮이지 않도록 잠시 억제
       suppressSyncUntilRef.current = Date.now() + 700;
 
-      runAttackAnimation(attacker.id, undefined, "field");
       socket.emit("directAttack", { roomCode, attackerId });
       addMessageToLog(`💥 ${attacker.name}이(가) 상대 플레이어를 직접 공격합니다!`);
       setMyCardsInZone((prev) => prev.map((c) => (c.id === attacker.id ? { ...c, canAttack: false } : c)));
@@ -1503,18 +1525,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="BottomLeft-Dia" />
         <div className="BottomRight-Dia" />
         <div className="enemy-card-bg" />
-        <div
-          className={`enemy-field ${
-            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0
-              ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}`
-              : ""
-          }`}
-          onClick={(e) => handleEnemyZoneInteraction(e)}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => handleEnemyZoneInteraction(e)}
-          role="button"
-          tabIndex={0}
-        />
+        <div className="enemy-field" />
 
         <div className="player-card-bg" />
         <div className="player-field" />
@@ -1780,7 +1791,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       {/* === 오른쪽 사이드 영역 === */}
       <div className="right-container">
-        <motion.div
+        {/* ================================
+    🔥 enemy-player-target (수정 완료)
+================================ */}
+        <div
           id="enemy-player-target"
           className={`enemy-info ${!isMyTurn ? "isEnemyTurn" : ""} ${
             isMyTurn && selectedAttacker && enemyCardsInZone.length === 0
@@ -1795,31 +1809,39 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             if (attackerId) handleDirectAttackOnEnemy(attackerId);
             setIsDragActive(false);
           }}
-          animate={{
-            x: playerHit === enemyIdRef.current ? [-14, 14, -10, 10, 0] : 0,
-          }}
-          transition={{ duration: playerHit ? 0.35 : 0.2 }}
         >
-          {/* 🔥 번쩍 플래시 */}
-          {playerHit === enemyIdRef.current && (
-            <motion.div
-              className="player-hit-flash"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: [0, 0.6, 0] }}
-              transition={{ duration: 0.25 }}
-            />
-          )}
+          {/* 🔥 아바타 + HP 바만 흔들리게 하는 motion.div */}
+          <motion.div
+            className="enemy-hit-wrapper"
+            animate={{
+              x: playerHit === "enemy" ? [-14, 14, -10, 10, 0] : 0,
+            }}
+            transition={{ duration: 0.35 }}
+          >
+            {/* 번쩍 플래시 */}
+            {playerHit === enemyIdRef.current && (
+              <motion.div
+                className="player-hit-flash"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [0, 0.6, 0] }}
+                transition={{ duration: 0.25 }}
+              />
+            )}
 
-          {/* 기존 내용 그대로 */}
-          <div className="enemy-avatar" />
-          <div className="hp-bar">
-            <div className="hp-bar-inner" style={{ width: `${(enemyHP / MAX_HP) * 100}%` }} />
-            <div className="hp-text">
-              {enemyHP}/{MAX_HP}
+            {/* 기존 내용 */}
+            <div className="enemy-avatar" />
+            <div className="hp-bar">
+              <div className="hp-bar-inner" style={{ width: `${(enemyHP / MAX_HP) * 100}%` }} />
+              <div className="hp-text">
+                {enemyHP}/{MAX_HP}
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
+        {/* ================================
+    🔥 Event Zone (변경 없음)
+================================ */}
         <div className="event-zone">
           <div className="event-items-container">
             {activeEvents.map((event) => (
@@ -1829,21 +1851,19 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                 id={`event-monster-${event.id}`}
                 onDragOver={(e) => {
                   if (!isMyTurn) return;
-                  e.preventDefault(); // 드롭 허용
+                  e.preventDefault();
                 }}
                 onDrop={(e) => {
                   if (!isMyTurn) return;
                   e.preventDefault();
                   const attackerId = e.dataTransfer.getData("attackerId");
                   if (attackerId) {
-                    handleEventAttack(event.id, attackerId); // 드래그 공격 — attackerId 전달
+                    handleEventAttack(event.id, attackerId);
                   } else {
-                    // 드롭했는데 attackerId가 없으면 시도 로그 (디버그용)
                     console.warn("drop without attackerId", e.dataTransfer);
-                    // 여전히 클릭 방식으로 공격하려면 selectedAttacker가 있으면 호출
                     handleEventAttack(event.id);
                   }
-                  setIsDragActive(false); // 드래그 상태 정리
+                  setIsDragActive(false);
                 }}
               >
                 <motion.div
@@ -1868,27 +1888,31 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           </button>
         </div>
 
-        <motion.div
-          id="my-player-target"
-          className={`player-info ${isMyTurn ? "isMyTurn" : ""}`}
-          animate={{
-            x: playerHit === socket.id ? [-14, 14, -10, 10, 0] : 0,
-          }}
-          transition={{ duration: playerHit ? 0.35 : 0.2 }}
-        >
-          {" "}
-          {/* [수정] 턴 라이트 클래스 */}
-          <div className="player-avatar" />
-          <div className="hp-bar">
-            <div className="hp-bar-inner" style={{ width: `${(playerHP / MAX_HP) * 100}%` }} />
-            <div className="hp-text">
-              {playerHP}/{MAX_HP}
+        {/* ================================
+    🔥 my-player-target (수정 완료)
+================================ */}
+        <div id="my-player-target" className={`player-info ${isMyTurn ? "isMyTurn" : ""}`}>
+          {/* 나도 아바타 + HP 바만 흔들리게 */}
+          <motion.div
+            className="player-hit-wrapper"
+            animate={{
+              x: playerHit === "me" ? [-14, 14, -10, 10, 0] : 0,
+            }}
+            transition={{ duration: 0.35 }}
+          >
+            <div className="player-avatar" />
+            <div className="hp-bar">
+              <div className="hp-bar-inner" style={{ width: `${(playerHP / MAX_HP) * 100}%` }} />
+              <div className="hp-text">
+                {playerHP}/{MAX_HP}
+              </div>
             </div>
-          </div>
+          </motion.div>
+
           <div className={`surrender-button ${turn >= 5 ? "" : "disabled"}`} onClick={handleSurrenderClick}>
             항복 <CiFlag1 />
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* ✅ 항복 재확인 팝업 */}

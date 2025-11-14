@@ -12,6 +12,8 @@
   background-position: center;
   position: relative;
   overflow-y: hidden;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .chat-log-container {
@@ -786,6 +788,11 @@
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.3s ease-in-out;
+
+  transform: translateZ(0);
+  will-change: transform;
+  position: relative; /* 이미 있음 */
+  z-index: 9999; /* 흔들림이 다른 요소에 영향을 주지 않도록 위 레이어로 */
 }
 
 /* [수정] ::before를 '상단' 라인으로 유지 */
@@ -1480,7 +1487,6 @@
 
 .enemy-card-zone.enemy-direct-attack:hover:not(.attacking),
 .enemy-card-zone.enemy-direct-attack.drag-active:not(.attacking) {
-  transform: translateX(-50%) scale(1) !important;
   background-color: rgba(255, 0, 0, 0.08);
   box-shadow: 0 0 8px rgba(255, 0, 0, 0.3) inset;
   transition: none !important;
@@ -1707,7 +1713,8 @@
   100% {
     opacity: 0;
     transform: translateY(-200px) scale(3);
-    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252, -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740, 30px 0 #ffd600;
+    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252, -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740,
+      30px 0 #ffd600;
   }
 }
 

@@ -6,6 +6,7 @@ import crypto from "crypto";
 import UserDeck from "../models/UserDeck"; // ✅ 덱 로딩용 추가
 import { calcDamage } from "./battle/calcDamage";
 import { detectTypeByName } from "../utils/detectTypeByName";
+import { endGameCleanup } from "./room";
 
 // ======================= 🔁 공유 타이머 설정 =======================
 const TURN_TIME = 30; // 한 턴당 제한 시간 (초 단위)
@@ -785,6 +786,8 @@ if (isValidObjectId) {
       });
       stopSharedTimer(room);
       room.gameState = null;
+
+      endGameCleanup(roomCode);
     }
   });
 
@@ -930,6 +933,8 @@ if (isValidObjectId) {
       });
       stopSharedTimer(room);
       room.gameState = null;
+
+      endGameCleanup(roomCode);
     }
   });
 
@@ -1028,6 +1033,8 @@ if (isValidObjectId) {
       });
       stopSharedTimer(room);
       room.gameState = null;
+
+      endGameCleanup(roomCode);
     }
   });
 
@@ -1244,6 +1251,8 @@ if (isValidObjectId) {
       });
       stopSharedTimer(room);
       room.gameState = null;
+
+      endGameCleanup(roomCode);
     }
   });
 
@@ -1377,6 +1386,8 @@ if (isValidObjectId) {
         });
         stopSharedTimer(room);
         room.gameState = null;
+
+        endGameCleanup(roomCode);
       }
     }
 
@@ -1390,6 +1401,8 @@ if (isValidObjectId) {
         });
         stopSharedTimer(room);
         room.gameState = null;
+
+        endGameCleanup(roomCode);
       }
     }
   });
@@ -1442,6 +1455,8 @@ if (isValidObjectId) {
     setTimeout(() => {
       stopSharedTimer(room);
       room.gameState = null;
+
+      endGameCleanup(roomCode);
     }, 300); // 0~300ms 사이면 충분 (전송 안정)
   });
 

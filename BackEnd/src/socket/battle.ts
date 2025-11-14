@@ -175,10 +175,14 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
       hp: eventData.hp,
       maxHp: eventData.hp,
       effect: () => {},
+      damagePopups: [], // 🔥 추가!
     };
 
     game.activeEvent = newEvent;
-    io.to(roomCode).emit("eventTriggered", newEvent);
+    io.to(roomCode).emit("eventTriggered", {
+      ...newEvent,
+      id: String(newEvent.id), // ⭐ 반드시 문자열로 변환
+    });
 
     console.log(`🔥 새 이벤트 생성! type=${eventType}, turn=${game.turnCount}`);
   }
@@ -1426,7 +1430,7 @@ if (isValidObjectId) {
 
     // ✅ 모든 클라이언트에 이벤트 HP 갱신 알림
     io.to(roomCode).emit("eventHPUpdate", {
-      eventId: event.id,
+      eventId: String(event.id),
       newHP: clampedHP,
     });
     console.log(`⚔️ ${attacker.name}(${damage}) → 이벤트(${event.id}) | HP ${prevHP} → ${clampedHP}`);

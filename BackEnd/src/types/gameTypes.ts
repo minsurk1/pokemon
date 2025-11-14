@@ -1,4 +1,4 @@
-// ✅ src/types/gameTypes.ts
+// ✅ BackEnd/src/types/gameTypes.ts
 
 export interface CardData {
   id: string;
@@ -27,6 +27,7 @@ export interface Event {
   hp: number;
   maxHp: number;
   effect: () => void; // 클라이언트에서는 사용하지 않음
+  damagePopups?: { id: number; amount: number }[]; // 🔥 추가!
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 

@@ -290,6 +290,28 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [playerHit, setPlayerHit] = useState<string | null>(null);
   const enemyIdRef = useRef<string | null>(null);
 
+  // 묘지에 카드 버리기
+  const [pendingDiscard, setPendingDiscard] = useState<{
+    card: Card;
+    location: "hand" | "field";
+    confirm: () => void;
+  } | null>(null);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+
+  const [isDraggingOverGrave, setIsDraggingOverGrave] = useState(false);
+  const [shuffleAnim, setShuffleAnim] = useState(false);
+  const discardedCardIdsRef = useRef<Set<string>>(new Set());
+
+  const [enemyGraveCount, setEnemyGraveCount] = useState(0);
+  const [enemyDiscardGhost, setEnemyDiscardGhost] = useState<{
+    image: string;
+    name: string;
+  } | null>(null);
+  const [lastEnemyDiscard, setLastEnemyDiscard] = useState<{
+    image: string;
+    name: string;
+  } | null>(null);
+
   // ======================================== 함수들 ========================================
   // (useEffect ref 동기화 - 변경 없음)
   useEffect(() => {
@@ -732,6 +754,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const onUpdateGameState = (data: any) => {
       const { hp, cost, decks, hands, graveyards, cardsInZone, turnCount, timeLeft, currentTurn } = data;
       const myId = socket?.id;
+      // 🔥 상대 묘지 카운트도 동기화
+      const enemyId = Object.keys(graveyards || {}).find((id) => id !== myId);
+      if (enemyId && graveyards[enemyId]) {
+        setEnemyGraveCount(graveyards[enemyId].length);
+      }
+
       if (!myId) return;
 
       dlog("📥 updateGameState 수신:", data);
@@ -811,15 +839,24 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       };
 
       /* ✅ 7) 필드 존 동기화 (얻어맞은 카드가 되살아나는 문제를 완전히 해결) */
+      /* ✅ 7) 필드 존 동기화 (버린 카드 부활 방지 추가) */
       if (!suppressing && cardsInZone) {
-        const mySv = cardsInZone?.[myId];
-        if (mySv) {
-          setMyCardsInZone((prev) => mergeZoneByMinHP(prev, mySv));
+        const mySvRaw = cardsInZone?.[myId];
+        if (mySvRaw) {
+          // 🔥 버린 카드 제외 필터링
+          const filtered = mySvRaw.filter((c: any) => !discardedCardIdsRef.current.has(String(c.id)));
+
+          setMyCardsInZone((prev) => mergeZoneByMinHP(prev, filtered));
         }
 
         const oppId = Object.keys(cardsInZone || {}).find((id) => id !== myId);
         if (oppId && cardsInZone?.[oppId]) {
-          setEnemyCardsInZone((prev) => mergeZoneByMinHP(prev, cardsInZone[oppId]));
+          const oppSvRaw = cardsInZone[oppId];
+
+          // 🔥 상대 필드도 마찬가지로 버린 카드 제외
+          const filteredOpp = oppSvRaw.filter((c: any) => !discardedCardIdsRef.current.has(String(c.id)));
+
+          setEnemyCardsInZone((prev) => mergeZoneByMinHP(prev, filteredOpp));
         }
       }
 
@@ -898,22 +935,33 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
       setActiveEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, hp: newHP } : e)));
     };
+
     const onEventEnded = ({ eventId }: { eventId: number }) => {
       setActiveEvents((prev) => prev.filter((e) => e.id !== eventId));
       addMessageToLog(`🎉 이벤트가 종료되었습니다! (보상 획득)`);
     };
+
     const onCardDrawn = ({ card, decks, hands }: any) => {
       const myId = socket?.id;
       if (!myId) return;
       const newCard = keepCardShape(card);
-      setHandCards(hands?.[myId]?.map(keepCardShape) ?? ((prev) => [...prev, newCard]));
+
+      setHandCards((prev) => {
+        if (hands?.[myId]) {
+          return hands[myId].map(keepCardShape);
+        }
+        return [...prev, newCard];
+      });
+
       if (decks?.[myId] && decks[myId].length < deckCards.length) {
         setDeckCards(decks[myId].map(keepCardShape));
       } else {
         setDeckCards((prev) => prev.slice(0, -1));
       }
+
       addMessageToLog(`📥 ${newCard.name} 카드를 드로우했습니다!`);
     };
+
     const onCardDestroyedWithGrave = ({ playerId, card, graveCount }: any) => {
       if (!card) {
         console.warn("⚠️ onCardDestroyedWithGrave: 카드 데이터 없음", {
@@ -931,6 +979,34 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         addMessageToLog(`🔥 상대의 ${card.name}이(가) 쓰러졌습니다!`);
       }
     };
+
+    // ⭐⭐⭐ 카드 버리기 수신 — 내/상대 모두 로그에 확실히 출력 ⭐⭐⭐
+    const onCardDiscarded = (data: any) => {
+      const { playerId, card, hpPenalty, costPenalty } = data;
+      const mine = playerId === socket.id;
+
+      const cardName = card?.name ?? card?.cardName ?? "알 수 없는 카드";
+      const cardImage = getImageUrl(card?.image);
+
+      if (mine) {
+        addMessageToLog(`🗑️ ${cardName}을(를) 버렸습니다! (HP -${hpPenalty}, COST -${costPenalty})`);
+      } else {
+        addMessageToLog(`🗑️ 상대가 ${cardName}을(를) 버렸습니다!`);
+
+        // ⭐⭐⭐ 잔상 페이드 애니메이션 데이터 저장 ⭐⭐⭐
+        setEnemyDiscardGhost({ image: cardImage, name: cardName });
+
+        setTimeout(() => {
+          setEnemyDiscardGhost(null);
+        }, 1200);
+      }
+
+      if (!mine) {
+        showMessageBox("상대가 카드를 버렸습니다!", 1700);
+        setLastEnemyDiscard({ image: cardImage, name: cardName });
+      }
+    };
+
     const onGraveyardShuffled = (data: any) => {
       const { deckCount, returned, failed, penaltyHP, decks, graveyards, hp } = data;
       const myId = socket?.id;
@@ -977,6 +1053,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.on("cardDrawn", onCardDrawn);
     socket.on("cardDestroyed", onCardDestroyedWithGrave);
     socket.on("graveyardShuffled", onGraveyardShuffled);
+    socket.on("cardDiscarded", onCardDiscarded);
     socket.on("gameOver", onGameOver);
 
     return () => {
@@ -1000,6 +1077,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("cardDrawn", onCardDrawn);
       socket.off("cardDestroyed", onCardDestroyedWithGrave);
       socket.off("graveyardShuffled", onGraveyardShuffled);
+      socket.off("cardDiscarded", onCardDiscarded);
       socket.off("gameOver", onGameOver);
     };
   }, [roomCode, addMessageToLog, applyTurnChange, deckCards.length, deckLoaded, socket]);
@@ -1048,6 +1126,121 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const handleToggleHand = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setShowHand(!showHand);
+  };
+
+  const handleDiscardRequest = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, card: Card) => {
+    e.preventDefault();
+
+    if (!isMyTurn) {
+      showMessageBox("지금은 당신의 턴이 아닙니다!");
+      return;
+    }
+
+    const cost = Number(card.cost ?? 1);
+    const tier = Number(card.tier ?? 1);
+    let hpPenalty = 5 + cost * 3 + tier * 2;
+    if (playerCostIcons <= 0) hpPenalty += 5;
+
+    setPendingDiscard({
+      card,
+      location: "hand",
+      confirm: () => {
+        // 1) fade-out 적용
+        setHandCards((prev) => prev.map((c) => (c.id === card.id ? { ...c, discardFade: true } : c)));
+
+        // 2) 300ms 후 실제 제거 + 서버 emit
+        setTimeout(() => {
+          discardedCardIdsRef.current.add(card.id);
+          setHandCards((prev) => prev.filter((c) => c.id !== card.id));
+
+          socket.emit("discardCard", {
+            roomCode,
+            cardId: card.id,
+            location: "hand",
+          });
+
+          setShowDiscardConfirm(false);
+          setPendingDiscard(null);
+        }, 300);
+      },
+    });
+
+    setShowDiscardConfirm(true);
+  };
+
+  const handleFieldDiscardRequest = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, card: Card) => {
+    e.preventDefault();
+
+    if (!isMyTurn) {
+      showMessageBox("지금은 당신의 턴이 아닙니다!");
+      return;
+    }
+
+    const cost = Number(card.cost ?? 1);
+    const tier = Number(card.tier ?? 1);
+    let hpPenalty = 5 + cost * 3 + tier * 2;
+    if (playerCostIcons <= 0) hpPenalty += 5;
+
+    setPendingDiscard({
+      card,
+      location: "field",
+      confirm: () => {
+        setMyCardsInZone((prev) => prev.map((c) => (c.id === card.id ? { ...c, discardFade: true } : c)));
+
+        setTimeout(() => {
+          discardedCardIdsRef.current.add(card.id);
+          setMyCardsInZone((prev) => prev.filter((c) => c.id !== card.id));
+
+          socket.emit("discardCard", {
+            roomCode,
+            cardId: card.id,
+            location: "field",
+          });
+
+          setShowDiscardConfirm(false);
+          setPendingDiscard(null);
+        }, 300);
+      },
+    });
+
+    setShowDiscardConfirm(true);
+  };
+
+  const handleGraveDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isMyTurn) return;
+    e.preventDefault();
+
+    const cardId = e.dataTransfer.getData("attackerId");
+    if (!cardId) return;
+
+    const card = myCardsInZone.find((c) => c.id === cardId);
+    if (!card) return;
+
+    const cost = Number(card.cost ?? 1);
+    const tier = Number(card.tier ?? 1);
+    let hpPenalty = 5 + cost * 3 + tier * 2;
+    if (playerCostIcons <= 0) hpPenalty += 5;
+
+    setPendingDiscard({
+      card,
+      location: "field",
+      confirm: () => {
+        discardedCardIdsRef.current.add(card.id);
+        // ⭐⭐⭐ 낙관적 UI — 즉시 필드에서 제거 ⭐⭐⭐
+        setMyCardsInZone((prev) => prev.filter((c) => c.id !== card.id));
+
+        socket.emit("discardCard", {
+          roomCode,
+          cardId: card.id,
+          location: "field",
+        });
+
+        setShowDiscardConfirm(false);
+        setPendingDiscard(null);
+      },
+    });
+
+    setShowDiscardConfirm(true);
   };
 
   const handleCardClick = (cardId: string, fromZone: boolean, e: React.MouseEvent<HTMLDivElement>) => {
@@ -1492,6 +1685,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const confirmSurrender = () => {
     setShowSurrenderConfirm(false);
 
+    // ✅ 항복 중 플래그 ON
+    setSurrendering(true);
+
     // ✅ 메시지박스 시작 시간 기록
     window.__surrenderMessageStart = Date.now();
 
@@ -1547,6 +1743,20 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="enemy-card-bg" />
         <div className="enemy-field" />
 
+        {/* === 🔥 상대 버린 카드 잔상(페이드) === */}
+        {enemyDiscardGhost && (
+          <div className="enemy-discard-ghost">
+            <img src={enemyDiscardGhost.image} alt={enemyDiscardGhost.name} />
+          </div>
+        )}
+
+        {/* === 🔥 상대가 마지막으로 버린 카드 미리보기 === */}
+        {lastEnemyDiscard && (
+          <div className="enemy-last-discard-preview" title={`상대가 버린 카드: ${lastEnemyDiscard.name}`}>
+            <img src={lastEnemyDiscard.image} alt={lastEnemyDiscard.name} />
+          </div>
+        )}
+
         <div className="player-card-bg" />
         <div className="player-field" />
 
@@ -1555,6 +1765,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             <div key={i} className="enemy-hand-card" />
           ))}
         </div>
+
+        <div className="enemy-grave-display">⚰️ 묘지 ({enemyGraveCount})</div>
 
         <div
           id="enemy-field-target"
@@ -1648,7 +1860,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                 >
                   <motion.div
                     id={`card-${card.id}`}
-                    className={`my-card in-zone ${card.canAttack ? "can-attack" : "cannot-attack"}`}
+                    className={`my-card in-zone ${card.discardFade ? "card-discard-fade" : ""} ${
+                      card.canAttack ? "can-attack" : "cannot-attack"
+                    }`}
                     draggable={isMyTurn}
                     onMouseDown={(e) => card.canAttack && handleCardMouseDown(card, e)}
                     onDragStart={(e) => card.canAttack && handleDragStart(card.id, e)}
@@ -1661,6 +1875,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                       }
                       handleCardClick(card.id, true, e);
                     }}
+                    onContextMenu={(e) => handleFieldDiscardRequest(e, card)} // ⭐ 필드 우클릭 버리기 추가
                     animate={{
                       // 🔥 선택된 카드 강조
                       ...(highlightCardId === card.id
@@ -1751,13 +1966,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             {handCards.map((card, index) => (
               <div key={card.id} className={`card-slot hand-card-position-${index}`} style={{ zIndex: handCards.length - index }}>
                 <div
-                  className="my-card hand-card"
+                  className={`my-card hand-card ${card.discardFade ? "card-discard-fade" : ""}`}
                   onClick={(e) => {
                     if (showHand) {
                       e.stopPropagation();
                       handleCardClick(card.id, false, e);
                     }
                   }}
+                  onContextMenu={(e) => handleDiscardRequest(e, card)}
                 >
                   <img src={getImageUrl(card.image)} alt={card.name} className={`card-image ${!isMyTurn ? "gray-filter" : ""}`} />
                 </div>
@@ -1786,7 +2002,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         </div>
 
         <div
-          className={`player-grave clickable-grave ${hasShuffledThisTurn ? "disabled" : ""}`}
+          className={`player-grave clickable-grave 
+    ${hasShuffledThisTurn ? "disabled" : ""} 
+    ${isDraggingOverGrave ? "drag-over" : ""}
+  `}
           onClick={() => {
             if (!isMyTurn) {
               showMessageBox("지금은 당신의 턴이 아닙니다!");
@@ -1801,8 +2020,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               return;
             }
             console.log("🧩 묘지 셔플 요청 전송:", roomCode);
-            socket.emit("shuffleGraveyard", { roomCode });
+            setShuffleAnim(true);
+
+            setTimeout(() => {
+              socket.emit("shuffleGraveyard", { roomCode });
+              setShuffleAnim(false);
+            }, 500);
           }}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => handleGraveDrop(e)}
           title={!isMyTurn ? "상대 턴입니다!" : "묘지를 클릭하면 덱으로 섞입니다"}
         >
           ⚰️ 묘지 ({graveCount})
@@ -1839,7 +2065,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             transition={{ duration: 0.35 }}
           >
             {/* 번쩍 플래시 */}
-            {playerHit === enemyIdRef.current && (
+            {playerHit === "enemy" && (
               <motion.div
                 className="player-hit-flash"
                 initial={{ opacity: 0 }}
@@ -2008,6 +2234,43 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               예
             </button>
             <button className="cancel" onClick={() => setShowLeaveConfirm(false)}>
+              아니오
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showDiscardConfirm && pendingDiscard && (
+        <div className="surrender-popup">
+          <div className="surrender-popup-content">
+            <p>
+              이 카드를 묘지로 버리겠습니까?
+              <br />
+              {(() => {
+                const cost = Number(pendingDiscard.card.cost ?? 1);
+                const tier = Number(pendingDiscard.card.tier ?? 1);
+
+                let hpPenalty = 5 + cost * 3 + tier * 2;
+                if (playerCostIcons <= 0) hpPenalty += 5;
+
+                return (
+                  <>
+                    <strong>HP -{hpPenalty}</strong> (코스트 -1)
+                  </>
+                );
+              })()}
+            </p>
+
+            <button className="confirm" onClick={pendingDiscard.confirm}>
+              예
+            </button>
+            <button
+              className="cancel"
+              onClick={() => {
+                setShowDiscardConfirm(false);
+                setPendingDiscard(null);
+              }}
+            >
               아니오
             </button>
           </div>

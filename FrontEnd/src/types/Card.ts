@@ -15,4 +15,7 @@ export interface Card {
   image2D?: string;
   cardType?: string; // ✅ 추가 — 카드 속성(불, 물, 전기 등)
   canAttack?: boolean; // ✅ 추가
+
+  // ⭐ 추가 — 버릴 때 fade-out 애니메이션용
+  discardFade?: boolean;
 }

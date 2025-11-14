@@ -1113,6 +1113,133 @@ if (isValidObjectId) {
     verifyCardTotal(game, playerId);
   });
 
+  // ==================== 🗑 카드 버리기 (손패/필드 → 묘지) ====================
+  socket.on("discardCard", ({ roomCode, cardId, location }) => {
+    const room = rooms[roomCode];
+    if (!room?.gameState) return;
+
+    const game = room.gameState;
+    const playerId = socket.id;
+
+    console.log(`🗑 discardCard 요청: ${playerId}, 카드=${cardId}, 위치=${location}`);
+
+    let card = null;
+
+    // 1️⃣ 손패에서 버리기
+    if (location === "hand") {
+      const hand = game.hands[playerId] || [];
+      card = hand.find((c) => c.id === cardId);
+      if (!card) {
+        socket.emit("error", "버릴 카드를 찾을 수 없습니다.");
+        return;
+      }
+      game.hands[playerId] = hand.filter((c) => c.id !== cardId);
+    }
+
+    // 2️⃣ 필드에서 버리기
+    else if (location === "field") {
+      const zone = game.cardsInZone[playerId] || [];
+      card = zone.find((c) => c.id === cardId);
+      if (!card) {
+        socket.emit("error", "버릴 카드를 찾을 수 없습니다.");
+        return;
+      }
+      game.cardsInZone[playerId] = zone.filter((c) => c.id !== cardId);
+    }
+
+    if (!card) {
+      socket.emit("error", "버릴 카드를 찾을 수 없습니다.");
+      return;
+    }
+
+    // 3️⃣ 묘지로 이동
+    if (!game.graveyards[playerId]) game.graveyards[playerId] = [];
+    game.graveyards[playerId].push(card);
+
+    // 4️⃣ 패널티 계산 (새 공식)
+    const tier = Number(card.tier ?? 1);
+    const costValue = Number(card.cost ?? 1);
+
+    // HP 패널티 = 5 + (cost × 3) + (tier × 2)
+    let totalHpPenalty = 5 + costValue * 3 + tier * 2;
+
+    // 기본 COST 패널티 = -1
+    let costPenalty = 1;
+
+    // 🔥 cost == 0 이면 HP 패널티 +5 추가, costPenalty = 0
+    if ((game.cost[playerId] ?? 0) <= 0) {
+      totalHpPenalty += 5;
+      costPenalty = 0; // 코스트가 없으면 차감 불가
+      console.log(`⚠️ 코스트 0 → 추가 HP -5 패널티 적용`);
+    }
+
+    // HP 감소
+    game.hp[playerId] = Math.max(0, (game.hp[playerId] ?? 0) - totalHpPenalty);
+
+    // COST 감소 (음수 방지)
+    game.cost[playerId] = Math.max(0, (game.cost[playerId] ?? 0) - costPenalty);
+
+    console.log(
+      `🛑 패널티 적용: HP -${totalHpPenalty} (코스트=${costValue}, 티어=${tier}), ` + `COST -${costPenalty}, 카드=${card.name}`
+    );
+
+    // 5️⃣ 카드 총합 검증
+    try {
+      verifyCardTotal(game, playerId);
+    } catch (e) {
+      console.error("verifyCardTotal 오류:", e);
+    }
+
+    // 6️⃣ HP 0이면 즉시 게임 종료 처리
+    if (game.hp[playerId] <= 0 && !game.over) {
+      const opponentId = room.players.find((id) => id !== playerId);
+      if (opponentId) {
+        game.over = true;
+        io.to(roomCode).emit("gameOver", {
+          winnerId: opponentId,
+          loserId: playerId,
+          reason: "hp-zero",
+        });
+        stopSharedTimer(room);
+        endGameCleanup(roomCode);
+      }
+      return;
+    }
+
+    // 7️⃣ 전체 상태 브로드캐스트
+    io.to(roomCode).emit("updateGameState", {
+      hp: game.hp,
+      decks: game.decks,
+      hands: game.hands,
+      graveyards: game.graveyards,
+      cardsInZone: game.cardsInZone,
+      cost: game.cost,
+      turnCount: game.turnCount,
+      activeEvent: game.activeEvent,
+      timeLeft: room.timeLeft,
+
+      serverTime: Date.now(),
+    });
+
+    // 8️⃣ UI용 cardDiscarded 이벤트 전송
+    io.to(roomCode).emit("cardDiscarded", {
+      playerId,
+      card,
+      hpPenalty: totalHpPenalty,
+      costPenalty,
+    });
+
+    // 9️⃣ 전투 로그 추가
+    io.to(roomCode).emit("addBattleLog", {
+      type: "discard",
+      playerId,
+      cardName: card.name ?? "??",
+      tier: card.tier ?? 1,
+      hpPenalty: totalHpPenalty,
+      costPenalty,
+    });
+  });
+
   // ==================== ♻️ 묘지 셔플 ====================
   socket.on("shuffleGraveyard", ({ roomCode }) => {
     console.log("📨 shuffleGraveyard 수신:", { roomCode, from: socket.id });

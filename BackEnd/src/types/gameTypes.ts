@@ -12,6 +12,9 @@ export interface CardData {
   image?: string; // 이미지 경로
   image2D?: string;
   canAttack?: boolean; // 한 턴에 한 번만 공격 가능 여부
+
+  // ⭐ UI 전용 (버리기 애니메이션용)
+  discardFade?: boolean;
 }
 
 // ++++++++++++++++ [추가된 Event 타입] ++++++++++++++++

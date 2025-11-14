@@ -606,7 +606,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         if (iAmAttacker) setEnemyHP(newHP);
         else setPlayerHP(newHP);
         addMessageToLog(
-          message ? `💥 ${attackerName}의 공격! ${message} (x${multiplier ?? 1})` : `💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`
+          message
+            ? `💥 ${attackerName}의 공격! ${message} (x${multiplier ?? 1})`
+            : `💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`
         );
       }
     };
@@ -1213,7 +1215,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     setSelectedAttacker(null);
 
     // UI 낙관적 업데이트: 이벤트 HP 바로 감소 표시 (서버확인 전)
-    setActiveEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, hp: Math.max(0, e.hp - (attacker.attack ?? 0)), temp: true } : e)));
+    setActiveEvents((prev) =>
+      prev.map((e) => (e.id === eventId ? { ...e, hp: Math.max(0, e.hp - (attacker.attack ?? 0)), temp: true } : e))
+    );
   };
 
   const handleEndTurn = useCallback(() => {
@@ -1377,16 +1381,20 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const remain = Math.max(0, MESSAGE_TIME - (now - start));
     console.log("⏱ 남은 메시지박스 시간:", remain);
 
-    // ✅ 내가 항복했을 때
+    // ✅ 내가 패배했을 때
     if (iLost) {
-      showMessageBox("항복하였습니다...", remain);
-      setGameOverMessage("항복하였습니다...");
+      if (reason === "surrender") {
+        showMessageBox("항복하였습니다...", remain);
+        setGameOverMessage("항복하였습니다...");
+      } else {
+        showMessageBox("패배하였습니다...", remain);
+        setGameOverMessage("패배하였습니다...");
+      }
+
       setIsVictory(false);
 
-      // ✅ 메시지박스가 완전히 끝난 후 배너 실행
       setTimeout(() => {
         setShowDefeatBanner(true);
-
         setTimeout(() => {
           setShowDefeatBanner(false);
           setFadeInGameOver(true);
@@ -1497,7 +1505,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="enemy-card-bg" />
         <div
           className={`enemy-field ${
-            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
+            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0
+              ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}`
+              : ""
           }`}
           onClick={(e) => handleEnemyZoneInteraction(e)}
           onDragOver={(e) => e.preventDefault()}
@@ -1518,7 +1528,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div
           id="enemy-field-target"
           className={`enemy-card-zone ${
-            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
+            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0
+              ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}`
+              : ""
           }`}
           onClick={(e) => handleEnemyZoneInteraction(e)}
           onDragOver={(e) => e.preventDefault()}
@@ -1560,7 +1572,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
                   {/* 🔥 피격 Flash 오버레이 (원하면 추가) */}
                   {hitCardId === card.id && (
-                    <motion.div className="hit-flash" initial={{ opacity: 0 }} animate={{ opacity: [0, 0.7, 0] }} transition={{ duration: 0.25 }} />
+                    <motion.div
+                      className="hit-flash"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 0.7, 0] }}
+                      transition={{ duration: 0.25 }}
+                    />
                   )}
 
                   <div className="card-hp-bar">
@@ -1631,11 +1648,20 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                     }}
                   >
                     {/* 카드 이미지 */}
-                    <img src={getImageUrl(card.image)} alt={card.name} className={`card-image ${!isMyTurn ? "gray-filter" : ""}`} />
+                    <img
+                      src={getImageUrl(card.image)}
+                      alt={card.name}
+                      className={`card-image ${!isMyTurn ? "gray-filter" : ""}`}
+                    />
 
                     {/* 🔥 피격 Flash */}
                     {hitCardId === card.id && (
-                      <motion.div className="hit-flash" initial={{ opacity: 0 }} animate={{ opacity: [0, 0.7, 0] }} transition={{ duration: 0.25 }} />
+                      <motion.div
+                        className="hit-flash"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: [0, 0.7, 0] }}
+                        transition={{ duration: 0.25 }}
+                      />
                     )}
 
                     {/* 🔥 선택된 카드 glow ring */}
@@ -1757,7 +1783,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <motion.div
           id="enemy-player-target"
           className={`enemy-info ${!isMyTurn ? "isEnemyTurn" : ""} ${
-            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
+            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0
+              ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}`
+              : ""
           }`}
           onClick={() => handleDirectAttackOnEnemy()}
           onDragOver={(e) => e.preventDefault()}
@@ -1774,7 +1802,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         >
           {/* 🔥 번쩍 플래시 */}
           {playerHit === enemyIdRef.current && (
-            <motion.div className="player-hit-flash" initial={{ opacity: 0 }} animate={{ opacity: [0, 0.6, 0] }} transition={{ duration: 0.25 }} />
+            <motion.div
+              className="player-hit-flash"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.6, 0] }}
+              transition={{ duration: 0.25 }}
+            />
           )}
 
           {/* 기존 내용 그대로 */}

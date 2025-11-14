@@ -723,9 +723,9 @@ if (isValidObjectId) {
     io.to(roomCode).emit("timeUpdate", room.timeLeft);
 
     console.log(
-      `🃏 ${playerId} → ${roomCode}에 ${summonedCard.name || summonedCard.cardName || "Unknown"} 소환 (코스트 ${costValue}), 남은 코스트: ${
-        game.cost[playerId]
-      }`
+      `🃏 ${playerId} → ${roomCode}에 ${
+        summonedCard.name || summonedCard.cardName || "Unknown"
+      } 소환 (코스트 ${costValue}), 남은 코스트: ${game.cost[playerId]}`
     );
   });
 
@@ -768,6 +768,7 @@ if (isValidObjectId) {
       io.to(roomCode).emit("gameOver", {
         winnerId: socket.id,
         loserId: opponentId,
+        reason: "hp-zero",
       });
       console.log(`🏁 게임 종료: ${socket.id} 승리`);
       stopSharedTimer(room);
@@ -910,6 +911,7 @@ if (isValidObjectId) {
       io.to(roomCode).emit("gameOver", {
         winnerId: playerId,
         loserId: opponentId,
+        reason: "hp-zero",
       });
       stopSharedTimer(room);
       room.gameState = null;
@@ -965,7 +967,9 @@ if (isValidObjectId) {
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;
 
-    console.log(`⚡ [Direct Attack] ${attacker.name} → ${opponentId} | 피해 ${damage} | 배율 x${multiplier} | HP ${prevHP} → ${newHP}`);
+    console.log(
+      `⚡ [Direct Attack] ${attacker.name} → ${opponentId} | 피해 ${damage} | 배율 x${multiplier} | HP ${prevHP} → ${newHP}`
+    );
 
     io.to(roomCode).emit("attackAnimation", {
       attackerOwner: playerId,
@@ -1003,6 +1007,7 @@ if (isValidObjectId) {
       io.to(roomCode).emit("gameOver", {
         winnerId: playerId,
         loserId: opponentId,
+        reason: "hp-zero",
       });
       stopSharedTimer(room);
       room.gameState = null;
@@ -1208,7 +1213,9 @@ if (isValidObjectId) {
       });
     }, 50); // 30~50ms 사이면 충분
 
-    console.log(`♻️ ${playerId} 묘지 셔플: ${returnedCards.length}/${grave.length} 성공 / ${failedCards.length}장 실패 / (HP -${penaltyHP})`);
+    console.log(
+      `♻️ ${playerId} 묘지 셔플: ${returnedCards.length}/${grave.length} 성공 / ${failedCards.length}장 실패 / (HP -${penaltyHP})`
+    );
 
     if (game.hp[playerId] <= 0) {
       const opponentId = room.players.find((id) => id !== playerId);
@@ -1216,6 +1223,7 @@ if (isValidObjectId) {
         io.to(roomCode).emit("gameOver", {
           winnerId: opponentId,
           loserId: playerId,
+          reason: "hp-zero",
         });
         console.log(`💀 ${playerId} 체력 0 → ${opponentId} 승리`);
         stopSharedTimer(room);

@@ -307,10 +307,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     image: string;
     name: string;
   } | null>(null);
-  const [lastEnemyDiscard, setLastEnemyDiscard] = useState<{
-    image: string;
-    name: string;
-  } | null>(null);
 
   // ======================================== 함수들 ========================================
   // (useEffect ref 동기화 - 변경 없음)
@@ -998,12 +994,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
         setTimeout(() => {
           setEnemyDiscardGhost(null);
-        }, 1200);
+        }, 1800);
       }
 
       if (!mine) {
         showMessageBox("상대가 카드를 버렸습니다!", 1700);
-        setLastEnemyDiscard({ image: cardImage, name: cardName });
       }
     };
 
@@ -1734,6 +1729,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       {/* === 전장 === */}
       <div className="field-container">
+        {/* === 🔥 상대 버린 카드 잔상(페이드) === */}
+        {enemyDiscardGhost && (
+          <div className="enemy-discard-ghost">
+            <img src={enemyDiscardGhost.image} alt={enemyDiscardGhost.name} />
+          </div>
+        )}
         <div className="Top-Line" />
         <div className="TopLeft-Dia" />
         <div className="TopRight-Dia" />
@@ -1743,20 +1744,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div className="enemy-card-bg" />
         <div className="enemy-field" />
 
-        {/* === 🔥 상대 버린 카드 잔상(페이드) === */}
-        {enemyDiscardGhost && (
-          <div className="enemy-discard-ghost">
-            <img src={enemyDiscardGhost.image} alt={enemyDiscardGhost.name} />
-          </div>
-        )}
-
-        {/* === 🔥 상대가 마지막으로 버린 카드 미리보기 === */}
-        {lastEnemyDiscard && (
-          <div className="enemy-last-discard-preview" title={`상대가 버린 카드: ${lastEnemyDiscard.name}`}>
-            <img src={lastEnemyDiscard.image} alt={lastEnemyDiscard.name} />
-          </div>
-        )}
-
         <div className="player-card-bg" />
         <div className="player-field" />
 
@@ -1765,8 +1752,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             <div key={i} className="enemy-hand-card" />
           ))}
         </div>
-
-        <div className="enemy-grave-display">⚰️ 묘지 ({enemyGraveCount})</div>
 
         <div
           id="enemy-field-target"
@@ -1984,7 +1969,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           </div>
         </div>
 
-        <div className="enemy-grave" />
+        <div className="enemy-grave grave-text">⚰️ 상대 묘지 ({enemyGraveCount})</div>
 
         <div className="enemy-cost-zone">
           {Array.from({
@@ -2003,9 +1988,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
         <div
           className={`player-grave clickable-grave 
-    ${hasShuffledThisTurn ? "disabled" : ""} 
-    ${isDraggingOverGrave ? "drag-over" : ""}
-  `}
+            ${hasShuffledThisTurn ? "disabled" : ""} 
+            ${isDraggingOverGrave ? "drag-over" : ""}
+          `}
           onClick={() => {
             if (!isMyTurn) {
               showMessageBox("지금은 당신의 턴이 아닙니다!");

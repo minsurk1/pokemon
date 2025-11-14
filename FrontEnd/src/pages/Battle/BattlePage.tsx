@@ -1405,26 +1405,26 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       return;
     }
 
-    // ✅ 상대가 항복했을 때
-    // ✅ 상대가 항복한 경우 (내가 이김)
+    // ✅ 내가 승리했을 때
     if (iWon) {
-      // ✅ 메시지박스 무조건 5초 유지
-      showMessageBox("상대가 항복했습니다!", MESSAGE_TIME, true);
+      if (reason === "surrender") {
+        showMessageBox("상대가 항복했습니다!", MESSAGE_TIME, true);
+        setGameOverMessage("상대가 항복했습니다!");
+      } else if (reason === "hp-zero") {
+        showMessageBox("승리하였습니다!", MESSAGE_TIME, true);
+        setGameOverMessage("승리하였습니다!");
+      }
 
-      setGameOverMessage("상대가 항복했습니다!");
       setIsVictory(true);
 
-      // ✅ 배너는 메시지박스가 끝난 후 실행
       setTimeout(() => {
         setShowVictoryBanner(true);
-
-        // ✅ 배너는 항상 3초 유지
         setTimeout(() => {
           setShowVictoryBanner(false);
           setFadeInGameOver(true);
           setShowGameOver(true);
         }, BANNER_TIME);
-      }, MESSAGE_TIME); // <<< remain 절대 쓰면 안됨
+      }, MESSAGE_TIME);
     }
   };
 

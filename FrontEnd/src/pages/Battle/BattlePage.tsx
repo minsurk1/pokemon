@@ -262,6 +262,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   const [surrendering, setSurrendering] = useState(false);
 
+  // 뒤로가기 방지
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+
   // ======================================== 게임오버 상태 ========================================
   // ✅ VICTORY 애니메이션 컨트롤용
   const [showVictoryBanner, setShowVictoryBanner] = useState(false);
@@ -1000,6 +1003,23 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("gameOver", onGameOver);
     };
   }, [roomCode, addMessageToLog, applyTurnChange, deckCards.length, deckLoaded, socket]);
+
+  // 🔥 뒤로가기 방지 + 재확인 팝업
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      setShowLeaveConfirm(true);
+
+      // ⬇⬇ 수정: history → window.history
+      window.history.pushState(null, "", window.location.href);
+    };
+
+    // 페이지 진입 시 현재 상태 추가
+    window.history.pushState(null, "", window.location.href);
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   useEffect(() => {
     if (socket.id && deckLoaded) {
@@ -1962,6 +1982,35 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       {showGameOver && (
         <div className={`gameover-fade-wrapper ${fadeInGameOver ? "fade-in" : ""}`}>
           <GameOverScreen message={gameOverMessage} isVictory={isVictory} onGoToMainMenu={() => navigate("/main")} />
+        </div>
+      )}
+
+      {showLeaveConfirm && (
+        <div className="surrender-popup">
+          <div className="surrender-popup-content">
+            <p>
+              뒤로 가시겠습니까?
+              <br />
+              게임이 종료되며 패배로 처리됩니다.
+            </p>
+            <button
+              className="confirm"
+              onClick={() => {
+                setShowLeaveConfirm(false);
+
+                // 패배 처리
+                socket.emit("surrender", { roomCode, playerId: socket.id });
+
+                // 메인으로 이동
+                navigate("/main");
+              }}
+            >
+              예
+            </button>
+            <button className="cancel" onClick={() => setShowLeaveConfirm(false)}>
+              아니오
+            </button>
+          </div>
         </div>
       )}
 

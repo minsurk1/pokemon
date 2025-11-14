@@ -765,6 +765,13 @@ if (isValidObjectId) {
       message,
     });
 
+    io.to(roomCode).emit("hit", {
+      targetOwner: opponentId,
+      targetId: null,
+      damage,
+      multiplier,
+    });
+
     console.log(`💥 ${socket.id} → ${opponentId} | 배율 x${multiplier} | 피해 ${damage}`);
 
     if (newHP <= 0) {
@@ -1298,7 +1305,7 @@ if (isValidObjectId) {
 
     // 🔥 이벤트 피격 애니메이션 신호
     io.to(roomCode).emit("hit", {
-      targetOwner: null,
+      targetOwner: "event",
       targetId: event.id,
       damage,
       multiplier: 1,

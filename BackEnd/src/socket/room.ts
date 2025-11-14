@@ -264,6 +264,7 @@ export default function roomHandler(io: Server, socket: Socket) {
         turnCount: 1,
         // ✅ 추가
         activeEvent: null,
+        over: false,
       };
     }
 

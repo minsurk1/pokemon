@@ -96,6 +96,8 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
   stopSharedTimer(room);
 
   const game = room.gameState;
+  // 🛑 게임이 이미 끝났으면 어떤 처리도 하지 않음
+  if (game.over) return;
 
   let currentIndex = room.players.indexOf(game.currentTurn);
 
@@ -237,6 +239,7 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
       turnCount: 1,
       activeEvent: null,
       lastShuffleTurn: {},
+      over: false,
     };
   }
 
@@ -765,14 +768,16 @@ if (isValidObjectId) {
     console.log(`💥 ${socket.id} → ${opponentId} | 배율 x${multiplier} | 피해 ${damage}`);
 
     if (newHP <= 0) {
+      if (game.over) return;
+      game.over = true;
+
       io.to(roomCode).emit("gameOver", {
         winnerId: socket.id,
         loserId: opponentId,
         reason: "hp-zero",
       });
-      console.log(`🏁 게임 종료: ${socket.id} 승리`);
       stopSharedTimer(room);
-      room.gameState = null; // ✅ 안전하고 TypeScript에 완벽히 호환하게 게임 상태 초기화
+      room.gameState = null;
     }
   });
 
@@ -908,6 +913,9 @@ if (isValidObjectId) {
     // ✅ 게임 종료 조건 검사
     const remainingHP = game.hp[opponentId] ?? MAX_HP;
     if (remainingHP <= 0) {
+      if (game.over) return;
+      game.over = true;
+
       io.to(roomCode).emit("gameOver", {
         winnerId: playerId,
         loserId: opponentId,
@@ -915,7 +923,6 @@ if (isValidObjectId) {
       });
       stopSharedTimer(room);
       room.gameState = null;
-      console.log(`🏁 ${playerId} 승리 (상대 카드 전멸 후 게임 종료)`);
     }
   });
 
@@ -1004,6 +1011,9 @@ if (isValidObjectId) {
 
     // ✅ HP 0 → 게임 종료
     if (newHP <= 0) {
+      if (game.over) return;
+      game.over = true;
+
       io.to(roomCode).emit("gameOver", {
         winnerId: playerId,
         loserId: opponentId,
@@ -1011,7 +1021,6 @@ if (isValidObjectId) {
       });
       stopSharedTimer(room);
       room.gameState = null;
-      console.log(`🏁 ${playerId} 승리 (직접 공격으로 게임 종료)`);
     }
   });
 
@@ -1216,19 +1225,18 @@ if (isValidObjectId) {
     console.log(
       `♻️ ${playerId} 묘지 셔플: ${returnedCards.length}/${grave.length} 성공 / ${failedCards.length}장 실패 / (HP -${penaltyHP})`
     );
-
+    const opponentId = room.players.find((id) => id !== playerId);
     if (game.hp[playerId] <= 0) {
-      const opponentId = room.players.find((id) => id !== playerId);
-      if (opponentId) {
-        io.to(roomCode).emit("gameOver", {
-          winnerId: opponentId,
-          loserId: playerId,
-          reason: "hp-zero",
-        });
-        console.log(`💀 ${playerId} 체력 0 → ${opponentId} 승리`);
-        stopSharedTimer(room);
-        room.gameState = null;
-      }
+      if (game.over) return;
+      game.over = true;
+
+      io.to(roomCode).emit("gameOver", {
+        winnerId: opponentId,
+        loserId: playerId,
+        reason: "hp-zero",
+      });
+      stopSharedTimer(room);
+      room.gameState = null;
     }
   });
 
@@ -1238,6 +1246,7 @@ if (isValidObjectId) {
     if (!room?.gameState) return;
     const game = room.gameState;
     const playerId = socket.id;
+    const opponentId = room.players.find((id) => id !== playerId)!;
 
     if (playerId !== game.currentTurn) {
       return socket.emit("error", "당신의 턴이 아닙니다.");
@@ -1298,7 +1307,6 @@ if (isValidObjectId) {
     // ✅ 이벤트가 파괴되었는지 확인
     if (newHP <= 0) {
       const eventType = event.type;
-      const opponentId = room.players.find((id) => id !== playerId);
       if (!opponentId) return;
 
       // ✅ 이벤트별 효과 처리
@@ -1351,6 +1359,31 @@ if (isValidObjectId) {
 
         serverTime: Date.now(),
       });
+    }
+    if (game.hp[playerId] <= 0) {
+      if (!game.over) {
+        game.over = true;
+        io.to(roomCode).emit("gameOver", {
+          winnerId: opponentId,
+          loserId: playerId,
+          reason: "hp-zero",
+        });
+        stopSharedTimer(room);
+        room.gameState = null;
+      }
+    }
+
+    if (game.hp[opponentId] <= 0) {
+      if (!game.over) {
+        game.over = true;
+        io.to(roomCode).emit("gameOver", {
+          winnerId: playerId,
+          loserId: opponentId,
+          reason: "hp-zero",
+        });
+        stopSharedTimer(room);
+        room.gameState = null;
+      }
     }
   });
   // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

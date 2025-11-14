@@ -1,4 +1,4 @@
-// src/types/Card.ts
+// FrontEnd/src/types/Card.ts
 // ✅ 프론트엔드에서 사용하는 배틀용 카드 타입 정의
 // 백엔드 models/Card.ts의 구조를 기반으로 함
 
@@ -18,4 +18,5 @@ export interface Card {
 
   // ⭐ 추가 — 버릴 때 fade-out 애니메이션용
   discardFade?: boolean;
+  isDestroyed?: boolean; // 🔥 파괴 연출용 플래그
 }

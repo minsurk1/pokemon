@@ -23,6 +23,7 @@ import { detectTypeByName } from "../../utils/detectTypeByName";
 import { motion, AnimatePresence } from "framer-motion";
 
 import DraggableChat from "../../components/common/DraggableChat";
+import DamagePopup from "../../components/battle/DamagePopup";
 
 // ===================== 인터페이스 =====================
 interface TurnPayload {
@@ -50,6 +51,15 @@ declare global {
     __surrenderMessageStart?: number;
   }
 }
+
+type BattleCard = Card & {
+  damagePopups?: { id: number; amount: number }[];
+  discardFade?: boolean;
+};
+
+type BattleEvent = Event & {
+  damagePopups?: { id: number; amount: number }[];
+};
 
 // ===================== 상수 =====================
 const INITIAL_TIME = 30;
@@ -217,8 +227,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [enemyHP, setEnemyHP] = useState(MAX_HP);
   const [deckCards, setDeckCards] = useState<Card[]>([]);
   const [handCards, setHandCards] = useState<Card[]>([]);
-  const [myCardsInZone, setMyCardsInZone] = useState<Card[]>([]);
-  const [enemyCardsInZone, setEnemyCardsInZone] = useState<Card[]>([]);
+  const [myCardsInZone, setMyCardsInZone] = useState<BattleCard[]>([]);
+  const [enemyCardsInZone, setEnemyCardsInZone] = useState<BattleCard[]>([]);
+
   const [selectedAttacker, setSelectedAttacker] = useState<string | null>(null);
   const [playerCostIcons, setPlayerCostIcons] = useState<number>(1);
   const [opponentCostIcons, setOpponentCostIcons] = useState<number>(1);
@@ -252,7 +263,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const isMyTurnRef = useRef(isMyTurn);
   const currentTurnIdRef = useRef(currentTurnId);
   const lastTurnIdRef = useRef<string | null>(null);
-  const [activeEvents, setActiveEvents] = useState<Event[]>([]);
+  const [activeEvents, setActiveEvents] = useState<BattleEvent[]>([]);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
 
   // ✅ 항복 재확인 팝업
@@ -308,6 +319,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     name: string;
   } | null>(null);
 
+  const [playerDamagePopups, setPlayerDamagePopups] = useState<{ id: number; amount: number }[]>([]);
+  const [enemyDamagePopups, setEnemyDamagePopups] = useState<{ id: number; amount: number }[]>([]);
+
   // ======================================== 함수들 ========================================
   // (useEffect ref 동기화 - 변경 없음)
   useEffect(() => {
@@ -331,6 +345,94 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setMessageBox(null);
       if (lock) setMessageLocked(false); // ✅ 시간이 끝나면 잠금 해제
     }, duration);
+  };
+
+  // 🔥 데미지 팝업 생성 함수
+  const showDamagePopup = (
+    targetType: "myCard" | "enemyCard" | "event" | "player" | "enemyPlayer",
+    targetId: string,
+    damage: number
+  ) => {
+    // --- 1) 내 카드 ---
+    if (targetType === "myCard") {
+      setMyCardsInZone((prev) =>
+        prev.map((card) =>
+          card.id === targetId
+            ? {
+                ...card,
+                damagePopups: [...(card.damagePopups || []), { id: Date.now() + Math.random(), amount: damage }],
+              }
+            : card
+        )
+      );
+    }
+
+    // --- 2) 상대 카드 ---
+    if (targetType === "enemyCard") {
+      setEnemyCardsInZone((prev) =>
+        prev.map((card) =>
+          card.id === targetId
+            ? {
+                ...card,
+                damagePopups: [...(card.damagePopups || []), { id: Date.now() + Math.random(), amount: damage }],
+              }
+            : card
+        )
+      );
+    }
+
+    // --- 3) 이벤트 몬스터 ---
+    if (targetType === "event") {
+      setActiveEvents((prev) =>
+        prev.map((ev) =>
+          String(ev.id) === String(targetId)
+            ? {
+                ...ev,
+                damagePopups: [...(ev.damagePopups || []), { id: Date.now() + Math.random(), amount: damage }],
+              }
+            : ev
+        )
+      );
+    }
+
+    // --- 추가: 플레이어 데미지 팝업 저장 ---
+    if (targetType === "player") {
+      setPlayerDamagePopups((prev) => [...prev, { id: Date.now() + Math.random(), amount: damage }]);
+
+      setTimeout(() => {
+        setPlayerDamagePopups((prev) => prev.slice(1));
+      }, 1200);
+    }
+
+    // --- 추가: 상대 플레이어 데미지 팝업 저장 ---
+    if (targetType === "enemyPlayer") {
+      setEnemyDamagePopups((prev) => [...prev, { id: Date.now() + Math.random(), amount: damage }]);
+
+      setTimeout(() => {
+        setEnemyDamagePopups((prev) => prev.slice(1));
+      }, 1200);
+    }
+
+    // 800ms 후 팝업 자동 삭제
+    setTimeout(() => {
+      if (targetType === "myCard") {
+        setMyCardsInZone((prev) =>
+          prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card))
+        );
+      }
+
+      if (targetType === "enemyCard") {
+        setEnemyCardsInZone((prev) =>
+          prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card))
+        );
+      }
+
+      if (targetType === "event") {
+        setActiveEvents((prev) =>
+          prev.map((ev) => (String(ev.id) === targetId ? { ...ev, damagePopups: ev.damagePopups?.slice(1) || [] } : ev))
+        );
+      }
+    }, 1200);
   };
 
   const addMessageToLog = useCallback((newMessage: string) => {
@@ -379,6 +481,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setCurrentTurnId(currentTurn ?? null);
       setIsMyTurn(mine);
       setTurnTime(timeLeft ?? INITIAL_TIME);
+
+      setSelectedAttacker(null);
+      setHighlightCardId(null);
 
       if (cost) {
         setPlayerCostIcons(Number(cost[myId]) || 0);
@@ -623,17 +728,32 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       addMessageToLog(`${attacker} ➤ ${defender} ${message} (x${multiplier})`);
     };
     const onDirectAttackEnhanced = (data: any) => {
-      runAttackAnimation(data.attackerId, undefined, "player");
-      const { attackerName, damage, newHP, multiplier, message } = data;
+      const { attackerId, attackerName, damage, newHP, multiplier, message } = data;
+
+      // 🔥 공격 애니메이션 실행
+      runAttackAnimation(attackerId, undefined, "player");
+
+      // 공격자가 나인가?
       const iAmAttacker = currentTurnIdRef.current === socket.id;
+
+      // 🔥 데미지 팝업 (직공)
+      if (damage > 0) {
+        if (iAmAttacker) showDamagePopup("enemyPlayer", "enemy-hp", damage);
+        else showDamagePopup("player", "player-hp", damage);
+      }
+
+      // 🔥 HP 업데이트
       if (damage < 0) {
+        // 회복
         if (!iAmAttacker) {
           setPlayerHP(newHP);
           addMessageToLog(`✨ ${attackerName}으로 ${-damage} HP 회복!`);
         }
       } else {
+        // 피해
         if (iAmAttacker) setEnemyHP(newHP);
         else setPlayerHP(newHP);
+
         addMessageToLog(
           message
             ? `💥 ${attackerName}의 공격! ${message} (x${multiplier ?? 1})`
@@ -674,30 +794,80 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     // 🔥 서버 hit 신호 → 피격 애니메이션 실행
-    const onHit = ({ targetOwner, targetId }: { targetOwner: string | null; targetId: string | number | null }) => {
+    const onHit = ({
+      targetOwner,
+      targetId,
+      damage,
+    }: {
+      targetOwner: string | null;
+      targetId: string | number | null;
+      damage?: number;
+    }) => {
       const me = socket.id;
       const enemy = enemyIdRef.current;
 
-      // 🔥 카드 공격일 때만 카드 흔들림 처리
-      if (targetId !== null && targetId !== undefined) {
+      // ===============================
+      // 1) 이벤트 몬스터 피격 (🔥 가장 먼저 처리)
+      // ===============================
+      if (targetOwner === "event" && targetId !== null && targetId !== undefined) {
         const idStr = String(targetId);
+
+        // 흔들림
         setHitCardId(idStr);
         setTimeout(() => setHitCardId(null), 350);
+
+        // 데미지 팝업
+        if (damage !== undefined) {
+          showDamagePopup("event", idStr, damage);
+        }
+
         return;
       }
 
-      // 🔥 여기서부터는 직접 공격일 때만 실행
-      // 내가 맞으면 player-info만 흔들림
+      // ===============================
+      // 2) 카드 피격
+      // ===============================
+      if (targetId !== null && targetId !== undefined) {
+        const idStr = String(targetId);
+
+        // 흔들림
+        setHitCardId(idStr);
+        setTimeout(() => setHitCardId(null), 350);
+
+        // 데미지 팝업
+        if (damage !== undefined) {
+          if (targetOwner === me) {
+            showDamagePopup("myCard", idStr, damage);
+          } else {
+            showDamagePopup("enemyCard", idStr, damage);
+          }
+        }
+
+        return;
+      }
+
+      // ===============================
+      // 3) 플레이어 피격 (직접 공격)
+      // ===============================
       if (targetOwner === me) {
         setPlayerHit("me");
         setTimeout(() => setPlayerHit(null), 350);
+
+        if (damage !== undefined) {
+          showDamagePopup("player", "player-hp", damage);
+        }
+
         return;
       }
 
-      // 적이 맞으면 enemy-info만 흔들림
       if (enemy && targetOwner === enemy) {
         setPlayerHit("enemy");
         setTimeout(() => setPlayerHit(null), 350);
+
+        if (damage !== undefined) {
+          showDamagePopup("enemyPlayer", "enemy-hp", damage);
+        }
+
         return;
       }
     };
@@ -858,8 +1028,30 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       /* ✅ 8) 이벤트 처리 */
       if (Object.prototype.hasOwnProperty.call(data, "activeEvent")) {
-        if (data.activeEvent) setActiveEvents([data.activeEvent]);
-        else setActiveEvents([]);
+        if (data.activeEvent) {
+          setActiveEvents((prev) => {
+            const prevEv = prev.find((e) => e.id === data.activeEvent.id);
+
+            if (prevEv) {
+              return [
+                {
+                  ...prevEv,
+                  ...data.activeEvent,
+                  damagePopups: prevEv.damagePopups, // 🔥 팝업 유지
+                },
+              ];
+            }
+
+            return [
+              {
+                ...data.activeEvent,
+                damagePopups: [], // 새 이벤트면 초기화
+              },
+            ];
+          });
+        } else {
+          setActiveEvents([]);
+        }
       }
     };
 
@@ -900,6 +1092,23 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
     const onUpdateCardHP = (data: any) => {
       const { targetId, ownerId, newHP } = data;
+
+      // 기존 카드의 HP 찾기
+      const prevHP =
+        ownerId === socket.id
+          ? myCardsInZone.find((c) => c.id === targetId)?.hp
+          : enemyCardsInZone.find((c) => c.id === targetId)?.hp;
+
+      // 데미지 계산
+      const damage = prevHP !== undefined ? prevHP - newHP : 0;
+
+      // 🔥 Damage Popup
+      if (damage > 0) {
+        if (ownerId === socket.id) showDamagePopup("myCard", targetId, damage);
+        else showDamagePopup("enemyCard", targetId, damage);
+      }
+
+      // HP 업데이트
       if (ownerId === socket.id) {
         setMyCardsInZone((prev) => prev.map((c) => (c.id === targetId ? { ...c, hp: newHP } : c)));
       } else {
@@ -921,15 +1130,45 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setTurnTime(0);
     };
     const onEventTriggered = (eventData: Event) => {
-      console.log("🔥 이벤트 발동 수신:", eventData);
-      setActiveEvents([eventData]);
+      setActiveEvents([
+        {
+          ...eventData,
+          damagePopups: [], // 새 이벤트라도 빈 배열은 넣어줘야 함
+        },
+      ]);
+
       addMessageToLog(`🚨 ${eventData.message}`);
     };
+
     const onEventHPUpdate = ({ eventId, newHP }: { eventId: number; newHP: number }) => {
+      // 기존 이벤트몬스터 HP 찾기
+      const prevHP = activeEvents.find((e) => e.id === eventId)?.hp;
+
+      // 데미지 계산
+      const damage = prevHP !== undefined ? prevHP - newHP : 0;
+
+      // 🔥 Damage Popup
+      if (damage > 0) {
+        showDamagePopup("event", String(eventId), damage);
+      }
+
+      // 🔥 이벤트몬스터 공격 애니메이션
       if (selectedAttacker) {
         runAttackAnimation(selectedAttacker, undefined, "event");
       }
-      setActiveEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, hp: newHP } : e)));
+
+      // HP 업데이트
+      setActiveEvents((prev) =>
+        prev.map((e) =>
+          e.id === eventId
+            ? {
+                ...e,
+                hp: newHP,
+                damagePopups: e.damagePopups ?? [], // 🔥 기존 팝업 유지!
+              }
+            : e
+        )
+      );
     };
 
     const onEventEnded = ({ eventId }: { eventId: number }) => {
@@ -966,12 +1205,28 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         });
         return;
       }
+
+      // ⭐ 카드 삭제 전 900ms 유지(데미지 팝업 보여주기 위한 시간)
+      const REMOVE_DELAY = 1200;
+
       if (playerId === socket.id) {
-        setMyCardsInZone((prev) => prev.filter((c) => c.id !== card.id));
+        // 🔥 먼저 카드에 isDestroyed 플래그 적용 (CSS 애니메이션용)
+        setMyCardsInZone((prev) => prev.map((c) => (c.id === card.id ? { ...c, isDestroyed: true } : c)));
+
+        // 🔥 400ms 후 실제로 제거
+        setTimeout(() => {
+          setMyCardsInZone((prev) => prev.filter((c) => c.id !== card.id));
+        }, REMOVE_DELAY);
+
         setGraveCount(graveCount);
         addMessageToLog(`💀 ${card.name}이(가) 내 묘지로 이동했습니다.`);
       } else {
-        setEnemyCardsInZone((prev) => prev.filter((c) => c.id !== card.id));
+        setEnemyCardsInZone((prev) => prev.map((c) => (c.id === card.id ? { ...c, isDestroyed: true } : c)));
+
+        setTimeout(() => {
+          setEnemyCardsInZone((prev) => prev.filter((c) => c.id !== card.id));
+        }, REMOVE_DELAY);
+
         addMessageToLog(`🔥 상대의 ${card.name}이(가) 쓰러졌습니다!`);
       }
     };
@@ -1453,6 +1708,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   const handleEndTurn = useCallback(() => {
     if (!isMyTurn) return;
+    setSelectedAttacker(null);
+    setHighlightCardId(null);
     socket.emit("endTurn", { roomCode });
     addMessageToLog("🔚 턴을 종료했습니다!");
   }, [isMyTurn, roomCode, socket, addMessageToLog]);
@@ -1786,7 +2043,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               >
                 <motion.div
                   id={`card-${card.id}`}
-                  className="enemy-card in-zone"
+                  className={`enemy-card in-zone ${card.isDestroyed ? "card-destroyed" : ""}`}
                   onMouseDown={(e) => handleCardMouseDown(card, e)}
                   animate={{
                     // 🔥 피격 애니메이션 (적 카드도 흔들리게)
@@ -1797,6 +2054,23 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   }}
                 >
                   <img src={getImageUrl(card.image)} alt={card.name} />
+
+                  {/* 🔥 데미지 팝업 표시 */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "-10px",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <AnimatePresence>
+                      {card.damagePopups?.map((pop) => (
+                        <DamagePopup key={pop.id} amount={pop.amount} />
+                      ))}
+                    </AnimatePresence>
+                  </div>
 
                   {/* 🔥 피격 Flash 오버레이 (원하면 추가) */}
                   {hitCardId === card.id && (
@@ -1845,9 +2119,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                 >
                   <motion.div
                     id={`card-${card.id}`}
-                    className={`my-card in-zone ${card.discardFade ? "card-discard-fade" : ""} ${
-                      card.canAttack ? "can-attack" : "cannot-attack"
-                    }`}
+                    className={`my-card in-zone 
+    ${card.discardFade ? "card-discard-fade" : ""} 
+    ${card.isDestroyed ? "card-destroyed" : ""} 
+    ${card.canAttack ? "can-attack" : "cannot-attack"}
+  `}
                     draggable={isMyTurn}
                     onMouseDown={(e) => card.canAttack && handleCardMouseDown(card, e)}
                     onDragStart={(e) => card.canAttack && handleDragStart(card.id, e)}
@@ -1862,19 +2138,26 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                     }}
                     onContextMenu={(e) => handleFieldDiscardRequest(e, card)} // ⭐ 필드 우클릭 버리기 추가
                     animate={{
-                      // 🔥 선택된 카드 강조
+                      // 🔥 더 강력한 선택 효과
                       ...(highlightCardId === card.id
                         ? {
-                            scale: [1, 1.05, 1],
-                            boxShadow: ["0 0 0px rgba(0,255,255,0)", "0 0 14px rgba(0,255,255,0.9)", "0 0 0px rgba(0,255,255,0)"],
+                            scale: [1, 1.12, 1.08, 1.12, 1],
+                            boxShadow: [
+                              "0 0 0px rgba(0,255,255,0)",
+                              "0 0 20px rgba(0,255,255,1)",
+                              "0 0 35px rgba(0,255,255,0.85)",
+                              "0 0 20px rgba(0,255,255,1)",
+                              "0 0 0px rgba(0,255,255,0)",
+                            ],
+                            filter: ["brightness(1)", "brightness(1.25)", "brightness(1.15)"],
                           }
-                        : { scale: 1, boxShadow: "none" }),
+                        : { scale: 1, boxShadow: "none", filter: "brightness(1)" }),
 
-                      // 🔥 피격 애니메이션 (shake)
+                      // 🔥 피격 애니메이션 유지
                       ...(hitCardId === card.id ? { x: [-8, 8, -5, 5, 0] } : { x: 0 }),
                     }}
                     transition={{
-                      duration: hitCardId === card.id ? 0.35 : 0.8,
+                      duration: highlightCardId === card.id ? 1.2 : 0.35,
                       repeat: highlightCardId === card.id ? Infinity : 0,
                     }}
                   >
@@ -1884,6 +2167,23 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                       alt={card.name}
                       className={`card-image ${!isMyTurn ? "gray-filter" : ""}`}
                     />
+
+                    {/* 🔥 데미지 팝업 */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "-12px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <AnimatePresence>
+                        {card.damagePopups?.map((pop) => (
+                          <DamagePopup key={pop.id} amount={pop.amount} />
+                        ))}
+                      </AnimatePresence>
+                    </div>
 
                     {/* 🔥 피격 Flash */}
                     {hitCardId === card.id && (
@@ -2059,6 +2359,23 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               />
             )}
 
+            {/* 🔥 Enemy Player Damage Popup */}
+            <div
+              style={{
+                position: "absolute",
+                top: "-20px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                pointerEvents: "none",
+              }}
+            >
+              <AnimatePresence>
+                {enemyDamagePopups.map((pop) => (
+                  <DamagePopup key={pop.id} amount={pop.amount} />
+                ))}
+              </AnimatePresence>
+            </div>
+
             {/* 기존 내용 */}
             <div className="enemy-avatar" />
             <div className="hp-bar">
@@ -2108,6 +2425,22 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   }}
                 >
                   <EventItem event={event} onClick={() => handleEventAttack(event.id)} />
+                  {/* 🔥 이벤트몬스터 Damage Popup */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: "-12px",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <AnimatePresence>
+                      {event.damagePopups?.map((pop) => (
+                        <DamagePopup key={pop.id} amount={pop.amount} />
+                      ))}
+                    </AnimatePresence>
+                  </div>
                 </motion.div>
               </div>
             ))}
@@ -2131,6 +2464,23 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
             }}
             transition={{ duration: 0.35 }}
           >
+            {/* 🔥 My Player Damage Popup */}
+            <div
+              style={{
+                position: "absolute",
+                top: "-20px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                pointerEvents: "none",
+              }}
+            >
+              <AnimatePresence>
+                {playerDamagePopups.map((pop) => (
+                  <DamagePopup key={pop.id} amount={pop.amount} />
+                ))}
+              </AnimatePresence>
+            </div>
+
             <div className="player-avatar" />
             <div className="hp-bar">
               <div className="hp-bar-inner" style={{ width: `${(playerHP / MAX_HP) * 100}%` }} />

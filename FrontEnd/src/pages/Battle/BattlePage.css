@@ -1938,3 +1938,9 @@
   height: 100%;
   object-fit: cover;
 }
+
+.card-destroyed {
+  opacity: 0 !important;
+  transform: scale(0.8);
+  transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+}

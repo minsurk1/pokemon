@@ -325,11 +325,6 @@ export const endGameCleanup = (roomCode: string) => {
 
   console.log(`🧹 endGameCleanup 실행: ${roomCode}`);
 
-  room.inGame = false; // ← 가장 중요
-  room.lastActivity = Date.now(); // ← roomCleaner가 삭제 타이머 돌림
-
-  if (room.gameState) {
-    room.gameState.over = true;
-    room.gameState.currentTurn = null as any;
-  }
+  // 🔥 게임 종료 시 방 즉시 삭제 (RoomList에서 즉시 사라짐)
+  delete rooms[roomCode];
 };

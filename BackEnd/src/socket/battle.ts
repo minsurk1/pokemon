@@ -785,8 +785,6 @@ if (isValidObjectId) {
         reason: "hp-zero",
       });
       stopSharedTimer(room);
-      room.gameState = null;
-
       endGameCleanup(roomCode);
     }
   });
@@ -932,8 +930,6 @@ if (isValidObjectId) {
         reason: "hp-zero",
       });
       stopSharedTimer(room);
-      room.gameState = null;
-
       endGameCleanup(roomCode);
     }
   });
@@ -1032,8 +1028,6 @@ if (isValidObjectId) {
         reason: "hp-zero",
       });
       stopSharedTimer(room);
-      room.gameState = null;
-
       endGameCleanup(roomCode);
     }
   });
@@ -1250,8 +1244,6 @@ if (isValidObjectId) {
         reason: "hp-zero",
       });
       stopSharedTimer(room);
-      room.gameState = null;
-
       endGameCleanup(roomCode);
     }
   });
@@ -1385,8 +1377,6 @@ if (isValidObjectId) {
           reason: "hp-zero",
         });
         stopSharedTimer(room);
-        room.gameState = null;
-
         endGameCleanup(roomCode);
       }
     }
@@ -1400,8 +1390,6 @@ if (isValidObjectId) {
           reason: "hp-zero",
         });
         stopSharedTimer(room);
-        room.gameState = null;
-
         endGameCleanup(roomCode);
       }
     }
@@ -1454,8 +1442,6 @@ if (isValidObjectId) {
     //    -> 이벤트가 먼저 클라이언트에 안전하게 전달되어야 함
     setTimeout(() => {
       stopSharedTimer(room);
-      room.gameState = null;
-
       endGameCleanup(roomCode);
     }, 300); // 0~300ms 사이면 충분 (전송 안정)
   });

@@ -903,11 +903,13 @@ if (isValidObjectId) {
 
     // 🔥 피격 애니메이션 신호 추가
     io.to(roomCode).emit("hit", {
+      attackerId: attacker.id,
+      attackerType: attacker.cardType,
+      attackerOwner: playerId,
       targetOwner: opponentId,
       targetId,
       damage,
       multiplier,
-      attackerType: attacker.cardType,
     });
 
     io.to(roomCode).emit("attackAnimation", {
@@ -1064,11 +1066,13 @@ if (isValidObjectId) {
 
     // 🔥 피격 애니메이션 신호 (플레이어 직접 공격)
     io.to(roomCode).emit("hit", {
+      attackerId: attacker.id,
+      attackerOwner: playerId,
+      attackerType: attacker.cardType,
       targetOwner: opponentId,
       targetId: null,
       damage,
       multiplier,
-      attackerType: attacker.cardType,
     });
 
     // ✅ HP 0 → 게임 종료
@@ -1489,11 +1493,13 @@ if (isValidObjectId) {
 
     // 🔥 이벤트 피격 애니메이션 신호
     io.to(roomCode).emit("hit", {
+      attackerId: attacker.id, // ⭐ 추가
+      attackerOwner: playerId,
+      attackerType: attacker.cardType,
       targetOwner: "event",
       targetId: event.id,
       damage,
       multiplier: 1,
-      attackerType: attacker.cardType,
     });
 
     // ✅ 이벤트가 파괴되었는지 확인

@@ -1097,6 +1097,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
     const onCardSummoned = ({ playerId, card, updatedCost, cost }: any) => {
       console.log(`🃏 카드 소환 수신 from ${playerId} | 카드: ${card.name}`);
+      SoundManager.play("card_summon");
       const fixedCard = normalizeCard(card);
       fixedCard.attack = Number(fixedCard.attack ?? card.attack ?? card.damage ?? 0);
       fixedCard.hp = Number(fixedCard.hp ?? card.hp ?? 0);
@@ -1576,7 +1577,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
     // ✅ 손패에서 제거 + UI 닫기
     setHandCards((prev) => prev.filter((c) => c.id !== cardId));
-    setShowHand(false);
 
     console.log("🎯 소환 시 전송되는 카드:", normalizedCard);
 
@@ -1842,6 +1842,18 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [handleEndTurn]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Tab") {
+        e.preventDefault(); // 기본 focus 이동 막기
+        setShowHand((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // ===== 패배 연출 =====
   useEffect(() => {
     if (surrendering) return; // ✅ 항복 중이면 자동 패배 연출 금지
@@ -1852,6 +1864,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       // ✅ 2초 뒤 DEFEAT 표시
       setTimeout(() => {
+        SoundManager.play("defeat");
         setShowDefeatBanner(true);
 
         // ✅ 3초 뒤 패배 배너 제거 → GameOverScreen 페이드인 시작
@@ -1880,6 +1893,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       // 2초 후 승리 카드 표시
       setTimeout(() => {
+        SoundManager.play("victory");
         setShowVictoryBanner(true);
 
         // 3초 뒤 종료 화면
@@ -1925,6 +1939,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setIsVictory(false);
 
       setTimeout(() => {
+        SoundManager.play("defeat");
         setShowDefeatBanner(true);
         setTimeout(() => {
           setShowDefeatBanner(false);
@@ -1949,6 +1964,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       setIsVictory(true);
 
       setTimeout(() => {
+        SoundManager.play("victory");
         setShowVictoryBanner(true);
         setTimeout(() => {
           setShowVictoryBanner(false);

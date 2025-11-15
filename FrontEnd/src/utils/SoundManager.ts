@@ -18,7 +18,10 @@ type SoundName =
   | "Hit_Super_Damage"
   | "Hit_Weak_Damage"
   | "Turn_change"
-  | "Pack_opening";
+  | "Pack_opening"
+  | "card_summon"
+  | "victory"
+  | "defeat";
 
 class SoundManager {
   private static sounds: Partial<Record<SoundName, HTMLAudioElement>> = {};
@@ -59,6 +62,9 @@ class SoundManager {
     register("Cardpack_open", "Cardpack_open.wav");
     register("Pack_opening", "pack_opening.mp3");
     register("Turn_change", "Turn_change.wav");
+    register("card_summon", "card_summon.wav");
+    register("victory", "victory.mp3");
+    register("defeat", "defeat.mp3");
 
     // 피격음
     register("Hit_Normal_Damage", "Hit_Normal_Damage.wav");

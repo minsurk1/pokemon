@@ -29,6 +29,8 @@ const allowedOrigins = [
   "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app",
   "http://172.18.7.30:3000", // ✅ 추가
   "http://172.18.7.30:3001", // ✅ 추가
+  "http://192.168.1.23:3000",
+  "http://192.168.1.23:3001",
 ];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));

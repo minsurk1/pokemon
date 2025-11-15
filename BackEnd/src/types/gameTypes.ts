@@ -1,4 +1,4 @@
-// ✅ src/types/gameTypes.ts
+// ✅ BackEnd/src/types/gameTypes.ts
 
 export interface CardData {
   id: string;
@@ -12,6 +12,9 @@ export interface CardData {
   image?: string; // 이미지 경로
   image2D?: string;
   canAttack?: boolean; // 한 턴에 한 번만 공격 가능 여부
+
+  // ⭐ UI 전용 (버리기 애니메이션용)
+  discardFade?: boolean;
 }
 
 // ++++++++++++++++ [추가된 Event 타입] ++++++++++++++++
@@ -24,6 +27,7 @@ export interface Event {
   hp: number;
   maxHp: number;
   effect: () => void; // 클라이언트에서는 사용하지 않음
+  damagePopups?: { id: number; amount: number }[]; // 🔥 추가!
 }
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -40,6 +44,7 @@ export interface GameState {
   turnCount: number; // 현재 턴 수
   activeEvent: Event | null; // ✅ [추가] 현재 활성화된 이벤트
   lastShuffleTurn?: Record<string, number>;
+  over: boolean;
 }
 
 export interface RoomInfo {

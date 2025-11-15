@@ -11,6 +11,9 @@
   background-size: cover;
   background-position: center;
   position: relative;
+  overflow-y: hidden;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .chat-log-container {
@@ -676,7 +679,7 @@
   z-index: 100;
   width: 4.4vw;
   right: 0;
-  top: 60.3vh;
+  top: 60.9vh;
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
@@ -701,6 +704,13 @@
   border-left: solid 2px white;
 }
 
+.grave-text {
+  color: #ffffff !important;
+  font-weight: bold;
+  text-shadow: none !important;
+  -webkit-text-stroke: 0px !important;
+}
+
 .player-grave {
   position: absolute;
   top: 50.3vh;
@@ -708,7 +718,6 @@
   height: 30.4vh;
   left: 0;
   clip-path: polygon(0 0, 100% 0%, 100% 100%, 0 74%);
-  /* background: url(../../assets/images/grave1.png); */
   background-size: cover;
   background-position: center;
   z-index: 1000;
@@ -717,8 +726,8 @@
   justify-content: center;
   align-items: center;
   text-align: center;
-  
 }
+
 .enemy-grave {
   position: absolute;
   top: 19.31vh;
@@ -726,14 +735,14 @@
   height: 30.4vh;
   left: 0;
   clip-path: polygon(0 26%, 100% 0%, 100% 100%, 0 100%);
-  /* background: url(../../assets/images/grave1.png); */
   background-size: cover;
   background-position: center;
   z-index: 1000;
   border-right: solid 3px rgb(196, 191, 191);
-  /* filter: blur(5px);
-  mask-image: linear-gradient(to right, black 60%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, black 60%, transparent 100%); */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .cost-icon {
@@ -786,6 +795,11 @@
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.3s ease-in-out;
+
+  transform: translateZ(0);
+  will-change: transform;
+  position: relative; /* 이미 있음 */
+  z-index: 9999; /* 흔들림이 다른 요소에 영향을 주지 않도록 위 레이어로 */
 }
 
 /* [수정] ::before를 '상단' 라인으로 유지 */
@@ -844,19 +858,18 @@
   transition: opacity 0.3s ease-in-out;
 }
 
-
 /* [수정] 턴 활성화 시 ::before와 ::after 둘 다 켠다 */
 .enemy-info.isEnemyTurn::before,
 .enemy-info.isEnemyTurn::after {
   opacity: 1;
   animation: neonPulse 1.5s infinite alternate;
-  --neon-color: #00afff; 
+  --neon-color: #00afff;
 }
 .player-info.isMyTurn::before,
 .player-info.isMyTurn::after {
   opacity: 1;
   animation: neonPulse 1.5s infinite alternate;
-  --neon-color: #ff4136; 
+  --neon-color: #ff4136;
 }
 
 @keyframes neonPulse {
@@ -886,7 +899,7 @@
 }
 
 .endturn-button {
-  width: 80px;
+  width: 110px;
   height: 40px;
   border-radius: 20%;
   color: #ffffff;
@@ -896,13 +909,19 @@
   border-bottom: 2px solid rgb(255, 255, 255);
   border-right: 0.5px solid rgb(255, 255, 255);
   font-weight: 900;
+  font-size: 1.1rem;
   cursor: pointer;
   position: absolute;
-  bottom: 60px;
   right: 147px;
   font-family: "Do Hyeon", serif;
   transition: transform 0.3s ease;
   z-index: 300;
+  right: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px; /* 아이콘과 텍스트 간격 */
+  white-space: nowrap;
 }
 
 .endturn-button:hover {
@@ -1475,7 +1494,6 @@
 
 .enemy-card-zone.enemy-direct-attack:hover:not(.attacking),
 .enemy-card-zone.enemy-direct-attack.drag-active:not(.attacking) {
-  transform: translateX(-50%) scale(1) !important;
   background-color: rgba(255, 0, 0, 0.08);
   box-shadow: 0 0 8px rgba(255, 0, 0, 0.3) inset;
   transition: none !important;
@@ -1743,4 +1761,275 @@
   z-index: 9998;
   display: flex;
   flex-direction: column;
+}
+
+/* 카드 기본 스타일 */
+.card-image {
+  width: 100px;
+  height: 140px;
+  border-radius: 8px;
+  object-fit: cover;
+  transition: filter 0.3s ease, opacity 0.3s ease;
+}
+
+/* 자기 턴이 아닐 때 흑백 처리 */
+.gray-filter {
+  filter: grayscale(100%) brightness(0.7);
+  opacity: 0.8;
+}
+
+/* 카드 선택 시 강조 효과 */
+.glow-ring {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  width: 85%;
+  height: 18px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(rgba(0, 255, 255, 0.6), rgba(0, 255, 255, 0));
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.9);
+  pointer-events: none;
+}
+
+/* 공격 받았을 때 빨간 플래시 효과 */
+.hit-flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 0, 0, 0.4); /* 살짝 빨간 번쩍 */
+  border-radius: 10px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.player-hit-flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 0, 0, 0.45);
+  border-radius: 10px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* 카드 버리기 fade-out 애니메이션 */
+.card-discard-fade {
+  animation: cardDiscardFade 0.35s ease-out forwards;
+}
+
+@keyframes cardDiscardFade {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+/* 묘지 드래그 시 애니메이션(glow) 효과 */
+.grave-drop-zone {
+  transition: box-shadow 0.25s ease, border 0.25s ease;
+}
+
+.grave-drop-zone.drag-over {
+  border: 2px dashed #ff5555;
+  box-shadow: 0 0 16px rgba(255, 80, 80, 0.75);
+  background-color: rgba(255, 80, 80, 0.1);
+}
+
+/* 묘지 셔플 효과 */
+.grave-shuffle-anim {
+  animation: graveShuffleAnim 0.6s ease-out forwards;
+}
+
+@keyframes graveShuffleAnim {
+  0% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.8);
+  }
+}
+
+/* ===============================
+   🔥 버린 카드 유령 애니메이션
+   =============================== */
+.enemy-discard-ghost {
+  position: absolute;
+  top: 20px; /* enemy-grave-display보다 위로 */
+  right: 50%; /* 적 묘지를 중앙 기준으로 */
+  transform: translateX(140px); /* 묘지 표시 기준 살짝 오른쪽 */
+  width: 80px;
+  height: 110px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 60, 60, 0.8);
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 2600;
+
+  opacity: 0;
+  animation: fadeDiscard 1.8s ease-out forwards;
+  pointer-events: none;
+}
+
+.enemy-discard-ghost img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ✨ Fade-in → Fade-out 애니메이션 */
+@keyframes fadeDiscard {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+    filter: blur(2px);
+  }
+  10% {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: blur(0);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes fadeOutGhost {
+  0% {
+    opacity: 1;
+    transform: translateX(50%) scale(1);
+  }
+  60% {
+    opacity: 0.65;
+    transform: translateX(50%) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(50%) scale(0.9);
+  }
+}
+
+.enemy-last-discard-preview {
+  position: absolute;
+  top: 120px; /* 적 묘지 라인 아래 */
+  right: 80px; /* 기존보다 화면 안쪽 */
+  width: 65px;
+  height: 90px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 90, 90, 0.9);
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 2500;
+  box-shadow: 0 0 10px rgba(255, 80, 80, 0.5);
+}
+
+.enemy-last-discard-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.card-destroyed {
+  opacity: 0 !important;
+  transform: scale(0.8);
+  transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+}
+
+/* bgm 뮤트 버튼 */
+.bgm-mute-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid white;
+  cursor: pointer;
+  font-size: 20px;
+  z-index: 9999;
+}
+
+.card-tooltip {
+  position: absolute;
+  bottom: 120%; /* 카드 위쪽 */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  font-size: 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.card-tooltip.show {
+  opacity: 1;
+}
+
+.hand-card-tooltip {
+  top: -70px; /* 기본 위치 */
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: rgba(20, 20, 20, 0.85);
+  border: 2px solid white;
+  border-radius: 8px;
+  color: white;
+  text-align: center;
+  font-size: 14px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+  white-space: nowrap;
+}
+
+.hand-card-tooltip.show {
+  opacity: 1;
+}
+
+.hand-card-tooltip .tooltip-name {
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 3px;
+}
+
+/* ============================= */
+/*  손패 접기(collapsed) 강제 적용 */
+/* ============================= */
+.hand-cards-wrapper.collapsed {
+  width: 7vw !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+.hand-cards-wrapper.collapsed .card-slot {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 7vw !important;
+  height: 17vh !important;
+  transform: translate(0, 0) !important;
+  margin: 0 !important;
+}
+
+.hand-cards-wrapper.collapsed .card-slot:not(:first-child) {
+  transform: translate(2px, 2px) !important;
 }

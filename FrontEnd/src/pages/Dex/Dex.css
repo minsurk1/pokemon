@@ -30,7 +30,7 @@
   border-bottom: solid 3px rgb(14, 147, 219);
   /* border-top: solid 3px rgb(14, 147, 219); */
 }
-  
+
 .header-icon {
   width: 70px;
   height: 70px;
@@ -51,7 +51,7 @@
 
 /* 카드 뷰포트 - 보이는 영역 제한 */
 .cards-viewport {
-  width: 1580px; 
+  width: 1580px;
   overflow: hidden;
   position: relative;
 }
@@ -59,12 +59,13 @@
 /* 카드 캐러셀 - 모든 카드를 포함하는 컨테이너 */
 .cards-carousel {
   display: flex;
-  gap: 15vw; 
+  gap: 15vw;
   will-change: transform;
   cursor: grab;
   padding: 20px 0;
   margin-left: 4vw;
   height: 50vh;
+  margin-top: 10vh;
 }
 
 .cards-carousel:active {
@@ -73,9 +74,9 @@
 
 .dex-card {
   font-family: "Do hyeon", serif;
-  min-width: 15vw; 
+  min-width: 15vw;
   height: 20vh;
-  background: transparent; 
+  background: transparent;
   color: white;
   font-size: 1.2rem;
   display: flex;
@@ -100,7 +101,7 @@
 .dex-card-image {
   width: 100%;
   height: 100%;
-  object-fit: contain; 
+  object-fit: contain;
   border-radius: 15px;
   will-change: transform;
 }
@@ -134,8 +135,8 @@
 
 .dex-header-button {
   margin-left: auto;
-  margin-right: 2vw; 
-  background:transparent;
+  margin-right: 2vw;
+  background: transparent;
   color: white;
   border: none;
   border-radius: 50%;
@@ -143,13 +144,13 @@
   font-family: "Do hyeon", serif;
   font-size: 1rem;
   overflow: hidden;
-  height:55px;
+  height: 55px;
   width: 55px;
 }
-.dex-main-button{
+.dex-main-button {
   margin-left: auto;
-  margin-right: 20px; 
-  background:transparent;
+  margin-right: 20px;
+  background: transparent;
   color: rgb(255, 255, 255);
   border: none;
   border-radius: 50%;
@@ -157,7 +158,7 @@
   font-family: "Do hyeon", serif;
   font-size: 1rem;
   overflow: hidden;
-  height:50px;
+  height: 50px;
   width: 50px;
 }
 .dex-header-button img {

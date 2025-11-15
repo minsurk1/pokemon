@@ -7,6 +7,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 
 // ✅ 공통 타입 import
 import { Card } from "./types/Card";
+import SoundManager from "./utils/SoundManager";
 
 // Context
 import { UserProvider } from "./context/UserContext";
@@ -76,6 +77,29 @@ function App() {
     };
 
     fetchUserDeck();
+  }, []);
+
+  useEffect(() => {
+    SoundManager.init();
+
+    const startAudioOnInteraction = () => {
+      SoundManager.playGlobalBGM();
+      window.removeEventListener("click", startAudioOnInteraction);
+    };
+
+    window.addEventListener("click", startAudioOnInteraction);
+  }, []);
+
+  useEffect(() => {
+    const handleMute = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "m") {
+        const muted = SoundManager.toggleGlobalMute();
+        console.log("🔇 Global BGM mute =", muted);
+      }
+    };
+
+    window.addEventListener("keydown", handleMute);
+    return () => window.removeEventListener("keydown", handleMute);
   }, []);
 
   // ✅ 브라우저 종료 시 socket 정리

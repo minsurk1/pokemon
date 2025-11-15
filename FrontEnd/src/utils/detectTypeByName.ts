@@ -35,6 +35,9 @@ export function detectTypeByName(name: string): string {
   // ==================== 🕊️ 비행 타입 ====================
   const flyList = ["찌르꼬", "깨비참", "구구", "깨비드릴조", "무장조", "토네로스", "루기아", "비행", "fly"];
 
+  // ==================== 🪱 벌레(worm) 타입 ====================
+  const wormList = ["캐터피", "단데기", "버터플", "뿔충이", "딱충이", "독침붕", "스코로피", "모스노우", "벌레", "애벌레", "worm", "bug", "caterpillar"];
+
   // ==================== ⭐ 전설 타입 ====================
   const legendList = ["디아루가", "펄기아", "기라티나", "제크로무", "큐레무", "레쿠쟈", "아르세우스", "전설", "legend"];
 
@@ -49,6 +52,7 @@ export function detectTypeByName(name: string): string {
     land: landList,
     esper: esperList,
     fly: flyList,
+    worm: wormList,
     legend: legendList,
   };
 
@@ -66,6 +70,7 @@ export function detectTypeByName(name: string): string {
   if (lower.includes("ground") || lower.includes("rock") || lower.includes("earth")) return "land";
   if (lower.includes("psychic") || lower.includes("mind") || lower.includes("esper")) return "esper";
   if (lower.includes("fly") || lower.includes("bird") || lower.includes("wing")) return "fly";
+  if (lower.includes("worm") || lower.includes("bug") || lower.includes("insect")) return "worm";
   if (lower.includes("legend") || lower.includes("myth") || lower.includes("god")) return "legend";
 
   return "normal";

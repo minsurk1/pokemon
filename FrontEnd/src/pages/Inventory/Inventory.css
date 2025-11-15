@@ -137,7 +137,19 @@
   align-items: center;
   z-index: 1000;
   backdrop-filter: blur(5px);
+  animation: fadeIn 0.6s ease forwards;
 }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /*개봉시 카드 나오는 창*/
 .modal-content {
   background: rgba(255, 255, 255, 0.95);
@@ -146,7 +158,17 @@
   width: 90%;
   max-width: 1200px;
   position: relative;
-  animation: modalFadeIn 0.5s ease;
+  animation: fadeIn 0.25s ease-out;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 /*카드 오픈했을때 새로운 카드가 나왔습니다 부분*/
 .modal-card-message {
@@ -394,5 +416,47 @@
 
   .inventory-page h2 {
     font-size: 2rem;
+  }
+}
+
+.cutscene-overlay {
+  position: fixed;
+  z-index: 999;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+}
+.cutscene-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cutscene-fadeout {
+  animation: cutsceneFadeOut 0.4s ease forwards;
+}
+
+@keyframes cutsceneFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.modal-content {
+  animation: modalFadeIn 1.2s ease forwards;
+}
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

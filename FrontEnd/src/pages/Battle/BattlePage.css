@@ -1720,8 +1720,7 @@
   100% {
     opacity: 0;
     transform: translateY(-200px) scale(3);
-    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252, -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740,
-      30px 0 #ffd600;
+    box-shadow: 0 0 0 #ffea00, -20px -20px #ff8a80, 20px -20px #ff5252, -20px 20px #ffca28, 20px 20px #ffeb3b, -30px 0 #ffd740, 30px 0 #ffd600;
   }
 }
 
@@ -1943,4 +1942,19 @@
   opacity: 0 !important;
   transform: scale(0.8);
   transition: opacity 0.35s ease-out, transform 0.35s ease-out;
+}
+
+/* bgm 뮤트 버튼 */
+.bgm-mute-btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid white;
+  cursor: pointer;
+  font-size: 20px;
+  z-index: 9999;
 }

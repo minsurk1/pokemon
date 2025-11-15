@@ -16,6 +16,8 @@ import BurnLineComponent from "../../components/battle/BurnLineComponent";
 import { Card } from "../../types/Card";
 import { CiFlag1 } from "react-icons/ci";
 
+import SoundManager from "../../utils/SoundManager";
+
 // ===================== 🔥 이벤트 시스템 추가 =====================
 import EventItem from "../../components/battle/Eventitem";
 import { detectTypeByName } from "../../utils/detectTypeByName";
@@ -108,7 +110,8 @@ const getImageUrl = (imagePath: any) => {
 const normalizeCard = (card: any) => {
   const name = String(card.name ?? card.cardName ?? card.card?.cardName ?? "Unknown").trim();
   const detectedType = detectTypeByName(name);
-  const realType = detectedType || card.cardType || card.type || card.card?.cardType || "normal";
+  const realType = detectedType.toLowerCase(); // 🔥 무조건 lowercase로 통일
+
   const img = card.image2D || card.image || card.card?.image2D || `${realType}Tier${card.tier ?? 1}.png`;
 
   return {
@@ -322,6 +325,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [playerDamagePopups, setPlayerDamagePopups] = useState<{ id: number; amount: number }[]>([]);
   const [enemyDamagePopups, setEnemyDamagePopups] = useState<{ id: number; amount: number }[]>([]);
 
+  // sound 관련 상태 관리
+  const [muted, setMuted] = useState<boolean>(false);
+
   // ======================================== 함수들 ========================================
   // (useEffect ref 동기화 - 변경 없음)
   useEffect(() => {
@@ -333,6 +339,25 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   useEffect(() => {
     if (isMyTurn) setHasShuffledThisTurn(false);
   }, [isMyTurn]);
+
+  useEffect(() => {
+    // 🔇 전역 BGM 중지
+    SoundManager.pauseGlobalBGM();
+    // 🔥 배틀BGM 재생
+    SoundManager.playBGM();
+
+    return () => {
+      // 🛑 배틀BGM 정지
+      SoundManager.stopBGM();
+      // 🔊 전역 BGM 재개
+      SoundManager.resumeGlobalBGM();
+    };
+  }, []);
+
+  const toggleMute = () => {
+    const m = SoundManager.toggleMuteBGM();
+    setMuted(m);
+  };
 
   const showMessageBox = (text: string, duration: number = 1500, lock = false) => {
     if (messageLocked) return; // ✅ 잠겨있으면 새 메시지 무시
@@ -348,11 +373,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   };
 
   // 🔥 데미지 팝업 생성 함수
-  const showDamagePopup = (
-    targetType: "myCard" | "enemyCard" | "event" | "player" | "enemyPlayer",
-    targetId: string,
-    damage: number
-  ) => {
+  const showDamagePopup = (targetType: "myCard" | "enemyCard" | "event" | "player" | "enemyPlayer", targetId: string, damage: number) => {
     // --- 1) 내 카드 ---
     if (targetType === "myCard") {
       setMyCardsInZone((prev) =>
@@ -416,21 +437,15 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     // 800ms 후 팝업 자동 삭제
     setTimeout(() => {
       if (targetType === "myCard") {
-        setMyCardsInZone((prev) =>
-          prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card))
-        );
+        setMyCardsInZone((prev) => prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card)));
       }
 
       if (targetType === "enemyCard") {
-        setEnemyCardsInZone((prev) =>
-          prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card))
-        );
+        setEnemyCardsInZone((prev) => prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card)));
       }
 
       if (targetType === "event") {
-        setActiveEvents((prev) =>
-          prev.map((ev) => (String(ev.id) === targetId ? { ...ev, damagePopups: ev.damagePopups?.slice(1) || [] } : ev))
-        );
+        setActiveEvents((prev) => prev.map((ev) => (String(ev.id) === targetId ? { ...ev, damagePopups: ev.damagePopups?.slice(1) || [] } : ev)));
       }
     }, 1200);
   };
@@ -649,8 +664,26 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [drawCard]);
 
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "m") {
+        const newState = SoundManager.toggleMuteBGM();
+        setMuted(newState);
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
+  // 🔥 damage 값을 기반으로 피격 타입 판정 함수
+  const getDamageType = (damage: number) => {
+    if (damage >= 150) return "super"; // 강한 피해
+    if (damage <= 40) return "weak"; // 약한 피해
+    return "normal";
+  };
+
   // 애니메이션 + emit 담당 (BattlePage 내부)
-  // 수정
   const runAttackAnimation = (
     attackerInstanceId: string,
     targetInstanceId?: string, // "my-player" | "enemy-player" | 카드ID | 이벤트ID
@@ -744,6 +777,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       // 🔥 HP 업데이트
       if (damage < 0) {
+        SoundManager.play("heal");
         // 회복
         if (!iAmAttacker) {
           setPlayerHP(newHP);
@@ -754,11 +788,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         if (iAmAttacker) setEnemyHP(newHP);
         else setPlayerHP(newHP);
 
-        addMessageToLog(
-          message
-            ? `💥 ${attackerName}의 공격! ${message} (x${multiplier ?? 1})`
-            : `💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`
-        );
+        addMessageToLog(message ? `💥 ${attackerName}의 공격! ${message} (x${multiplier ?? 1})` : `💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`);
       }
     };
 
@@ -794,17 +824,27 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     // 🔥 서버 hit 신호 → 피격 애니메이션 실행
-    const onHit = ({
-      targetOwner,
-      targetId,
-      damage,
-    }: {
-      targetOwner: string | null;
-      targetId: string | number | null;
-      damage?: number;
-    }) => {
+    const onHit = ({ targetOwner, targetId, damage }: { targetOwner: string | null; targetId: string | number | null; damage?: number }) => {
       const me = socket.id;
       const enemy = enemyIdRef.current;
+
+      // ===============================
+      // 🔥 피격 사운드 판단
+      // ===============================
+      let hitType: "normal" | "super" | "weak" = "normal";
+
+      if (typeof damage === "number") {
+        hitType = getDamageType(damage);
+      }
+
+      // 🔥 추가될 디버그 로그
+      console.log({
+        category: "Hit Logic",
+        damageReceived: damage,
+        resolvedHitType: hitType,
+      });
+
+      SoundManager.playHit(hitType);
 
       // ===============================
       // 1) 이벤트 몬스터 피격 (🔥 가장 먼저 처리)
@@ -1094,10 +1134,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       const { targetId, ownerId, newHP } = data;
 
       // 기존 카드의 HP 찾기
-      const prevHP =
-        ownerId === socket.id
-          ? myCardsInZone.find((c) => c.id === targetId)?.hp
-          : enemyCardsInZone.find((c) => c.id === targetId)?.hp;
+      const prevHP = ownerId === socket.id ? myCardsInZone.find((c) => c.id === targetId)?.hp : enemyCardsInZone.find((c) => c.id === targetId)?.hp;
 
       // 데미지 계산
       const damage = prevHP !== undefined ? prevHP - newHP : 0;
@@ -1612,6 +1649,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     if (!targetId && enemyCardsInZone.length === 0) {
       addMessageToLog(`💥 ${attacker.name}이(가) 상대 플레이어를 직접 공격합니다!`);
 
+      // 🔥 공격 사운드
+      const attackerType = attacker.cardType ?? "normal";
+      SoundManager.playAttackByType(attackerType);
+
       // ✅ 직접 공격 애니메이션
       runAttackAnimation(attacker.id, undefined, "player");
 
@@ -1628,6 +1669,10 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     /* ✅ 2) 카드 공격 */
     if (targetId) {
       addMessageToLog(`🔥 ${attacker.name} ➤ 공격!`);
+
+      // 🔥 공격 사운드
+      const attackerType = attacker.cardType ?? "normal";
+      SoundManager.playAttackByType(attackerType);
 
       // ✅ 공격 애니메이션
       runAttackAnimation(attacker.id, targetId);
@@ -1701,15 +1746,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     setSelectedAttacker(null);
 
     // UI 낙관적 업데이트: 이벤트 HP 바로 감소 표시 (서버확인 전)
-    setActiveEvents((prev) =>
-      prev.map((e) => (e.id === eventId ? { ...e, hp: Math.max(0, e.hp - (attacker.attack ?? 0)), temp: true } : e))
-    );
+    setActiveEvents((prev) => prev.map((e) => (e.id === eventId ? { ...e, hp: Math.max(0, e.hp - (attacker.attack ?? 0)), temp: true } : e)));
   };
 
   const handleEndTurn = useCallback(() => {
     if (!isMyTurn) return;
     setSelectedAttacker(null);
     setHighlightCardId(null);
+    SoundManager.playTurnChange(); // 🔊 여기서 재생
     socket.emit("endTurn", { roomCode });
     addMessageToLog("🔚 턴을 종료했습니다!");
   }, [isMyTurn, roomCode, socket, addMessageToLog]);
@@ -2013,9 +2057,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         <div
           id="enemy-field-target"
           className={`enemy-card-zone ${
-            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0
-              ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}`
-              : ""
+            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
           }`}
           onClick={(e) => handleEnemyZoneInteraction(e)}
           onDragOver={(e) => e.preventDefault()}
@@ -2074,12 +2116,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
                   {/* 🔥 피격 Flash 오버레이 (원하면 추가) */}
                   {hitCardId === card.id && (
-                    <motion.div
-                      className="hit-flash"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: [0, 0.7, 0] }}
-                      transition={{ duration: 0.25 }}
-                    />
+                    <motion.div className="hit-flash" initial={{ opacity: 0 }} animate={{ opacity: [0, 0.7, 0] }} transition={{ duration: 0.25 }} />
                   )}
 
                   <div className="card-hp-bar">
@@ -2162,11 +2199,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                     }}
                   >
                     {/* 카드 이미지 */}
-                    <img
-                      src={getImageUrl(card.image)}
-                      alt={card.name}
-                      className={`card-image ${!isMyTurn ? "gray-filter" : ""}`}
-                    />
+                    <img src={getImageUrl(card.image)} alt={card.name} className={`card-image ${!isMyTurn ? "gray-filter" : ""}`} />
 
                     {/* 🔥 데미지 팝업 */}
                     <div
@@ -2187,12 +2220,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
                     {/* 🔥 피격 Flash */}
                     {hitCardId === card.id && (
-                      <motion.div
-                        className="hit-flash"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: [0, 0.7, 0] }}
-                        transition={{ duration: 0.25 }}
-                      />
+                      <motion.div className="hit-flash" initial={{ opacity: 0 }} animate={{ opacity: [0, 0.7, 0] }} transition={{ duration: 0.25 }} />
                     )}
 
                     {/* 🔥 선택된 카드 glow ring */}
@@ -2325,12 +2353,14 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         {/* ================================
     🔥 enemy-player-target (수정 완료)
 ================================ */}
+        <button className="bgm-mute-btn" onClick={toggleMute}>
+          {muted ? "🔇" : "🔊"}
+        </button>
+
         <div
           id="enemy-player-target"
           className={`enemy-info ${!isMyTurn ? "isEnemyTurn" : ""} ${
-            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0
-              ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}`
-              : ""
+            isMyTurn && selectedAttacker && enemyCardsInZone.length === 0 ? `enemy-direct-attack ${isDragActive ? "drag-active" : ""}` : ""
           }`}
           onClick={() => handleDirectAttackOnEnemy()}
           onDragOver={(e) => e.preventDefault()}
@@ -2351,12 +2381,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
           >
             {/* 번쩍 플래시 */}
             {playerHit === "enemy" && (
-              <motion.div
-                className="player-hit-flash"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: [0, 0.6, 0] }}
-                transition={{ duration: 0.25 }}
-              />
+              <motion.div className="player-hit-flash" initial={{ opacity: 0 }} animate={{ opacity: [0, 0.6, 0] }} transition={{ duration: 0.25 }} />
             )}
 
             {/* 🔥 Enemy Player Damage Popup */}

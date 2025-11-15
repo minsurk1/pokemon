@@ -1,5 +1,5 @@
 // FrontEnd/src/utils/SoundManager.ts
-type SoundName =
+export type SoundName =
   | "Attack_fire"
   | "Attack_forest"
   | "Attack_electric"

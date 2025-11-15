@@ -45,6 +45,8 @@ export interface GameState {
   activeEvent: Event | null; // ✅ [추가] 현재 활성화된 이벤트
   lastShuffleTurn?: Record<string, number>;
   over: boolean;
+  // ⭐⭐⭐ 추가 필요!!
+  firstTurnDone: Record<string, boolean>;
 }
 
 export interface RoomInfo {

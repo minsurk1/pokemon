@@ -907,6 +907,7 @@ if (isValidObjectId) {
       targetId,
       damage,
       multiplier,
+      attackerType: attacker.cardType,
     });
 
     io.to(roomCode).emit("attackAnimation", {
@@ -1067,6 +1068,7 @@ if (isValidObjectId) {
       targetId: null,
       damage,
       multiplier,
+      attackerType: attacker.cardType,
     });
 
     // ✅ HP 0 → 게임 종료
@@ -1491,6 +1493,7 @@ if (isValidObjectId) {
       targetId: event.id,
       damage,
       multiplier: 1,
+      attackerType: attacker.cardType,
     });
 
     // ✅ 이벤트가 파괴되었는지 확인

@@ -63,6 +63,21 @@ type BattleEvent = Event & {
   damagePopups?: { id: number; amount: number }[];
 };
 
+const typeColorMap: Record<string, string> = {
+  fire: "#ff5733",
+  water: "#3498db",
+  electric: "#f1c40f",
+  forest: "#27ae60",
+  ice: "#5dade2",
+  poison: "#9b59b6",
+  land: "#a04000",
+  esper: "#8e44ad",
+  fly: "#85c1e9",
+  normal: "#bdc3c7",
+  legend: "#f39c12",
+  worm: "#7dcea0",
+};
+
 // ===================== 상수 =====================
 const INITIAL_TIME = 30;
 const IMAGE_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/images";
@@ -324,6 +339,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   const [playerDamagePopups, setPlayerDamagePopups] = useState<{ id: number; amount: number }[]>([]);
   const [enemyDamagePopups, setEnemyDamagePopups] = useState<{ id: number; amount: number }[]>([]);
+
+  const [tooltip, setTooltip] = useState<string | null>(null);
 
   // sound 관련 상태 관리
   const [muted, setMuted] = useState<boolean>(false);
@@ -2293,9 +2310,39 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
               </button>
             )}
             {handCards.map((card, index) => (
-              <div key={card.id} className={`card-slot hand-card-position-${index}`} style={{ zIndex: handCards.length - index }}>
+              <div
+                key={card.id}
+                className={`card-slot hand-card-position-${index}`}
+                style={{
+                  zIndex: handCards.length - index,
+                  position: "relative",
+                }}
+                onMouseEnter={() => setTooltip(card.id)}
+                onMouseLeave={() => setTooltip(null)}
+              >
+                {/* 🔥 타입 컬러 강조 + 세련된 툴팁 */}
+                {tooltip === card.id && (
+                  <div
+                    className="hand-card-tooltip show"
+                    style={{
+                      borderColor: typeColorMap[card.cardType ?? "normal"],
+                      top: "-75px",
+                    }}
+                  >
+                    <div className="tooltip-name" style={{ color: typeColorMap[card.cardType ?? "normal"] }}>
+                      {card.name}
+                    </div>
+
+                    <div style={{ opacity: 0.85 }}>
+                      Type: <span style={{ color: typeColorMap[card.cardType ?? "normal"] }}>{card.cardType}</span>
+                    </div>
+
+                    <div style={{ opacity: 0.9 }}>Cost: {card.cost}</div>
+                  </div>
+                )}
+
                 <div
-                  className={`my-card hand-card ${card.discardFade ? "card-discard-fade" : ""}`}
+                  className="my-card hand-card"
                   onClick={(e) => {
                     if (showHand) {
                       e.stopPropagation();

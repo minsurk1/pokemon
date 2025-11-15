@@ -71,7 +71,7 @@ class SoundManager {
     register("Hit_Super_Damage", "Hit_Super_Damage.wav");
     register("Hit_Weak_Damage", "Hit_Weak_Damage.wav");
 
-    this.cutsceneGain.gain.value = 30.0; // 기본 증폭
+    this.cutsceneGain.gain.value = 20.0; // 기본 증폭
     this.cutsceneGain.connect(this.audioCtx.destination); // 🔥 이 줄 추가해야 완성!
   }
 

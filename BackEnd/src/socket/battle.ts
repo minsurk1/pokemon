@@ -826,6 +826,13 @@ if (isValidObjectId) {
       return;
     }
 
+    // 🔥🔥🔥 후공 첫 턴(= turnCount 1) 공격 금지
+    const hostId = room.players[0];
+    if (game.turnCount === 1 && playerId !== hostId) {
+      socket.emit("error", "첫 턴에는 공격할 수 없습니다!");
+      return;
+    }
+
     const attacker = game.cardsInZone[playerId]?.find((c) => c.id === attackerId);
     if (!attacker) {
       socket.emit("error", "공격할 카드 정보를 찾을 수 없습니다.");
@@ -974,6 +981,13 @@ if (isValidObjectId) {
 
     // 🔥🔥🔥 여기 추가 → 1턴 공격 금지
     if (!game.firstTurnDone[playerId]) {
+      socket.emit("error", "첫 턴에는 직접 공격할 수 없습니다!");
+      return;
+    }
+
+    // 🔥🔥🔥 후공 첫 턴 직접 공격 금지
+    const hostId = room.players[0];
+    if (game.turnCount === 1 && playerId !== hostId) {
       socket.emit("error", "첫 턴에는 직접 공격할 수 없습니다!");
       return;
     }

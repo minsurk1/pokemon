@@ -37,11 +37,7 @@ function LoginPanel() {
   const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const response: AxiosResponse<LoginResponse> = await axios.post<LoginResponse>(
-        "/api/auth/login",
-        { username, password },
-        { withCredentials: true }
-      );
+      const response: AxiosResponse<LoginResponse> = await axios.post<LoginResponse>("/api/auth/login", { username, password }, { withCredentials: true });
 
       if (response.data.token) {
         const token = response.data.token;
@@ -98,12 +94,7 @@ function LoginPanel() {
             }}
           >
             <input type="text" placeholder="아이디" value={username} onChange={(e) => setUsername(e.target.value)} />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="비밀번호"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <input type={showPassword ? "text" : "password"} placeholder="비밀번호" value={password} onChange={(e) => setPassword(e.target.value)} />
             <span onClick={togglePasswordVisibility}>{showPassword ? <FaEyeSlash /> : <FaEye />}</span>
             <button className="login-button" type="submit" disabled={isLoading}>
               {isLoading ? "로그인 중..." : "로그인"}
@@ -122,7 +113,16 @@ function LoginPanel() {
           className="toggle-button open"
           onClick={togglePanel}
           onKeyDown={(e) => {
-            if (["Enter", " ", "Spacebar", "Tab"].includes(e.key)) {
+            const key = e.key.toLowerCase();
+
+            // 🔥 Shift+Tab은 뒤로 가는 키 → 패널 열리면 안됨 (중요!)
+            if (key === "tab" && !e.shiftKey) {
+              e.preventDefault();
+              togglePanel();
+            }
+
+            // Enter 또는 Space 도 패널 열도록 유지
+            if (key === "enter" || key === " " || key === "spacebar") {
               e.preventDefault();
               togglePanel();
             }

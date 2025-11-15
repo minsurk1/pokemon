@@ -242,9 +242,20 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
       hands: { [player1]: [], [player2]: [] },
       graveyards: { [player1]: [], [player2]: [] },
       turnCount: 1,
+      firstTurnDone: {
+        [player1]: false,
+        [player2]: false,
+      },
       activeEvent: null,
       lastShuffleTurn: {},
       over: false,
+    };
+  }
+
+  if (!room.gameState.firstTurnDone) {
+    room.gameState.firstTurnDone = {
+      [player1]: false,
+      [player2]: false,
     };
   }
 
@@ -798,14 +809,33 @@ if (isValidObjectId) {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
+    const hostId = room.players[0];
+
     const game = room.gameState;
     const playerId = socket.id;
     const opponentId = room.players.find((id) => id !== playerId);
     if (!opponentId) return;
 
+    // 🔥 후공 첫 턴 직접 공격 금지
+    if (game.turnCount === 1 && playerId !== hostId) {
+      return socket.emit("error", "첫 턴에는 직접 공격할 수 없습니다!");
+    }
+
     // ✅ 턴 검사
     if (playerId !== game.currentTurn) {
       socket.emit("error", "당신의 턴이 아닙니다.");
+      return;
+    }
+
+    // 🔥🔥🔥 여기 추가 → 1턴 공격 금지
+    if (!game.firstTurnDone[playerId]) {
+      socket.emit("error", "첫 턴에는 공격할 수 없습니다!");
+      return;
+    }
+
+    // 🔥🔥🔥 후공 첫 턴(= turnCount 1) 공격 금지
+    if (game.turnCount === 1 && playerId !== hostId) {
+      socket.emit("error", "첫 턴에는 공격할 수 없습니다!");
       return;
     }
 
@@ -873,6 +903,9 @@ if (isValidObjectId) {
 
     // 🔥 피격 애니메이션 신호 추가
     io.to(roomCode).emit("hit", {
+      attackerId: attacker.id,
+      attackerType: attacker.cardType,
+      attackerOwner: playerId,
       targetOwner: opponentId,
       targetId,
       damage,
@@ -944,14 +977,32 @@ if (isValidObjectId) {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
+    const hostId = room.players[0];
     const game = room.gameState;
     const playerId = socket.id;
     const opponentId = room.players.find((id) => id !== playerId);
     if (!opponentId) return;
 
+    // 🔥 후공 첫 턴 직접 공격 금지
+    if (game.turnCount === 1 && playerId !== hostId) {
+      return socket.emit("error", "첫 턴에는 직접 공격할 수 없습니다!");
+    }
+
     // ✅ 턴 확인
     if (playerId !== game.currentTurn) {
       socket.emit("error", "당신의 턴이 아닙니다.");
+      return;
+    }
+
+    // 🔥🔥🔥 여기 추가 → 1턴 공격 금지
+    if (!game.firstTurnDone[playerId]) {
+      socket.emit("error", "첫 턴에는 직접 공격할 수 없습니다!");
+      return;
+    }
+
+    // 🔥🔥🔥 후공 첫 턴 직접 공격 금지
+    if (game.turnCount === 1 && playerId !== hostId) {
+      socket.emit("error", "첫 턴에는 직접 공격할 수 없습니다!");
       return;
     }
 
@@ -1015,6 +1066,9 @@ if (isValidObjectId) {
 
     // 🔥 피격 애니메이션 신호 (플레이어 직접 공격)
     io.to(roomCode).emit("hit", {
+      attackerId: attacker.id,
+      attackerOwner: playerId,
+      attackerType: attacker.cardType,
       targetOwner: opponentId,
       targetId: null,
       damage,
@@ -1383,6 +1437,12 @@ if (isValidObjectId) {
     const playerId = socket.id;
     const opponentId = room.players.find((id) => id !== playerId)!;
 
+    // 🔥 후공 첫 턴 이벤트 공격 금지
+    const hostId = room.players[0];
+    if (game.turnCount === 1 && playerId !== hostId) {
+      return socket.emit("error", "첫 턴에는 공격할 수 없습니다!");
+    }
+
     if (playerId !== game.currentTurn) {
       return socket.emit("error", "당신의 턴이 아닙니다.");
     }
@@ -1433,6 +1493,9 @@ if (isValidObjectId) {
 
     // 🔥 이벤트 피격 애니메이션 신호
     io.to(roomCode).emit("hit", {
+      attackerId: attacker.id, // ⭐ 추가
+      attackerOwner: playerId,
+      attackerType: attacker.cardType,
       targetOwner: "event",
       targetId: event.id,
       damage,
@@ -1542,6 +1605,13 @@ if (isValidObjectId) {
     if (socket.id !== room.gameState.currentTurn) {
       socket.emit("error", "당신의 턴이 아닙니다.");
       return;
+    }
+
+    const game = room.gameState;
+    const current = game.currentTurn;
+
+    if (!game.firstTurnDone[current]) {
+      game.firstTurnDone[current] = true;
     }
 
     switchTurnAndRestartTimer(io, roomCode, room);

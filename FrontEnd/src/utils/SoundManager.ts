@@ -1,5 +1,5 @@
 // FrontEnd/src/utils/SoundManager.ts
-type SoundName =
+export type SoundName =
   | "Attack_fire"
   | "Attack_forest"
   | "Attack_electric"
@@ -71,7 +71,7 @@ class SoundManager {
     register("Hit_Super_Damage", "Hit_Super_Damage.wav");
     register("Hit_Weak_Damage", "Hit_Weak_Damage.wav");
 
-    this.cutsceneGain.gain.value = 30.0; // 기본 증폭
+    this.cutsceneGain.gain.value = 20.0; // 기본 증폭
     this.cutsceneGain.connect(this.audioCtx.destination); // 🔥 이 줄 추가해야 완성!
   }
 
@@ -115,6 +115,30 @@ class SoundManager {
 
   static unmuteGlobalBGM() {
     if (this.globalBGM) this.globalBGM.muted = false;
+  }
+
+  private static bannerBGM: HTMLAudioElement | null = null;
+  static playBannerBGM(type: "victory" | "defeat") {
+    // 기존 배너 BGM이 있으면 먼저 종료
+    this.stopBannerBGM();
+
+    const file = type === "victory" ? "victory.mp3" : "defeat.mp3";
+    const bgmPath = `${window.location.origin}/assets/sounds/${file}`;
+
+    this.bannerBGM = new Audio(bgmPath);
+    this.bannerBGM.loop = false;
+    this.bannerBGM.volume = 0.8;
+
+    console.log(`[BANNER BGM Start] ${file}`);
+    this.bannerBGM.play().catch(() => {});
+  }
+  static stopBannerBGM() {
+    if (this.bannerBGM) {
+      console.log("[BANNER BGM Stop]");
+      this.bannerBGM.pause();
+      this.bannerBGM.currentTime = 0;
+      this.bannerBGM = null; // ★ 완전 초기화 중요!
+    }
   }
 
   // 💥 공통 재생 함수
@@ -232,12 +256,12 @@ class SoundManager {
   static playBGM() {
     const bgmPath = `${window.location.origin}/assets/sounds/bgm/battle_theme.mp3`;
 
-    // 이미 생성된 BGM이 없으면 생성
-    if (!this.bgm) {
-      this.bgm = new Audio(bgmPath);
-      this.bgm.loop = true;
-      this.bgm.volume = 0.3;
-    }
+    // 🎯 기존 BGM 무조건 종료
+    this.stopBGM();
+
+    this.bgm = new Audio(bgmPath);
+    this.bgm.loop = true;
+    this.bgm.volume = 0.3;
 
     console.log(`🎵 [BGM Start] ${bgmPath}`);
     this.bgm.play().catch(() => {});
@@ -245,10 +269,12 @@ class SoundManager {
 
   // 🔇 BGM 정지
   static stopBGM() {
-    if (!this.bgm) return;
-    console.log(`🛑 [BGM Stop]`);
-    this.bgm.pause();
-    this.bgm.currentTime = 0;
+    if (this.bgm) {
+      console.log("🛑 [BGM Stop]");
+      this.bgm.pause();
+      this.bgm.currentTime = 0;
+      this.bgm = null; // ★★★ 반드시 필요 ★★★
+    }
   }
 
   // 🔇 BGM 음소거 토글

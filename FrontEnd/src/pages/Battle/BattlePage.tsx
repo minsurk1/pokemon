@@ -17,6 +17,7 @@ import { Card } from "../../types/Card";
 import { CiFlag1 } from "react-icons/ci";
 
 import SoundManager from "../../utils/SoundManager";
+import type { SoundName } from "../../utils/SoundManager";
 
 // ===================== 🔥 이벤트 시스템 추가 =====================
 import EventItem from "../../components/battle/Eventitem";
@@ -259,6 +260,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   const [showGameOver, setShowGameOver] = useState(false);
   const [gameOverMessage, setGameOverMessage] = useState("");
+  const [isGameOverState, setIsGameOverState] = useState(false);
   const [isVictory, setIsVictory] = useState(false);
   const [lastPlayedCardId, setLastPlayedCardId] = useState<string | null>(null);
   const [lastEnemyCardId, setLastEnemyCardId] = useState<string | null>(null);
@@ -293,6 +295,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
   // 뒤로가기 방지
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+
+  const [firstTurnDone, setFirstTurnDone] = useState<Record<string, boolean>>({});
 
   // ======================================== 게임오버 상태 ========================================
   // ✅ VICTORY 애니메이션 컨트롤용
@@ -361,13 +365,22 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     // 🔇 전역 BGM 중지
     SoundManager.pauseGlobalBGM();
     // 🔥 배틀BGM 재생
-    SoundManager.playBGM();
+    if (!isGameOverState) {
+      SoundManager.playBGM();
+    }
 
     return () => {
       // 🛑 배틀BGM 정지
       SoundManager.stopBGM();
       // 🔊 전역 BGM 재개
       SoundManager.resumeGlobalBGM();
+    };
+  }, [isGameOverState]);
+
+  // 🔥 승리/패배 배너 BGM도 페이지 이동 시 반드시 정지
+  useEffect(() => {
+    return () => {
+      SoundManager.stopBannerBGM();
     };
   }, []);
 
@@ -512,6 +525,12 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       const mine = currentTurn === myId;
       setCurrentTurnId(currentTurn ?? null);
       setIsMyTurn(mine);
+      // 🔥 내가 한번이라도 턴을 받으면 첫턴 종료 처리
+      setFirstTurnDone((prev) => ({
+        ...prev,
+        [myId]: true,
+      }));
+
       setTurnTime(timeLeft ?? INITIAL_TIME);
 
       setSelectedAttacker(null);
@@ -780,8 +799,17 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const onDirectAttackEnhanced = (data: any) => {
       const { attackerId, attackerName, damage, newHP, multiplier, message } = data;
 
-      // 🔥 공격 애니메이션 실행
-      runAttackAnimation(attackerId, undefined, "player");
+      // 🚫 후공 첫턴 공격 사운드 차단
+      const me = socket.id;
+      if (!me) return;
+
+      // ⭐ 공격 사운드를 미리 재생
+      // 서버에서 받아온 공격자 타입 사용
+      const atkType = (data.attackerType as string | undefined)?.toLowerCase() ?? "normal";
+
+      if (!isMyTurnRef.current && firstTurnDone && firstTurnDone[me] === false) {
+        return;
+      }
 
       // 공격자가 나인가?
       const iAmAttacker = currentTurnIdRef.current === socket.id;
@@ -813,6 +841,18 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const onAttackAnimation = (data: any) => {
       const { attackerOwner, attackerId, targetType, targetOwner, targetId, eventId } = data;
 
+      // 🚫 후공 첫턴 애니메이션도 차단
+      const me = socket.id;
+      if (!me) return;
+
+      // ⭐ 공격 사운드는 여기에서 먼저 실행해야 함
+      // 서버에서 받아온 공격자 타입 사용
+      const atkType = (data.attackerType as string | undefined)?.toLowerCase() ?? "normal";
+
+      if (!isMyTurnRef.current && firstTurnDone && firstTurnDone[me] === false) {
+        return;
+      }
+
       const isAttackerMe = attackerOwner === socket.id;
       const isTargetMe = targetOwner === socket.id;
 
@@ -841,79 +881,88 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
 
     // 🔥 서버 hit 신호 → 피격 애니메이션 실행
-    const onHit = ({ targetOwner, targetId, damage }: { targetOwner: string | null; targetId: string | number | null; damage?: number }) => {
+    const onHit = ({
+      attackerId,
+      attackerOwner,
+      attackerType,
+      targetOwner,
+      targetId,
+      damage,
+    }: {
+      attackerId: string;
+      attackerOwner: string; // ⭐ 추가
+      attackerType?: string;
+      targetOwner: string | null;
+      targetId: string | number | null;
+      damage?: number;
+    }) => {
       const me = socket.id;
       const enemy = enemyIdRef.current;
 
-      // ===============================
-      // 🔥 피격 사운드 판단
-      // ===============================
-      let hitType: "normal" | "super" | "weak" = "normal";
+      if (!me) return;
 
-      if (typeof damage === "number") {
-        hitType = getDamageType(damage);
+      const iAmAttacker = me === attackerOwner;
+      const iAmTarget = me === targetOwner;
+
+      // ================================
+      // 🔥 공격 사운드 (공격자만 들음)
+      // ================================
+      if (iAmAttacker && attackerType) {
+        SoundManager.playAttackByType(attackerType.toLowerCase());
       }
 
-      // 🔥 추가될 디버그 로그
-      console.log({
-        category: "Hit Logic",
-        damageReceived: damage,
-        resolvedHitType: hitType,
-      });
+      // ================================
+      // 🔥 피격 사운드 (맞는 사람만 들음)
+      // ================================
+      if (iAmTarget && typeof damage === "number") {
+        const hitType = damage >= 150 ? "super" : damage <= 40 ? "weak" : "normal";
 
-      SoundManager.playHit(hitType);
+        SoundManager.playHit(hitType);
+      }
 
-      // ===============================
-      // 1) 이벤트 몬스터 피격 (🔥 가장 먼저 처리)
-      // ===============================
-      if (targetOwner === "event" && targetId !== null && targetId !== undefined) {
+      // ================================
+      // 🔥 이벤트 몬스터 피격
+      // ================================
+      if (targetOwner === "event" && targetId !== null) {
         const idStr = String(targetId);
-
-        // 흔들림
         setHitCardId(idStr);
         setTimeout(() => setHitCardId(null), 350);
 
-        // 데미지 팝업
         if (damage !== undefined) {
           showDamagePopup("event", idStr, damage);
         }
-
         return;
       }
 
-      // ===============================
-      // 2) 카드 피격
-      // ===============================
+      // ================================
+      // 🔥 카드 피격
+      // ================================
       if (targetId !== null && targetId !== undefined) {
         const idStr = String(targetId);
 
-        // 흔들림
         setHitCardId(idStr);
         setTimeout(() => setHitCardId(null), 350);
 
-        // 데미지 팝업
         if (damage !== undefined) {
-          if (targetOwner === me) {
+          if (iAmTarget) {
             showDamagePopup("myCard", idStr, damage);
           } else {
             showDamagePopup("enemyCard", idStr, damage);
           }
         }
-
         return;
       }
 
-      // ===============================
-      // 3) 플레이어 피격 (직접 공격)
-      // ===============================
-      if (targetOwner === me) {
+      // ================================
+      // 🔥 플레이어 직접 공격
+      // ================================
+      if (iAmTarget) {
         setPlayerHit("me");
         setTimeout(() => setPlayerHit(null), 350);
 
         if (damage !== undefined) {
           showDamagePopup("player", "player-hp", damage);
         }
-
         return;
       }
 
@@ -924,7 +973,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         if (damage !== undefined) {
           showDamagePopup("enemyPlayer", "enemy-hp", damage);
         }
-
         return;
       }
     };
@@ -975,8 +1023,11 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
     };
     const onUpdateGameState = (data: any) => {
-      const { hp, cost, decks, hands, graveyards, cardsInZone, turnCount, timeLeft, currentTurn } = data;
+      const { hp, cost, decks, hands, graveyards, cardsInZone, turnCount, timeLeft, currentTurn, firstTurnDone: ftd } = data;
       const myId = socket?.id;
+      if (ftd) {
+        setFirstTurnDone(ftd);
+      }
       // 🔥 상대 묘지 카운트도 동기화
       const enemyId = Object.keys(graveyards || {}).find((id) => id !== myId);
       if (enemyId && graveyards[enemyId]) {
@@ -1205,11 +1256,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       // 🔥 Damage Popup
       if (damage > 0) {
         showDamagePopup("event", String(eventId), damage);
-      }
-
-      // 🔥 이벤트몬스터 공격 애니메이션
-      if (selectedAttacker) {
-        runAttackAnimation(selectedAttacker, undefined, "event");
       }
 
       // HP 업데이트
@@ -1666,13 +1712,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     if (!targetId && enemyCardsInZone.length === 0) {
       addMessageToLog(`💥 ${attacker.name}이(가) 상대 플레이어를 직접 공격합니다!`);
 
-      // 🔥 공격 사운드
-      const attackerType = attacker.cardType ?? "normal";
-      SoundManager.playAttackByType(attackerType);
-
-      // ✅ 직접 공격 애니메이션
-      runAttackAnimation(attacker.id, undefined, "player");
-
       // ✅ 서버에 직접 공격 알림
       socket.emit("directAttack", { roomCode, attackerId });
 
@@ -1686,13 +1725,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     /* ✅ 2) 카드 공격 */
     if (targetId) {
       addMessageToLog(`🔥 ${attacker.name} ➤ 공격!`);
-
-      // 🔥 공격 사운드
-      const attackerType = attacker.cardType ?? "normal";
-      SoundManager.playAttackByType(attackerType);
-
-      // ✅ 공격 애니메이션
-      runAttackAnimation(attacker.id, targetId);
 
       // ✅ (추가) 서버가 updateGameState를 늦게 보낼 때 옛 HP로 덮이지 않도록 잠시 억제
       suppressSyncUntilRef.current = Date.now() + 700;
@@ -1752,8 +1784,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     }
 
     addMessageToLog(`⚔️ ${attacker.name}이(가) 이벤트를 공격합니다!`);
-    // 애니메이션
-    runAttackAnimation(attacker.id, String(eventId), "event");
 
     // 서버로 공격 전송
     socket.emit("attackEvent", { roomCode, attackerId: attacker.id, eventId });
@@ -1929,6 +1959,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   }, [enemyHP]);
 
   const handleGameOver = ({ winnerId, loserId, reason }: { winnerId: string; loserId: string; reason?: string }) => {
+    setIsGameOverState(true);
+    SoundManager.stopBGM();
+
     const me = socket.id;
     const iWon = me === winnerId;
     const iLost = me === loserId;

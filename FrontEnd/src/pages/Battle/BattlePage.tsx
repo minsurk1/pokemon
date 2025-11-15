@@ -371,6 +371,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     };
   }, []);
 
+  // 🔥 승리/패배 배너 BGM도 페이지 이동 시 반드시 정지
+  useEffect(() => {
+    return () => {
+      SoundManager.stopBannerBGM();
+    };
+  }, []);
+
   const toggleMute = () => {
     const m = SoundManager.toggleMuteBGM();
     setMuted(m);

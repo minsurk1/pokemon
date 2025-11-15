@@ -253,6 +253,17 @@ export default function roomHandler(io: Server, socket: Socket) {
 
     // gameState가 없으면 초기 골격 생성
     if (!room.gameState) {
+      // 🎯 플레이어 두 명을 추출 (항상 1번 = host, 2번 = participant)
+      const [player1, player2] = room.players;
+
+      const firstTurnDone: Record<string, boolean> = {
+        [player1]: false,
+      };
+
+      // 🔥 player2가 실제로 존재할 때만 추가
+      if (player2) {
+        firstTurnDone[player2] = false;
+      }
       room.gameState = {
         currentTurn: room.players[0],
         hp: {},
@@ -265,6 +276,7 @@ export default function roomHandler(io: Server, socket: Socket) {
         // ✅ 추가
         activeEvent: null,
         over: false,
+        firstTurnDone,
       };
     }
 

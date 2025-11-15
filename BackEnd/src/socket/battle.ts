@@ -731,9 +731,9 @@ if (isValidObjectId) {
     io.to(roomCode).emit("timeUpdate", room.timeLeft);
 
     console.log(
-      `🃏 ${playerId} → ${roomCode}에 ${
-        summonedCard.name || summonedCard.cardName || "Unknown"
-      } 소환 (코스트 ${costValue}), 남은 코스트: ${game.cost[playerId]}`
+      `🃏 ${playerId} → ${roomCode}에 ${summonedCard.name || summonedCard.cardName || "Unknown"} 소환 (코스트 ${costValue}), 남은 코스트: ${
+        game.cost[playerId]
+      }`
     );
   });
 
@@ -853,6 +853,7 @@ if (isValidObjectId) {
     // ✅ 결과 전송
     io.to(roomCode).emit("attackResult", {
       attacker: attacker.name,
+      attackerType: attacker.cardType, // ⭐ 추가
       defender: target.name,
       multiplier,
       damage,
@@ -986,9 +987,7 @@ if (isValidObjectId) {
     const newHP = Math.max(0, prevHP - damage);
     game.hp[opponentId] = newHP;
 
-    console.log(
-      `⚡ [Direct Attack] ${attacker.name} → ${opponentId} | 피해 ${damage} | 배율 x${multiplier} | HP ${prevHP} → ${newHP}`
-    );
+    console.log(`⚡ [Direct Attack] ${attacker.name} → ${opponentId} | 피해 ${damage} | 배율 x${multiplier} | HP ${prevHP} → ${newHP}`);
 
     io.to(roomCode).emit("attackAnimation", {
       attackerOwner: playerId,
@@ -1003,6 +1002,7 @@ if (isValidObjectId) {
     io.to(roomCode).emit("directAttack", {
       attackerName: attacker.name,
       attackerId: playerId,
+      attackerType: attacker.cardType, // ⭐ 추가
       defenderId: opponentId,
       damage,
       newHP,
@@ -1183,9 +1183,7 @@ if (isValidObjectId) {
     // COST 감소 (음수 방지)
     game.cost[playerId] = Math.max(0, (game.cost[playerId] ?? 0) - costPenalty);
 
-    console.log(
-      `🛑 패널티 적용: HP -${totalHpPenalty} (코스트=${costValue}, 티어=${tier}), ` + `COST -${costPenalty}, 카드=${card.name}`
-    );
+    console.log(`🛑 패널티 적용: HP -${totalHpPenalty} (코스트=${costValue}, 티어=${tier}), ` + `COST -${costPenalty}, 카드=${card.name}`);
 
     // 5️⃣ 카드 총합 검증
     try {
@@ -1361,9 +1359,7 @@ if (isValidObjectId) {
       });
     }, 50); // 30~50ms 사이면 충분
 
-    console.log(
-      `♻️ ${playerId} 묘지 셔플: ${returnedCards.length}/${grave.length} 성공 / ${failedCards.length}장 실패 / (HP -${penaltyHP})`
-    );
+    console.log(`♻️ ${playerId} 묘지 셔플: ${returnedCards.length}/${grave.length} 성공 / ${failedCards.length}장 실패 / (HP -${penaltyHP})`);
     const opponentId = room.players.find((id) => id !== playerId);
     if (game.hp[playerId] <= 0) {
       if (game.over) return;

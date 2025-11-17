@@ -35,7 +35,7 @@ export default function ElectricImpact({ onFinish }: ElectricImpactProps) {
 
     // ===== 중앙 번개 플래시 =====
     if (coreFlash.current) {
-      const s = 1 + t * 6;
+      const s = 1 + t * 4.0;
       coreFlash.current.scale.set(s, s, s);
 
       const flashOpacity = Math.max(0, 1 - t * 2.0);
@@ -47,38 +47,31 @@ export default function ElectricImpact({ onFinish }: ElectricImpactProps) {
       if (!mesh) return;
 
       const angle = (i / sparkCount) * Math.PI * 2;
-      const speed = 3.5; // 더 빠르게 확산
+      const speed = 3.2;
 
       mesh.position.x = Math.cos(angle) * speed * t;
       mesh.position.y = Math.sin(angle) * speed * t;
-      mesh.position.z = 0.55;
+      mesh.position.z = 0.01; // ✔ Shockwave 기준 높이 맞춤
 
-      // 가늘고 긴 번개 모양
-      const scale = Math.max(0, 1.0 - t * 1.5);
+      const scale = Math.max(0, 0.7 - t * 1.5);
       mesh.scale.set(scale, scale * 0.25, 1);
 
-      // 깜박임
       const opacity = Math.max(0, 1 - t * 2.0);
       setOpacitySafe(mesh.material, opacity);
 
-      // jitter (진동)
-      mesh.rotation.z = Math.sin(t * 70 + i) * 0.5;
+      mesh.rotation.z = Math.sin(t * 70 + i) * 0.4;
     });
 
-    // ===== 끝 =====
-    if (t > 0.55) onFinish?.();
+    // ===== 종료 =====
+    if (t > 0.45) onFinish?.();
   });
 
   return (
     <>
       {/* 중앙 플래시 */}
-      <mesh
-        ref={coreFlash}
-        position={[0, 0, 0.55]}
-        rotation-x={-Math.PI / 2} // 바닥면 보이도록
-      >
-        <circleGeometry args={[0.35, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent blending={THREE.AdditiveBlending} opacity={1} />
+      <mesh ref={coreFlash} position={[0, 0, 0.01]}>
+        <circleGeometry args={[0.4, 32]} />
+        <meshBasicMaterial color="#fff9a8" transparent blending={THREE.AdditiveBlending} opacity={1} />
       </mesh>
 
       {/* 전기 스파크 */}
@@ -86,11 +79,10 @@ export default function ElectricImpact({ onFinish }: ElectricImpactProps) {
         <mesh
           key={i}
           ref={(el) => (sparksRef.current[i] = el!)}
-          position={[0, 0, 0.55]}
-          rotation-x={-Math.PI / 2} // 바닥에서 튀는 느낌
+          position={[0, 0, 0.01]} // ✔ Shockwave와 동일 높이
         >
-          <planeGeometry args={[1.2, 0.25]} /> {/* 더 크고 잘 보이게 */}
-          <meshBasicMaterial color="#88ccff" transparent blending={THREE.AdditiveBlending} opacity={1} />
+          <planeGeometry args={[1.0, 0.22]} />
+          <meshBasicMaterial color="#fff200" transparent blending={THREE.AdditiveBlending} opacity={1} />
         </mesh>
       ))}
     </>

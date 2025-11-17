@@ -32,15 +32,12 @@ interface SummonedCard3DProps {
 const normalizeType = (t: string) => {
   if (!t) return "normal";
 
-  t = t.toLowerCase();
+  t = t.toLowerCase().trim(); // 🔥 trim 추가 — 매우 중요!
 
   if (t.includes("legend")) return "legend";
-
   if (t.includes("fire") || t.includes("불")) return "fire";
   if (t.includes("water") || t.includes("물")) return "water";
-
   if (t.includes("electric") || t.includes("전기")) return "electric";
-
   if (t.includes("ice") || t.includes("얼음")) return "ice";
   if (t.includes("poison") || t.includes("독")) return "poison";
 
@@ -86,6 +83,11 @@ const ImpactByType = (type: string, onFinish: () => void) => {
 
 export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroyed }: SummonedCard3DProps) {
   const groupRef = useRef<THREE.Group>(null!);
+
+  const loggedImpactRef = useRef(false);
+
+  const impactElementRef = useRef<JSX.Element | null>(null);
+
   useEffect(() => {
     console.log("🔥 cardType:", card.cardType, "→ normalize:", rawType);
   }, [card.cardType]);
@@ -105,16 +107,33 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
   // card.cardType 안전 처리
   const rawType = normalizeType(card.cardType ?? "");
   const isLegend = rawType === "legend";
+  console.log("🟡 normalizeType 결과 =", rawType);
+
+  useEffect(() => {
+    console.log("💡 Impact Selection Check");
+    console.log("    - rawType:", `"${rawType}"`);
+    console.log("    - card.cardType:", `"${card.cardType}"`);
+    console.log("    - normalize(card.cardType):", `"${normalizeType(card.cardType || "")}"`);
+
+    const selected = ImpactByType(rawType, () => {});
+    console.log("    - Selected Component:", selected.type?.name || selected.type);
+  }, [rawType]);
 
   // 🔥 safeTier 계산
   let safeTier = isLegend
     ? legendTierMap[card.name] ?? 1 // 이름 기반 real tier 선택
     : card.tier;
 
+  // 🔥 여기 추가
+  console.log("🟡 tier =", safeTier, " typeof =", typeof safeTier);
+
   // 🔥 typeFolder 설정
   const typeFolder = isLegend ? "legend" : rawType;
   // 🔥 최종 glb 경로
   const glbPath = `/assets/models/${typeFolder}tier${safeTier}.glb`;
+  // 🔥 여기 추가
+  console.log("🟡 최종 GLB PATH =", glbPath);
+
   const { scene } = useGLTF(glbPath);
 
   // 🔥 파괴 후 파티클 띄우기 여부
@@ -207,6 +226,10 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
     console.log("카드 바닥 높이:", modelBottomRef.current);
   }, [scene]);
 
+  useEffect(() => {
+    loggedImpactRef.current = false;
+  }, [card.id]);
+
   // 애니메이션 상태 저장 (프레임마다 리셋되지 않도록)
   const hitPowerRef = useRef(0);
   const lastHitRef = useRef(false);
@@ -259,8 +282,16 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
         return;
       }
 
-      // 착지 순간 이펙트 실행
+      // 착지 순간
       if (p >= 1.0 && p < 1.02 && !showShockwave) {
+        if (!loggedImpactRef.current) {
+          console.log("🔥 Shockwave Triggered with type:", rawType);
+          loggedImpactRef.current = true;
+        }
+
+        // 🔥 타입별 이펙트를 안정적으로 ref에 저장
+        impactElementRef.current = <group key={rawType}>{ImpactByType(rawType, () => setShowShockwave(false))}</group>;
+
         setShowShockwave(true);
       }
 
@@ -335,7 +366,7 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
       {/* 🔥 착지 이펙트 (카드 위치 동기화됨) */}
       {showShockwave && (
         <group ref={effectGroupRef}>
-          <group position={[0, -0.25, -0.15]}>{ImpactByType(rawType, () => setShowShockwave(false))}</group>
+          <group position={[0, 0, 0]}>{impactElementRef.current}</group>
         </group>
       )}
 

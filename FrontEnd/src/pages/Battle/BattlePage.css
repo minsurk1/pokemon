@@ -1233,6 +1233,8 @@
   position: relative;
   overflow: hidden;
   margin-top: 5px;
+  border: solid rgb(255, 255, 255) 3.5px;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8); /* 내부 그림자 */
 }
 
 .card-hp-bar-inner {
@@ -1242,6 +1244,7 @@
   top: 0;
   left: 0;
   transition: width 0.5s linear;
+  box-shadow: 0 0 6px rgba(255, 0, 0, 0.5);
 }
 
 .card-hp-text {

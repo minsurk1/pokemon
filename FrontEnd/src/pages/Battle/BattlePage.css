@@ -2033,3 +2033,109 @@
 .hand-cards-wrapper.collapsed .card-slot:not(:first-child) {
   transform: translate(2px, 2px) !important;
 }
+
+.battle-3d-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 5; /* 카드 아래면 가려진다 → 위로 올리자 */
+}
+
+.card-3d-area {
+  position: absolute;
+  top: -10px; /* 카드 위로 많이 안 튀어나오게 */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px; /* 카드 폭 근처 */
+  height: 190px; /* 카드+HP바 영역 거의 전체 커버 */
+  pointer-events: none;
+  z-index: 9999; /* 항상 카드 위에 보이게 */
+}
+
+/* 기존 버튼 스타일 유지, absolute 삭제 */
+.bgm-mute-btn,
+.toggle-3d-btn {
+  position: static;
+  padding: 8px 14px; /* 버튼 크기 통일 */
+  border-radius: 6px;
+  border: 1px solid white;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+  cursor: pointer;
+  font-size: 0.95rem;
+  z-index: 99999;
+}
+
+/* 공통 기본 스타일 */
+.toggle-3d-btn {
+  min-width: 110px; /* 기존보다 넉넉하게 */
+  padding: 6px 12px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.25s ease;
+
+  border: 2px solid;
+  background: rgba(0, 0, 0, 0.6);
+
+  /* 약한 기본 글로우 */
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.1), inset 0 0 8px rgba(255, 255, 255, 0.1);
+}
+
+/* ========================= */
+/* 🔵 3D ON (네온 블루) */
+/* ========================= */
+.toggle-3d-btn.on {
+  color: #00eaff;
+  border-color: #00eaff;
+  box-shadow: 0 0 12px rgba(0, 234, 255, 0.6), inset 0 0 10px rgba(0, 234, 255, 0.3);
+}
+
+.toggle-3d-btn.on:hover {
+  background: rgba(0, 234, 255, 0.15);
+  box-shadow: 0 0 18px rgba(0, 234, 255, 0.9), inset 0 0 14px rgba(0, 234, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.toggle-3d-btn.on:active {
+  transform: scale(0.95);
+}
+
+/* ========================= */
+/* 🔴 3D OFF (네온 레드) */
+/* ========================= */
+.toggle-3d-btn.off {
+  color: #ff5757;
+  border-color: #ff5757;
+  box-shadow: 0 0 12px rgba(255, 80, 80, 0.6), inset 0 0 10px rgba(255, 80, 80, 0.3);
+}
+
+.toggle-3d-btn.off:hover {
+  background: rgba(255, 80, 80, 0.18);
+  box-shadow: 0 0 18px rgba(255, 80, 80, 0.9), inset 0 0 14px rgba(255, 80, 80, 0.4);
+  transform: translateY(-2px);
+}
+
+.toggle-3d-btn.off:active {
+  transform: scale(0.95);
+}
+
+.action-buttons {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  z-index: 99999;
+
+  display: flex;
+  flex-direction: row;
+  gap: 12px; /* 버튼 간 간격 넓힘 */
+  align-items: center; /* 수직 가운데 정렬 */
+  justify-content: center; /* 오른쪽 정렬 */
+}

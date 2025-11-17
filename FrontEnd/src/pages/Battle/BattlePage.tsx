@@ -477,9 +477,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
 
       if (targetType === "enemyCard") {
-        setEnemyCardsInZone((prev) =>
-          prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card))
-        );
+        setEnemyCardsInZone((prev) => prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card)));
       }
 
       if (targetType === "event") {
@@ -852,9 +850,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         if (iAmAttacker) setEnemyHP(newHP);
         else setPlayerHP(newHP);
 
-        addMessageToLog(
-          message ? `💥 ${attackerName}의 공격! ${message} (x${multiplier ?? 1})` : `💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`
-        );
+        addMessageToLog(message ? `💥 ${attackerName}의 공격! ${message} (x${multiplier ?? 1})` : `💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`);
       }
     };
 
@@ -1002,6 +998,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const onBattleLog = (log: any) => {
       // log = { type, attackerName, defenderName, damage, multiplier, effectMsg, prevHP, newHP }
       addMessageToLog(`🗡️ ${log.attackerName} → ${log.defenderName} | ${log.damage} 피해! (x${log.multiplier}) ${log.effectMsg}`);
+    };
+
+    const onTurnStartSound = () => {
+      // 상대 턴 시작일 때만 들리게 하기 위함은 아님.
+      // 서버가 nextTurn 에게만 보내니까 자연스럽게 "턴 받은 사람"만 들음.
+      SoundManager.play("Turn_change");
+      addMessageToLog("🔔 당신의 턴입니다!");
     };
 
     const onCardPlayedEnhanced = (data: any) => {
@@ -1413,6 +1416,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.on("attackResult", onAttackResult);
     socket.on("directAttack", onDirectAttackEnhanced);
     socket.on("hit", onHit);
+    socket.on("turnStart", onTurnStartSound);
     socket.on("attackAnimation", onAttackAnimation);
     socket.on("cardPlayed", onCardPlayedEnhanced);
     socket.on("cardSummoned", onCardSummoned);
@@ -1437,6 +1441,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("attackResult", onAttackResult);
       socket.off("directAttack", onDirectAttackEnhanced);
       socket.off("hit", onHit);
+      socket.off("turnStart", onTurnStartSound);
       socket.off("attackAnimation", onAttackAnimation);
       socket.off("cardPlayed", onCardPlayedEnhanced);
       socket.off("cardSummoned", onCardSummoned);

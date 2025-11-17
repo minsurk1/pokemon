@@ -147,6 +147,9 @@ function switchTurnAndRestartTimer(io: Server, roomCode: string, room: RoomInfo)
 
   game.currentTurn = nextTurn;
 
+  // 🔊 추가: 턴 시작 사운드 이벤트 보내기
+  io.to(nextTurn).emit("turnStart");
+
   // ✅ 선공 기준으로만 turnCount 증가
   const hostId = room.players[0];
   if (nextTurn === hostId) {

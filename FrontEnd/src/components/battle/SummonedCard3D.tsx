@@ -35,16 +35,20 @@ const normalizeType = (t: string) => {
   t = t.toLowerCase();
 
   if (t.includes("legend")) return "legend";
-  if (t.includes("fire")) return "fire";
-  if (t.includes("water")) return "water";
-  if (t.includes("electric")) return "electric";
-  if (t.includes("ice")) return "ice";
-  if (t.includes("poison")) return "poison";
-  if (t.includes("land")) return "land";
-  if (t.includes("fly")) return "fly";
-  if (t.includes("forest")) return "forest";
-  if (t.includes("worm")) return "worm";
-  if (t.includes("esper")) return "esper";
+
+  if (t.includes("fire") || t.includes("불")) return "fire";
+  if (t.includes("water") || t.includes("물")) return "water";
+
+  if (t.includes("electric") || t.includes("전기")) return "electric";
+
+  if (t.includes("ice") || t.includes("얼음")) return "ice";
+  if (t.includes("poison") || t.includes("독")) return "poison";
+
+  if (t.includes("land") || t.includes("땅")) return "land";
+  if (t.includes("fly") || t.includes("비행")) return "fly";
+  if (t.includes("forest") || t.includes("풀")) return "forest";
+  if (t.includes("worm") || t.includes("벌레")) return "worm";
+  if (t.includes("esper") || t.includes("에스퍼")) return "esper";
 
   return "normal";
 };
@@ -82,6 +86,9 @@ const ImpactByType = (type: string, onFinish: () => void) => {
 
 export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroyed }: SummonedCard3DProps) {
   const groupRef = useRef<THREE.Group>(null!);
+  useEffect(() => {
+    console.log("🔥 cardType:", card.cardType, "→ normalize:", rawType);
+  }, [card.cardType]);
 
   // ⚡ legend 타입 전용 tier 매핑
   const legendTierMap: Record<string, number> = {

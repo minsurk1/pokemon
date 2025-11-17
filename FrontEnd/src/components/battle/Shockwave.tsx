@@ -28,7 +28,7 @@ export default function Shockwave({ onFinish }: { onFinish: () => void }) {
 
   return (
     <mesh ref={meshRef} rotation-x={-Math.PI / 2} position={[0, 0, 0.01]}>
-      <circleGeometry args={[3.0, 40]} />
+      <circleGeometry args={[9.0, 40]} />
       <meshBasicMaterial color="white" transparent opacity={0.8} />
     </mesh>
   );

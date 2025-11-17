@@ -35,6 +35,39 @@ function verifyCardTotal(game: GameState, playerId: string) {
   console.log(`🧮 ${playerId} 총 카드 수 = ${total}`);
 }
 
+function fisherYatesShuffle<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function createStartingHand(fullDeck: any[]) {
+  const shuffled = fisherYatesShuffle(fullDeck);
+
+  const costOne = shuffled.filter((c) => Number(c.cost) === 1);
+
+  if (costOne.length > 0) {
+    const guaranteed = costOne[Math.floor(Math.random() * costOne.length)];
+    const remaining = shuffled.filter((c) => c.id !== guaranteed.id);
+
+    const hand = [guaranteed, ...remaining.slice(0, 2)];
+    const handIds = new Set(hand.map((c) => c.id));
+
+    const newDeck = shuffled.filter((c) => !handIds.has(c.id));
+
+    return { hand, deck: newDeck };
+  }
+
+  // 1코 없으면 일반 셔플 기반 상위 3장
+  return {
+    hand: shuffled.slice(0, 3),
+    deck: shuffled.slice(3),
+  };
+}
+
 /** 성장 단계 방식: 턴 구간별 코스트 증가 계산 */
 function getCostIncrease(turn: number): number {
   if (turn <= 3) return 1; // 1~3턴
@@ -274,21 +307,9 @@ export function initializeBattle(io: Server, roomCode: string, room: RoomInfo) {
     }
 
     if (!game.hands[pid] || game.hands[pid].length === 0) {
-      // 1코스트 카드 필터링
-      const lowCostCards = fullDeck.filter((c: any) => Number(c.cost) === 1);
-      const guaranteedLowCost = lowCostCards.length > 0 ? [lowCostCards[Math.floor(Math.random() * lowCostCards.length)]] : [];
-
-      const remainingCards = fullDeck.filter((c) => !guaranteedLowCost.includes(c));
-      const otherDraws = remainingCards.sort(() => Math.random() - 0.5).slice(0, 2);
-      const drawnCards = [...guaranteedLowCost, ...otherDraws];
-
-      game.hands[pid] = drawnCards;
-      game.decks[pid] = fullDeck.filter((c) => !drawnCards.some((h) => h.id === c.id));
-
-      console.log(
-        `🎴 초기 손패 (${pid}):`,
-        drawnCards.map((c) => c.name)
-      );
+      const { hand, deck } = createStartingHand(fullDeck);
+      game.hands[pid] = hand;
+      game.decks[pid] = deck;
     } else {
       console.log(`🟢 ${pid}는 이미 손패가 존재함 (패스)`);
     }
@@ -395,16 +416,10 @@ export default function battleHandler(io: Server, socket: Socket) {
               // 나머지 덱에서 해당 카드 제외
               const pool = shuffled.filter((c) => c.id !== guaranteed.id);
 
-              startingHand = [guaranteed, ...pool.slice(0, 2)];
-              room.gameState.hands[socket.id] = startingHand;
-              room.gameState.decks[socket.id] = pool.slice(2);
-            } else {
-              // 1코스트 없을 경우 일반 셔플
-              startingHand = shuffled.slice(0, 3);
-              room.gameState.hands[socket.id] = startingHand;
-              room.gameState.decks[socket.id] = shuffled.slice(3);
+              const { hand, deck } = createStartingHand(shuffled);
+              room.gameState.hands[socket.id] = hand;
+              room.gameState.decks[socket.id] = deck;
             }
-
             console.log(`✅ ${socket.id} 덱 자동 로딩 완료: ${deckCards.length}장`);
             console.log(
               "🎴 서버 덱 이미지 체크:",
@@ -427,26 +442,11 @@ export default function battleHandler(io: Server, socket: Socket) {
       // 🔍 로그 확인용 (디버깅)
       console.log(`🔁 재입장 감지 → ${socket.id}, 덱 ${deck.length}장, 손패 없음. 자동 손패 생성`);
 
-      const oneCostPool = deck.filter((c: any) => Number(c.cost) === 1);
+      const fullDeck = [...deck];
+      const { hand, deck: newDeck } = createStartingHand(fullDeck);
 
-      let startingHand;
-      if (oneCostPool.length > 0) {
-        const guaranteed = oneCostPool[Math.floor(Math.random() * oneCostPool.length)];
-        const pool = deck.filter((c: any) => c.id !== guaranteed.id);
-
-        startingHand = [guaranteed, ...pool.slice(0, 2)];
-        room.gameState.hands[socket.id] = startingHand;
-        room.gameState.decks[socket.id] = pool.slice(2);
-      } else {
-        startingHand = deck.slice(0, 3);
-        room.gameState.hands[socket.id] = startingHand;
-        room.gameState.decks[socket.id] = deck.slice(3);
-      }
-
-      console.log(
-        `♻️ 손패 재생성 완료:`,
-        startingHand.map((c) => c.name)
-      );
+      room.gameState.hands[socket.id] = hand;
+      room.gameState.decks[socket.id] = newDeck;
     }
 
     // ✅ 게임 상태가 있으면 전체 상태 즉시 전달
@@ -507,48 +507,25 @@ export default function battleHandler(io: Server, socket: Socket) {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
-    // ✅ game을 최상단에서 선언 (이게 핵심!)
     const game = room.gameState!;
     const playerId = socket.id;
     const existingDeck = game.decks[playerId] || [];
 
-    // 이미 덱이 있는 경우
+    // ================================
+    // 1️⃣ 이미 덱이 존재하는 경우 (재접속)
+    // ================================
     if (existingDeck.length > 0) {
-      console.log(`⚠️ ${playerId}의 덱이 이미 존재함. 중복 전송 무시.`);
+      console.log(`⚠️ ${playerId}의 덱이 이미 존재함.`);
 
-      // ✅ 손패가 비어 있다면 여기서 바로 생성
+      // 손패가 비어 있을 때만 새로 생성
       if (!game.hands[playerId] || game.hands[playerId].length === 0) {
         const fullDeck = [...existingDeck];
-        const costOneCards = fullDeck.filter((c) => Number(c.cost) === 1);
-        const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
-
-        let hand: any[] = [];
-        if (costOneCards.length > 0) {
-          const guaranteed = shuffle(costOneCards)[0];
-          const remainingPool = fullDeck.filter((c) => c.id !== guaranteed.id);
-          const randomTwo = shuffle(remainingPool).slice(0, 2);
-          hand = [guaranteed, ...randomTwo];
-        } else {
-          hand = shuffle(fullDeck).slice(0, 3);
-        }
-
-        const handIds = new Set(hand.map((c) => c.id));
-        const remainingDeck = fullDeck.filter((c) => !handIds.has(c.id));
+        const { hand, deck: newDeck } = createStartingHand(fullDeck);
 
         game.hands[playerId] = hand;
-        game.decks[playerId] = remainingDeck;
+        game.decks[playerId] = newDeck;
 
-        // ✅ 내 화면 업데이트
         io.to(playerId).emit("updateGameState", {
-          decks: game.decks,
-          hands: game.hands,
-          graveyards: game.graveyards,
-          cost: game.cost,
-          hp: game.hp,
-        });
-
-        // ✅ 전체 싱크 (여기서 game 참조 오류 해결됨)
-        io.to(roomCode).emit("updateGameState", {
           hp: game.hp,
           decks: game.decks,
           hands: game.hands,
@@ -558,15 +535,15 @@ export default function battleHandler(io: Server, socket: Socket) {
           cardsInZone: game.cardsInZone,
           activeEvent: game.activeEvent,
           timeLeft: room.timeLeft,
-
-          serverTime: Date.now(),
         });
       }
 
       return;
     }
 
-    // ✅ 1️⃣ 덱 전체 저장
+    // ================================
+    // 2️⃣ 처음 덱이 보내진 경우 (정상 게임 시작)
+    // ================================
     game.decks[playerId] = deck.map((c: any) => ({
       id: String(c.id ?? c._id ?? c.cardId ?? "unknown"),
       name: String(c.name ?? c.cardName ?? "Unknown"),
@@ -582,37 +559,22 @@ export default function battleHandler(io: Server, socket: Socket) {
 
     const fullDeck = [...game.decks[playerId]];
 
-    // ✅ 2️⃣ 덱 유효성 검사
+    // 덱 검증
     if (fullDeck.length < 3) {
       io.to(playerId).emit("message", "덱에 카드가 3장 이상 있어야 게임을 시작할 수 있습니다!");
-      console.warn(`⚠️ ${playerId}의 덱이 너무 작음 (${fullDeck.length}장) → 게임 불가`);
       return;
     }
 
-    // ✅ 3️⃣ 손패 구성
-    const costOneCards = fullDeck.filter((c) => Number(c.cost) === 1);
-    const shuffle = <T>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
-
-    let hand: any[] = [];
-    if (costOneCards.length > 0) {
-      const guaranteed = shuffle(costOneCards)[0];
-      const remainingPool = fullDeck.filter((c) => c.id !== guaranteed.id);
-      const randomTwo = shuffle(remainingPool).slice(0, 2);
-      hand = [guaranteed, ...randomTwo];
-    } else {
-      hand = shuffle(fullDeck).slice(0, 3);
-    }
-
-    const handIds = new Set(hand.map((c) => c.id));
-    const remainingDeck = fullDeck.filter((c) => !handIds.has(c.id));
+    // ⭐ createStartingHand 단 1회 적용
+    const { hand, deck: newDeck } = createStartingHand(fullDeck);
 
     game.hands[playerId] = hand;
-    game.decks[playerId] = remainingDeck;
+    game.decks[playerId] = newDeck;
 
-    console.log(`📥 ${playerId}의 덱 저장 완료 (${deck.length}장)`);
-    console.log(`🎴 시작 손패: ${hand.map((c) => c.name).join(", ")} / 남은 덱: ${remainingDeck.length}장`);
+    console.log(`📥 ${playerId} 덱 저장 완료 (${deck.length}장)`);
+    console.log(`🎴 시작 손패: ${hand.map((c) => c.name).join(", ")} / 남은덱: ${newDeck.length}`);
 
-    // ✅ 4️⃣ 클라이언트에 즉시 반영
+    // 내 화면 업데이트
     io.to(playerId).emit("updateGameState", {
       hp: game.hp,
       decks: game.decks,
@@ -625,7 +587,7 @@ export default function battleHandler(io: Server, socket: Socket) {
       timeLeft: room.timeLeft,
     });
 
-    // ✅ 5️⃣ 전체 싱크
+    // 전체 동기화
     io.to(roomCode).emit("updateGameState", {
       hp: game.hp,
       decks: game.decks,
@@ -636,7 +598,6 @@ export default function battleHandler(io: Server, socket: Socket) {
       cardsInZone: game.cardsInZone,
       activeEvent: game.activeEvent,
       timeLeft: room.timeLeft,
-
       serverTime: Date.now(),
     });
   });
@@ -1109,12 +1070,16 @@ if (isValidObjectId) {
       return;
     }
 
-    const drawnCard = deck.shift(); // 맨 위 카드 한 장
+    // 🎯 매턴 랜덤 드로우
+    const randomIndex = Math.floor(Math.random() * deck.length);
+    const drawnCard = deck.splice(randomIndex, 1)[0];
+
     if (!drawnCard) return;
 
     hand.push(drawnCard);
 
-    console.log(`🃏 ${playerId} 드로우: ${drawnCard.name} / 남은덱 ${deck.length}`);
+    console.log(`🃏 ${playerId} 랜덤 드로우: ${drawnCard.name} / 남은덱 ${deck.length}`);
+
     io.to(playerId).emit("cardDrawn", {
       card: drawnCard, // ✅ 항상 { card: {...} } 구조
       decks: game.decks,

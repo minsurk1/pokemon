@@ -316,3 +316,39 @@
   color: #ff5252;
   font-weight: bold;
 }
+
+/* ======================
+   덱 슬롯 번호 오버레이
+====================== */
+.selected-card {
+  position: relative; /* 오버레이 배치를 위해 필요 */
+}
+
+.card-index-label {
+  position: absolute;
+  top: 7px;
+  right: 7px; /* 오른쪽 위 */
+
+  width: 32px;
+  height: 32px;
+  border-radius: 50%; /* 원형 */
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background: radial-gradient(circle, #ffe066, #ffca28, #f4a300);
+  /* 포켓몬 느낌 노란-금빛 */
+
+  color: #000;
+  font-weight: 900;
+  font-size: 1rem;
+  font-family: "Do Hyeon", sans-serif;
+
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.4), inset 0 0 4px rgba(255, 255, 255, 0.8);
+
+  pointer-events: none;
+  z-index: 10;
+
+  border: 2px solid #fff79b; /* 금빛 강조 */
+}

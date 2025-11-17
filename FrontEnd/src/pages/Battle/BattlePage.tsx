@@ -19,6 +19,10 @@ import { CiFlag1 } from "react-icons/ci";
 import SoundManager from "../../utils/SoundManager";
 import type { SoundName } from "../../utils/SoundManager";
 
+import { Canvas } from "@react-three/fiber";
+import { Suspense } from "react";
+import SummonedCard3D from "../../components/battle/SummonedCard3D";
+
 // ===================== 🔥 이벤트 시스템 추가 =====================
 import EventItem from "../../components/battle/Eventitem";
 import { detectTypeByName } from "../../utils/detectTypeByName";
@@ -297,6 +301,8 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const [firstTurnDone, setFirstTurnDone] = useState<Record<string, boolean>>({});
+
+  const [show3D, setShow3D] = useState(true);
 
   // ======================================== 게임오버 상태 ========================================
   // ✅ VICTORY 애니메이션 컨트롤용
@@ -701,6 +707,17 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   }, [drawCard]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "v") {
+        setShow3D((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key.toLowerCase() === "m") {
         const newState = SoundManager.toggleMuteBGM();
@@ -981,6 +998,13 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     const onBattleLog = (log: any) => {
       // log = { type, attackerName, defenderName, damage, multiplier, effectMsg, prevHP, newHP }
       addMessageToLog(`🗡️ ${log.attackerName} → ${log.defenderName} | ${log.damage} 피해! (x${log.multiplier}) ${log.effectMsg}`);
+    };
+
+    const onTurnStartSound = () => {
+      // 상대 턴 시작일 때만 들리게 하기 위함은 아님.
+      // 서버가 nextTurn 에게만 보내니까 자연스럽게 "턴 받은 사람"만 들음.
+      SoundManager.play("Turn_change");
+      addMessageToLog("🔔 당신의 턴입니다!");
     };
 
     const onCardPlayedEnhanced = (data: any) => {
@@ -1392,6 +1416,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     socket.on("attackResult", onAttackResult);
     socket.on("directAttack", onDirectAttackEnhanced);
     socket.on("hit", onHit);
+    socket.on("turnStart", onTurnStartSound);
     socket.on("attackAnimation", onAttackAnimation);
     socket.on("cardPlayed", onCardPlayedEnhanced);
     socket.on("cardSummoned", onCardSummoned);
@@ -1416,6 +1441,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       socket.off("attackResult", onAttackResult);
       socket.off("directAttack", onDirectAttackEnhanced);
       socket.off("hit", onHit);
+      socket.off("turnStart", onTurnStartSound);
       socket.off("attackAnimation", onAttackAnimation);
       socket.off("cardPlayed", onCardPlayedEnhanced);
       socket.off("cardSummoned", onCardSummoned);
@@ -1800,7 +1826,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     if (!isMyTurn) return;
     setSelectedAttacker(null);
     setHighlightCardId(null);
-    SoundManager.playTurnChange(); // 🔊 여기서 재생
     socket.emit("endTurn", { roomCode });
     addMessageToLog("🔚 턴을 종료했습니다!");
   }, [isMyTurn, roomCode, socket, addMessageToLog]);
@@ -2161,6 +2186,26 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                     duration: hitCardId === card.id ? 0.35 : 0.3,
                   }}
                 >
+                  {/* 🔥 3D 모델이 올라오는 공간 */}
+                  {show3D && (
+                    <div className="card-3d-area">
+                      <Canvas>
+                        <ambientLight intensity={1} />
+                        <directionalLight position={[2, 5, 2]} />
+                        <Suspense fallback={null}>
+                          <SummonedCard3D
+                            card={card}
+                            owner="enemy"
+                            isMyTurn={isMyTurn}
+                            isHit={hitCardId === card.id}
+                            isDestroyed={!!card.isDestroyed}
+                            getCardRect={() => document.getElementById(`card-${card.id}`)?.getBoundingClientRect()}
+                          />
+                        </Suspense>
+                      </Canvas>
+                    </div>
+                  )}
+
                   <img src={getImageUrl(card.image)} alt={card.name} />
 
                   {/* 🔥 데미지 팝업 표시 */}
@@ -2223,9 +2268,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                   <motion.div
                     id={`card-${card.id}`}
                     className={`my-card in-zone 
-    ${card.discardFade ? "card-discard-fade" : ""} 
-    ${card.isDestroyed ? "card-destroyed" : ""} 
-    ${card.canAttack ? "can-attack" : "cannot-attack"}
+                    ${card.discardFade ? "card-discard-fade" : ""} 
+                    ${card.isDestroyed ? "card-destroyed" : ""} 
+                    ${card.canAttack ? "can-attack" : "cannot-attack"}
   `}
                     draggable={isMyTurn}
                     onMouseDown={(e) => card.canAttack && handleCardMouseDown(card, e)}
@@ -2264,6 +2309,26 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                       repeat: highlightCardId === card.id ? Infinity : 0,
                     }}
                   >
+                    {/* 🔥 3D 모델이 올라오는 공간 */}
+                    {show3D && (
+                      <div className="card-3d-area">
+                        <Canvas>
+                          <ambientLight intensity={1} />
+                          <directionalLight position={[2, 5, 2]} />
+                          <Suspense fallback={null}>
+                            <SummonedCard3D
+                              card={card}
+                              owner="me"
+                              isMyTurn={isMyTurn}
+                              isHit={hitCardId === card.id}
+                              isDestroyed={!!card.isDestroyed}
+                              getCardRect={() => document.getElementById(`card-${card.id}`)?.getBoundingClientRect()}
+                            />
+                          </Suspense>
+                        </Canvas>
+                      </div>
+                    )}
+
                     {/* 카드 이미지 */}
                     <img src={getImageUrl(card.image)} alt={card.name} className={`card-image ${!isMyTurn ? "gray-filter" : ""}`} />
 
@@ -2446,12 +2511,16 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
 
       {/* === 오른쪽 사이드 영역 === */}
       <div className="right-container">
-        {/* ================================
-    🔥 enemy-player-target (수정 완료)
-================================ */}
-        <button className="bgm-mute-btn" onClick={toggleMute}>
-          {muted ? "🔇" : "🔊"}
-        </button>
+        {/* 버튼 2개 가로 정렬하는 래퍼 */}
+        <div className="action-buttons">
+          <button className="bgm-mute-btn" onClick={toggleMute}>
+            {muted ? "🔇" : "🔊"}
+          </button>
+
+          <button className={`toggle-3d-btn ${show3D ? "on" : "off"}`} onClick={() => setShow3D((prev) => !prev)}>
+            {show3D ? "3D ON (V)" : "3D OFF (V)"}
+          </button>
+        </div>
 
         <div
           id="enemy-player-target"

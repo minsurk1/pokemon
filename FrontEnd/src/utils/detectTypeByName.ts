@@ -46,7 +46,7 @@ export function detectTypeByName(name: string, originalType?: string): string {
   const flyList = ["찌르꼬", "깨비참", "구구", "깨비드릴조", "무장조", "루기아", "비행"];
 
   // 벌레
-  const wormList = ["과사삭벌레", "두루지벌레", "캐터피", "실쿤", "파라섹트", "핫삼", "벌레"];
+  const wormList = ["과사삭벌레", "두루지벌레", "케터피", "실쿤", "파라섹트", "핫삼", "벌레"];
 
   // 전설
   const legendList = ["디아루가", "펄기아", "기라티나", "제크로무", "큐레무", "레쿠쟈", "아르세우스", "전설"];

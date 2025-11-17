@@ -10,6 +10,8 @@ import loginVideo from "../../assets/videos/loginvideo2.mp4";
 // ✅ 추가 import
 import axiosInstance from "../../utils/axiosInstance";
 import { useUser } from "../../context/UserContext";
+import MessageBox from "../common/MessageBox";
+
 
 interface LoginResponse {
   token: string;
@@ -34,6 +36,10 @@ function LoginPanel() {
   const togglePanel = () => setIsOpen(!isOpen);
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
+    const [message, setMessage] = useState("");
+    const [showMessage, setShowMessage] = useState(false);
+  
+
   const handleLogin = async () => {
     setIsLoading(true);
     try {
@@ -55,7 +61,8 @@ function LoginPanel() {
         navigate("/main");
       }
     } catch (error) {
-      alert("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.");
+      setMessage("로그인 실패! 아이디 또는 비밀번호를 확인해주세요.");
+      setShowMessage(true);
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +113,11 @@ function LoginPanel() {
           </button>
         </div>
       </div>
-
+ {showMessage && (
+        <MessageBox bgColor="#e3f2fd" borderColor="#2196f3" textColor="#0d47a1" onClose={() => setShowMessage(false)}>
+          {message}
+        </MessageBox>
+      )}
       {!isOpen && (
         <button
           ref={openButtonRef}

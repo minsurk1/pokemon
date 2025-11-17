@@ -77,6 +77,7 @@ router.get("/me", isAuthenticated, async (req: AuthenticatedRequest, res: Respon
     }));
 
     res.status(200).json({
+      id: foundUser._id.toString(),
       nickname: foundUser.nickname,
       money: foundUser.money,
       inventory: populatedInventory,

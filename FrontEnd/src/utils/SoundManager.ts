@@ -21,7 +21,8 @@ export type SoundName =
   | "Pack_opening"
   | "card_summon"
   | "victory"
-  | "defeat";
+  | "defeat"
+  | "landing";
 
 class SoundManager {
   private static sounds: Partial<Record<SoundName, HTMLAudioElement>> = {};
@@ -65,6 +66,7 @@ class SoundManager {
     register("card_summon", "card_summon.wav");
     register("victory", "victory.mp3");
     register("defeat", "defeat.mp3");
+    register("landing", "landing.wav");
 
     // 피격음
     register("Hit_Normal_Damage", "Hit_Normal_Damage.wav");
@@ -150,6 +152,11 @@ class SoundManager {
     }
 
     console.log(`🎧 [Sound Play] name=${name}, volume=${volume}, path=${sound.src}`);
+
+    // 🔥 착지 사운드만 기본볼륨 줄이기
+    if (name === "landing") {
+      volume = 0.4; // 원하는 볼륨(0.2~0.5 추천)
+    }
 
     sound.currentTime = 0;
     sound.volume = volume;

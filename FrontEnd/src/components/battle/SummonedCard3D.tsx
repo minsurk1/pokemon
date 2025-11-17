@@ -19,6 +19,9 @@ import ForestImpact from "./effects/ForestImpact";
 import WormImpact from "./effects/WormImpact";
 import EsperImpact from "./effects/EsperImpact";
 
+// ✅ 추가: 착지 사운드 재생용
+import SoundManager from "../../utils/SoundManager";
+
 interface SummonedCard3DProps {
   card: Card;
   getCardRect: () => DOMRect | undefined;
@@ -107,7 +110,6 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
   // card.cardType 안전 처리
   const rawType = normalizeType(card.cardType ?? "");
   const isLegend = rawType === "legend";
-  console.log("🟡 normalizeType 결과 =", rawType);
 
   useEffect(() => {
     console.log("💡 Impact Selection Check");
@@ -124,15 +126,10 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
     ? legendTierMap[card.name] ?? 1 // 이름 기반 real tier 선택
     : card.tier;
 
-  // 🔥 여기 추가
-  console.log("🟡 tier =", safeTier, " typeof =", typeof safeTier);
-
   // 🔥 typeFolder 설정
   const typeFolder = isLegend ? "legend" : rawType;
   // 🔥 최종 glb 경로
   const glbPath = `/assets/models/${typeFolder}tier${safeTier}.glb`;
-  // 🔥 여기 추가
-  console.log("🟡 최종 GLB PATH =", glbPath);
 
   const { scene } = useGLTF(glbPath);
 
@@ -143,6 +140,9 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
   const spawnProgressRef = useRef(0); // 0 → 1로 증가
   const baseScaleRef = useRef(1);
   const [showShockwave, setShowShockwave] = useState(false);
+
+  // ✅ 추가: 착지 사운드 한 번만 재생 여부
+  const landingSoundPlayedRef = useRef(false);
 
   // 🔥 NEW: 이펙트 위치 동기화용 ref
   const effectGroupRef = useRef<THREE.Group>(null!);
@@ -188,27 +188,27 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
 
   // 회색 필터 적용 (owner + isMyTurn 조건 기반)
   useEffect(() => {
-    const shouldGray = owner === "me" && !isMyTurn;
+    if (!scene) return;
+
+    const shouldGray = (owner === "me" && !isMyTurn) || (owner === "enemy" && isMyTurn);
 
     scene.traverse((child: any) => {
       if (!child.isMesh) return;
 
-      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
 
-      mats.forEach((mat: THREE.Material) => {
-        // 색상 처리
-        if ("color" in mat) {
-          (mat as any).color.setRGB(shouldGray ? 0.4 : 1, shouldGray ? 0.4 : 1, shouldGray ? 0.4 : 1);
+      materials.forEach((mat: any) => {
+        if (mat.color) {
+          mat.color.setRGB(shouldGray ? 0.4 : 1, shouldGray ? 0.4 : 1, shouldGray ? 0.4 : 1);
         }
 
-        // 투명도 처리
-        if ("opacity" in mat) {
-          (mat as any).transparent = true;
-          (mat as any).opacity = shouldGray ? 0.7 : 1;
+        if (mat.opacity !== undefined) {
+          mat.transparent = true;
+          mat.opacity = shouldGray ? 0.7 : 1;
         }
       });
     });
-  }, [isMyTurn, owner, scene]);
+  }, [scene, owner, isMyTurn]);
 
   // 🔥 카드 바닥 높이 저장
   const modelBottomRef = useRef(0);
@@ -227,7 +227,12 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
   }, [scene]);
 
   useEffect(() => {
+    // ✅ 카드가 바뀔 때마다 소환/착지 상태 리셋
     loggedImpactRef.current = false;
+    spawnProgressRef.current = 0;
+    landingSoundPlayedRef.current = false;
+    setShowShockwave(false);
+    setShowSmoke(false);
   }, [card.id]);
 
   // 애니메이션 상태 저장 (프레임마다 리셋되지 않도록)
@@ -282,7 +287,13 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
         return;
       }
 
-      // 착지 순간
+      // ✅ 착지 순간: 사운드 1번만 재생
+      if (!landingSoundPlayedRef.current && p >= 1.0) {
+        SoundManager.play("landing");
+        landingSoundPlayedRef.current = true;
+      }
+
+      // 착지 직후 shockwave & 타입 이펙트
       if (p >= 1.0 && p < 1.02 && !showShockwave) {
         if (!loggedImpactRef.current) {
           console.log("🔥 Shockwave Triggered with type:", rawType);
@@ -337,10 +348,12 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
     }
 
     // ===== 내 턴 애니메이션 =====
-    if (isMyTurn) {
+    if (owner === "me" && isMyTurn) {
+      // 내 카드 + 내 턴일 때만 애니메이션
       groupRef.current.position.y = Math.sin(t * 2.4) * 0.05;
       groupRef.current.rotation.z = Math.sin(t * 1.8) * 0.04;
     } else {
+      // 나머지는 모두 정지 모션
       groupRef.current.position.y *= 0.8;
       groupRef.current.rotation.z *= 0.8;
     }

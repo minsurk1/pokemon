@@ -2195,7 +2195,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                         <Suspense fallback={null}>
                           <SummonedCard3D
                             card={card}
-                            owner="me"
+                            owner="enemy"
                             isMyTurn={isMyTurn}
                             isHit={hitCardId === card.id}
                             isDestroyed={!!card.isDestroyed}
@@ -2318,7 +2318,7 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                           <Suspense fallback={null}>
                             <SummonedCard3D
                               card={card}
-                              owner="enemy"
+                              owner="me"
                               isMyTurn={isMyTurn}
                               isHit={hitCardId === card.id}
                               isDestroyed={!!card.isDestroyed}

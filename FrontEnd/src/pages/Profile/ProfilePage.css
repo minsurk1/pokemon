@@ -7,9 +7,7 @@
 /* 1. 기본 배경 및 레이아웃 (CYBER GLITCH / DARK BLUE) */
 /* ========================================= */
 .profile-page {
-
-
-  font-family: 'Rajdhani', sans-serif; /* 메인 폰트 */
+  font-family: "Rajdhani", sans-serif; /* 메인 폰트 */
   color: #00ffff; /* 시안 네온 기본 색상 */
   display: flex;
   flex-direction: column;
@@ -24,38 +22,61 @@
 
 /* 네온/글리치 타이틀 */
 .profile-page h1.neon-text {
-  font-family: 'Press Start 2P', cursive; /* 더 강렬한 레트로 폰트 */
+  font-family: "Press Start 2P", cursive; /* 더 강렬한 레트로 폰트 */
   font-size: 2.2rem; /* 레트로 폰트 특성상 크기 조정 */
   font-weight: 400;
   margin-bottom: 5rem;
   letter-spacing: 5px;
   color: #39ff14; /* 강렬한 그린 네온 */
-  text-shadow: 
-    0 0 5px rgba(57, 255, 20, 0.8), 
-    0 0 10px rgba(57, 255, 20, 0.6), 
-    0 0 20px rgba(57, 255, 20, 0.4);
+  text-shadow: 0 0 5px rgba(57, 255, 20, 0.8), 0 0 10px rgba(57, 255, 20, 0.6), 0 0 20px rgba(57, 255, 20, 0.4);
   /* 글리치 애니메이션 추가 */
-  animation: 
-    glitch-text 1.5s infinite alternate,
-    flicker 0.2s infinite; 
+  animation: glitch-text 1.5s infinite alternate, flicker 0.2s infinite;
   text-transform: uppercase;
   text-align: center;
 }
 
 /* 글리치 애니메이션 */
 @keyframes glitch-text {
-  0% { transform: translate(0); text-shadow: 0 0 5px #39ff14; }
-  20% { transform: translate(-2px, 2px); }
-  40% { transform: translate(-2px, -2px); text-shadow: 0 0 10px #00ffff; }
-  60% { transform: translate(2px, 2px); }
-  80% { transform: translate(2px, -2px); text-shadow: 0 0 5px #ff00ff; }
-  100% { transform: translate(0); }
+  0% {
+    transform: translate(0);
+    text-shadow: 0 0 5px #39ff14;
+  }
+  20% {
+    transform: translate(-2px, 2px);
+  }
+  40% {
+    transform: translate(-2px, -2px);
+    text-shadow: 0 0 10px #00ffff;
+  }
+  60% {
+    transform: translate(2px, 2px);
+  }
+  80% {
+    transform: translate(2px, -2px);
+    text-shadow: 0 0 5px #ff00ff;
+  }
+  100% {
+    transform: translate(0);
+  }
 }
 
 /* 깜빡이는 애니메이션 */
 @keyframes flicker {
-  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
-  20%, 24%, 55% { opacity: 0.5; }
+  0%,
+  19%,
+  21%,
+  23%,
+  25%,
+  54%,
+  56%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  24%,
+  55% {
+    opacity: 0.5;
+  }
 }
 
 /* 메인 프롬프트 버튼 (Home Button 대체) */
@@ -63,13 +84,13 @@
   position: absolute;
   top: 20px;
   right: 20px;
-  font-family: 'Press Start 2P', cursive;
+  font-family: "Press Start 2P", cursive;
   font-weight: 400;
   padding: 10px 15px;
   font-size: 0.7rem;
   background: transparent;
   border: 2px solid #00ffff; /* 시안 네온 테두리 */
-  color: #00ffff; 
+  color: #00ffff;
   border-radius: 0; /* 각진 디자인 */
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
   cursor: pointer;
@@ -86,27 +107,24 @@
   color: #39ff14;
   box-shadow: 0 0 15px rgba(57, 255, 20, 0.8);
   transform: skewX(-5deg); /* 비틀림 효과 */
-  background: rgba(57, 255, 20, 0.05); 
+  background: rgba(57, 255, 20, 0.05);
 }
-
 
 /* ========================================= */
 /* 2. 폼 및 데이터 패널 (FORM - METALIC/GRID) */
 /* ========================================= */
 .profile-page form {
   /* 각진 메탈릭 데이터 패널 */
-  background: #1a202c; 
+  background: #1a202c;
   border: 1px solid #00ffff; /* 시안 테두리 */
-  border-radius: 0; 
-  padding: 3rem; 
+  border-radius: 0;
+  padding: 3rem;
   width: 100%;
-  max-width: 550px; 
-  box-shadow: 
-    0 0 20px rgba(0, 255, 255, 0.2), /* 약한 네온 글로우 */
-    inset 0 0 5px rgba(0, 0, 0, 0.5); /* 내부 그림자 */
+  max-width: 550px;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2), /* 약한 네온 글로우 */ inset 0 0 5px rgba(0, 0, 0, 0.5); /* 내부 그림자 */
   position: relative;
-  overflow: hidden; 
-  
+  overflow: hidden;
+
   display: flex;
   flex-direction: column;
   color: #00ffff;
@@ -114,70 +132,53 @@
 
 /* 폼 패널의 아날로그 TV 노이즈/스크린 효과 */
 .profile-page form::before {
-  content: '';
+  content: "";
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(0, 0, 0, 0.1) 1px,
-    transparent 2px,
-    transparent 4px
-  );
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.1) 1px, transparent 2px, transparent 4px);
   z-index: 0;
   opacity: 0.5;
   pointer-events: none;
 }
 /* 호버 시 테두리 깜빡임 효과 */
 .profile-page form:hover {
-    border-color: #39ff14;
-    box-shadow: 0 0 30px rgba(57, 255, 20, 0.5);
+  border-color: #39ff14;
+  box-shadow: 0 0 30px rgba(57, 255, 20, 0.5);
 }
 
 .profile-page label {
-  font-family: 'Press Start 2P', cursive;
+  font-family: "Press Start 2P", cursive;
   font-size: 0.65rem; /* 레트로 느낌 */
-  color: #00ffff; 
+  color: #00ffff;
   margin-bottom: 0.5rem;
-  margin-top: 2rem; 
+  margin-top: 2rem;
   letter-spacing: 2px;
   text-transform: uppercase;
-}
-
-/* 유저 닉네임 정보 (데이터 프롬프트) */
-.user-nickname {
-    font-family: 'Rajdhani', sans-serif;
-    text-align: left;
-    font-size: 1.2rem; 
-    color: #39ff14; /* 그린 하이라이트 */
-    margin-bottom: 3rem; 
-    margin-top: -3rem; 
-    text-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
-    font-weight: 700;
-    border-left: 3px solid #00ffff; /* 데이터 블록 느낌 */
-    padding-left: 10px;
 }
 
 /* ========================================= */
 /* 3. 인풋 필드 (INPUTS - TERMINAL) */
 /* ========================================= */
 .profile-page input {
-  font-family: 'Rajdhani', sans-serif;
-  margin-bottom: 1.5rem; 
-  padding: 10px 15px; 
+  font-family: "Rajdhani", sans-serif;
+  margin-bottom: 1.5rem;
+  padding: 10px 15px;
   font-size: 1.2rem;
-  border: 1px solid #00ffff; 
-  border-radius: 0; 
+  border: 1px solid #00ffff;
+  border-radius: 0;
   background-color: #0d1117; /* 짙은 터미널 배경 */
   color: #39ff14; /* 그린 텍스트 */
   transition: all 0.2s ease-in-out;
   box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.3);
-  text-transform: uppercase;
+  text-transform: upwqpercase;
 }
 
 .profile-page input:focus {
   border-color: #ff00ff; /* 포커스 시 마젠타(에러/액션) */
-  box-shadow: 0 0 10px rgba(255, 0, 255, 0.6), inset 0 0 5px rgba(255, 0, 255, 0.4); 
+  box-shadow: 0 0 10px rgba(255, 0, 255, 0.6), inset 0 0 5px rgba(255, 0, 255, 0.4);
   outline: none;
   background-color: #1a202c;
   color: #ff00ff; /* 텍스트도 마젠타로 변경 */
@@ -185,12 +186,12 @@
 
 /* 읽기 전용 필드 (잠금 UI - 시스템 데이터) */
 .profile-page input[readOnly] {
-  background: #000000; 
+  background: #000000;
   color: #777; /* 어두운 회색 텍스트 */
   cursor: default;
   border-style: dashed; /* 점선 테두리 */
-  border-color: #2a2a2a; 
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8); 
+  border-color: #2a2a2a;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8);
   font-style: normal;
   text-transform: none;
 }
@@ -200,46 +201,45 @@
   position: relative;
   display: flex;
   align-items: center;
-  margin-bottom: 1.5rem; 
+  margin-bottom: 1.5rem;
 }
 
 .password-container input {
   flex: 1;
-  padding-right: 50px; 
-  margin-bottom: 0; 
+  padding-right: 50px;
+  margin-bottom: 0;
 }
 
 .password-container .password-toggle {
   position: absolute;
-  right: 15px; 
+  right: 15px;
   cursor: pointer;
-  color: #00ffff; 
-  font-size: 1.2rem; 
+  color: #00ffff;
+  font-size: 1.2rem;
   transition: color 0.1s;
   z-index: 10;
 }
 
 .password-container .password-toggle:hover {
-  color: #39ff14; 
+  color: #39ff14;
 }
 
 /* ========================================= */
 /* 4. 버튼 (BUTTONS - EXECUTE) */
 /* ========================================= */
 .profile-page form button[type="submit"] {
-  font-family: 'Press Start 2P', cursive; /* 대담한 레트로 폰트 */
-  margin-top: 4rem; 
-  padding: 15px; 
-  font-size: 0.9rem; 
+  font-family: "Press Start 2P", cursive; /* 대담한 레트로 폰트 */
+  margin-top: 4rem;
+  padding: 15px;
+  font-size: 0.9rem;
   background: #39ff14; /* 그린 네온 솔리드 */
-  color: #0d1117; 
+  color: #0d1117;
   border: 3px solid #0d1117; /* 내부 테두리 */
-  border-radius: 0; 
+  border-radius: 0;
   cursor: pointer;
   font-weight: 400;
-  box-shadow: 
-    0 0 10px rgba(57, 255, 20, 0.8); 
-  transition: all 0.1s linear; 
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.8);
+  transition: all 0.1s linear;
   text-transform: uppercase;
   letter-spacing: 3px;
 }
@@ -248,8 +248,7 @@
   background: #00ffff; /* 호버 시 시안으로 변경 */
   color: #0d1117;
   transform: skewX(5deg); /* 비틀림 */
-  box-shadow: 
-    0 0 20px rgba(0, 255, 255, 0.8);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
 }
 
 .profile-page form button[type="submit"]:disabled {
@@ -264,16 +263,16 @@
 
 /* 메시지 박스 (SYSTEM ALERT) */
 .message-box {
-  position: fixed; 
+  position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   background-color: #ff00ff; /* 마젠타 (경고/시스템 메시지) */
-  color: #0d1117; 
+  color: #0d1117;
   border: 1px solid #0d1117;
   border-radius: 0;
   padding: 10px 20px;
-  font-family: 'Press Start 2P', cursive;
+  font-family: "Press Start 2P", cursive;
   font-size: 0.8rem;
   box-shadow: 0 0 10px rgba(255, 0, 255, 0.8);
   z-index: 10000;

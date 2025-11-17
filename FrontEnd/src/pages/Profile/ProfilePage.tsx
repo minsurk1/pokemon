@@ -1,55 +1,54 @@
+// src/pages/Profile/ProfilePage.tsx
 import React, { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaEye, FaEyeSlash, FaHome } from "react-icons/fa";
-import "./ProfilePage.css"; // 방금 만든 CSS 임포트
+import "./ProfilePage.css"; 
 import MessageBox from "../../components/common/MessageBox";
-// import BackgroundVideo from "../../components/common/global"; // 필요하면 사용
-// import profileVideo from "../../assets/videos/profileVideo.mp4"; // 필요하면 사용
+import signupVideo from "../../assets/videos/signupvideo.mp4";
+import BackgroundVideo from "../../components/common/global";
 
-// API 기본 URL (SignUpPage와 동일하게)
+// API 기본 URL
 const API_URL = "https://port-0-pokemon-mbelzcwu1ac9b0b0.sel4.cloudtype.app/api/auth";
 
 function ProfilePage() {
   const navigate = useNavigate();
 
-  // 1. 기존 정보를 담을 State
+  // 1. 기존 정보를 담을 State (로직 변경 없음)
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [nickname, setNickname] = useState(""); // 닉네임은 수정 가능
+  const [nickname, setNickname] = useState("");
 
-  // 2. 새로 변경할 정보를 담을 State
+  // 2. 새로 변경할 정보를 담을 State (로직 변경 없음)
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  // 3. UI/메시지 State
+  // 3. UI/메시지 State (로직 변경 없음)
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
-  
-  // 💡 페이지 로드 시 1번만 실행: 서버에서 내 정보 가져오기
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 💡 페이지 로드 시 1번만 실행: 서버에서 내 정보 가져오기 (로직 변경 없음)
   useEffect(() => {
     const fetchProfile = async () => {
-      // 로컬 스토리지에서 토큰 가져오기 (로그인 시 저장했다고 가정)
       const token = localStorage.getItem("token");
 
       if (!token) {
-        setMessage("로그인이 필요합니다.");
+        setMessage("ACCESS DENIED: RELOG REQUIRED.");
         setShowMessage(true);
-        setTimeout(() => navigate("/"), 2000); // 로그인 페이지로 튕기기
+        setTimeout(() => navigate("/"), 2000);
         return;
       }
 
       try {
-        // ⭐️ (가정 1) GET /api/auth/profile API 호출
         const response = await axios.get(`${API_URL}/profile`, {
           headers: {
-            Authorization: `Bearer ${token}`, // 헤더에 토큰 전송
+            Authorization: `Bearer ${token}`,
           },
         });
 
-        // 서버에서 받은 정보로 State 세팅
         const { username, email, nickname } = response.data;
         setUsername(username);
         setEmail(email);
@@ -57,44 +56,44 @@ function ProfilePage() {
         
       } catch (error) {
         console.error("프로필 로딩 실패:", error);
-        setMessage("정보를 불러오는데 실패했습니다. 다시 로그인해주세요.");
+        setMessage("SYSTEM FAIL: RETRY ACCESS PROTOCOL.");
         setShowMessage(true);
-        localStorage.removeItem("token"); // 토큰이 유효하지 않을 수 있으니 삭제
+        localStorage.removeItem("token");
         setTimeout(() => navigate("/"), 2000);
       }
     };
 
     fetchProfile();
-  }, [navigate]); // navigate가 변경될 일은 없지만, lint 규칙상 포함
+  }, [navigate]);
 
   const closeMessage = () => {
     setShowMessage(false);
     setMessage("");
   };
 
-  // 💡 폼 제출 시 (수정하기 버튼 클릭)
+  // 💡 폼 제출 시 (수정하기 버튼 클릭) (로직 변경 없음)
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSaving) return;
 
-    // 새 비밀번호를 입력했다면, 일치하는지 확인
     if (newPassword && newPassword !== confirmPassword) {
-      setMessage("새 비밀번호가 일치하지 않습니다.");
+      setMessage("ERROR: ACCESS CODES MISMATCH.");
       setShowMessage(true);
       return;
     }
 
     const token = localStorage.getItem("token");
     if (!token) {
-        // 이 시점에 토큰이 없으면 안 됨 (useEffect에서 이미 걸렀어야 함)
-        setMessage("인증 세션이 만료되었습니다. 다시 로그인해주세요.");
+        setMessage("SESSION EXPIRED. RE-INITIATE LOGIN.");
         setShowMessage(true);
         setTimeout(() => navigate("/"), 2000);
         return;
     }
 
-    // 서버에 보낼 데이터 (닉네임 + 새 비밀번호가 있다면 비밀번호)
+    setIsSaving(true);
+
     const updateData: { nickname: string; password?: string } = {
-      nickname: nickname, // 현재 state의 닉네임 값
+      nickname: nickname,
     };
 
     if (newPassword) {
@@ -102,105 +101,110 @@ function ProfilePage() {
     }
 
     try {
-      // ⭐️ (가정 2) PUT /api/auth/profile/update API 호출
       const response = await axios.put(`${API_URL}/profile/update`, updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      setMessage(response.data.message || "회원정보가 성공적으로 수정되었습니다.");
+      setMessage(response.data.message || "DATA SYNCHRONIZED. PROFILE UPDATED.");
       setShowMessage(true);
       
-      // 비밀번호 필드 초기화
       setNewPassword("");
       setConfirmPassword("");
 
     } catch (error: any) {
       console.error("회원정보 수정 에러:", error);
       const errorMessage =
-        error.response?.data?.message || "회원정보 수정에 실패했습니다.";
+        error.response?.data?.message || "UPDATE FAILED. SERVER OFFLINE.";
       setMessage(errorMessage);
       setShowMessage(true);
+    } finally {
+        setIsSaving(false);
     }
   };
 
   return (
     <div className="profile-page">
-      {/* <BackgroundVideo src={profileVideo} opacity={0.8} zIndex={-1} /> */}
-      
-      {/* 홈(메인)으로 돌아가기 버튼 */}
+                  <BackgroundVideo src={signupVideo} opacity={1} zIndex={-1} />
       <button className="home-button" onClick={() => navigate("/main")}> 
-        메인으로 <FaHome />
+        <FaHome size={20} /> [MAIN_PROMPT]
       </button>
 
       <form onSubmit={handleSubmit}>
-        <h1>회원정보 수정</h1>
+        <h1 className="neon-text">USER DATA ACQUISITION</h1> {/* 타이틀 변경 */}
+        
+        <p className="user-nickname"> USER ID: {nickname} // SYSTEM ACCESS GRANTED</p> {/* 닉네임 프롬프트 변경 */}
 
-        <label htmlFor="username">아이디</label>
+
+        <label htmlFor="username">IDENTIFIER (SYSTEM LOCKED)</label>
         <input
           id="username"
           type="text"
           value={username}
-          readOnly // 아이디는 수정 불가능
+          readOnly 
         />
 
-        <label htmlFor="email">이메일</label>
+        <label htmlFor="email">CONTACT ADDRESS (SYSTEM LOCKED)</label>
         <input
           id="email"
           type="email"
           value={email}
-          readOnly // 이메일은 수정 불가능
+          readOnly 
         />
 
-        <label htmlFor="nickname">닉네임 (수정 가능)</label>
+        <label htmlFor="nickname">ALIAS / NICKNAME (MODIFY ACCESS)</label> {/* 레이블 변경 */}
         <input
           id="nickname"
           type="text"
-          placeholder="닉네임"
+          placeholder="ENTER NEW ALIAS"
           required
           value={nickname}
-          onChange={(e) => setNickname(e.target.value)} // 닉네임은 수정 가능
+          onChange={(e) => setNickname(e.target.value)} 
+          disabled={isSaving}
         />
 
-        <label htmlFor="newPassword">새 비밀번호 (선택)</label>
+        <label htmlFor="newPassword">NEW ACCESS KEY</label> {/* 레이블 변경 */}
         <div className="password-container">
           <input
             id="newPassword"
             type={showNewPassword ? "text" : "password"}
-            placeholder="새 비밀번호 (변경 시에만 입력)"
+            placeholder="INPUT NEW ACCESS KEY"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+            disabled={isSaving}
           />
-          <span onClick={() => setShowNewPassword(!showNewPassword)}>
+          <span onClick={() => setShowNewPassword(!showNewPassword)} className="password-toggle">
             {showNewPassword ? <FaEyeSlash /> : <FaEye />}
           </span>
         </div>
 
-        <label htmlFor="confirmPassword">새 비밀번호 확인</label>
+        <label htmlFor="confirmPassword">CONFIRM NEW ACCESS KEY</label> {/* 레이블 변경 */}
         <div className="password-container">
           <input
             id="confirmPassword"
             type={showConfirmPassword ? "text" : "password"}
-            placeholder="새 비밀번호 확인"
+            placeholder="VERIFY ACCESS KEY"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={isSaving}
           />
-          <span onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+          <span onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="password-toggle">
             {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
           </span>
         </div>
 
-        <button type="submit">수정하기</button>
+        <button type="submit" disabled={isSaving}>
+          {isSaving ? 'EXECUTING DATA TRANSFER...' : 'EXECUTE: UPDATE DATA'} {/* 버튼 텍스트 변경 */}
+        </button>
       </form>
 
       {showMessage && (
         <MessageBox
-          bgColor="#e3f2fd"
-          borderColor="#2196f3"
-          textColor="#0d47a1"
+          bgColor="#ff00ff" // 마젠타
+          borderColor="#0d1117"
+          textColor="#0d1117"
           onClose={closeMessage}
-          closeborderColor="black"
         >
           {message}
         </MessageBox>

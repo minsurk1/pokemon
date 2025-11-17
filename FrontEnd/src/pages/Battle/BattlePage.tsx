@@ -1826,7 +1826,6 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
     if (!isMyTurn) return;
     setSelectedAttacker(null);
     setHighlightCardId(null);
-    SoundManager.playTurnChange(); // 🔊 여기서 재생
     socket.emit("endTurn", { roomCode });
     addMessageToLog("🔚 턴을 종료했습니다!");
   }, [isMyTurn, roomCode, socket, addMessageToLog]);

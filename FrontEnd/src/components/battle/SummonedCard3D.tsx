@@ -2,8 +2,22 @@ import { useRef, useEffect, useState } from "react";
 import { useGLTF } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import SmokeParticle from "./SmokeParticle";
+import Shockwave from "./Shockwave";
 import * as THREE from "three";
 import { Card } from "../../types/Card";
+
+import FireImpact from "./effects/FireImpact";
+import WaterImpact from "./effects/WaterImpact";
+import ElectricImpact from "./effects/ElectricImpact";
+import IceImpact from "./effects/IceImpact";
+import PoisonImpact from "./effects/PoisonImpact";
+import LegendImpact from "./effects/LegendImpact";
+
+import LandImpact from "./effects/LandImpact";
+import FlyImpact from "./effects/FlyImpact";
+import ForestImpact from "./effects/ForestImpact";
+import WormImpact from "./effects/WormImpact";
+import EsperImpact from "./effects/EsperImpact";
 
 interface SummonedCard3DProps {
   card: Card;
@@ -13,6 +27,58 @@ interface SummonedCard3DProps {
   isHit: boolean;
   isDestroyed: boolean; // 🔥 추가
 }
+
+// 🔥 타입 문자열 정규화 (불완전, 대소문자, "_type", "Legendary" 전부 커버)
+const normalizeType = (t: string) => {
+  if (!t) return "normal";
+
+  t = t.toLowerCase();
+
+  if (t.includes("legend")) return "legend";
+  if (t.includes("fire")) return "fire";
+  if (t.includes("water")) return "water";
+  if (t.includes("electric")) return "electric";
+  if (t.includes("ice")) return "ice";
+  if (t.includes("poison")) return "poison";
+  if (t.includes("land")) return "land";
+  if (t.includes("fly")) return "fly";
+  if (t.includes("forest")) return "forest";
+  if (t.includes("worm")) return "worm";
+  if (t.includes("esper")) return "esper";
+
+  return "normal";
+};
+
+const ImpactByType = (type: string, onFinish: () => void) => {
+  switch (type) {
+    case "fire":
+      return <FireImpact onFinish={onFinish} />;
+    case "water":
+      return <WaterImpact onFinish={onFinish} />;
+    case "electric":
+      return <ElectricImpact onFinish={onFinish} />;
+    case "ice":
+      return <IceImpact onFinish={onFinish} />;
+    case "poison":
+      return <PoisonImpact onFinish={onFinish} />;
+    case "legend":
+      return <LegendImpact onFinish={onFinish} />;
+
+    case "land":
+      return <LandImpact onFinish={onFinish} />;
+    case "fly":
+      return <FlyImpact onFinish={onFinish} />;
+    case "forest":
+      return <ForestImpact onFinish={onFinish} />;
+    case "worm":
+      return <WormImpact onFinish={onFinish} />;
+    case "esper":
+      return <EsperImpact onFinish={onFinish} />;
+
+    default:
+      return <Shockwave onFinish={onFinish} />; // 기본값
+  }
+};
 
 export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroyed }: SummonedCard3DProps) {
   const groupRef = useRef<THREE.Group>(null!);
@@ -29,11 +95,9 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
     // 필요한 만큼 계속 추가
   };
 
-  // ─────────────────────────────
-
   // card.cardType 안전 처리
-  const rawType = (card.cardType ?? "").toLowerCase();
-  const isLegend = rawType.includes("legend");
+  const rawType = normalizeType(card.cardType ?? "");
+  const isLegend = rawType === "legend";
 
   // 🔥 safeTier 계산
   let safeTier = isLegend
@@ -49,12 +113,25 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
   // 🔥 파괴 후 파티클 띄우기 여부
   const [showSmoke, setShowSmoke] = useState(false);
 
+  // 소환 애니메이션 관련 변수 저장
+  const spawnProgressRef = useRef(0); // 0 → 1로 증가
+  const baseScaleRef = useRef(1);
+  const [showShockwave, setShowShockwave] = useState(false);
+
+  // 🔥 NEW: 이펙트 위치 동기화용 ref
+  const effectGroupRef = useRef<THREE.Group>(null!);
+
   // 기본 자세 (scale 제거)
   useEffect(() => {
     if (!groupRef.current) return;
 
+    // ⭐ 초기 착지 위치 정확히 설정
     groupRef.current.position.set(0, 0, 0.55);
+
     groupRef.current.rotation.set(THREE.MathUtils.degToRad(20), THREE.MathUtils.degToRad(-25), 0);
+
+    // ⭐ Y 위치는 떨어지는 애니메이션에서 조절할 것이므로 처음엔 0
+    groupRef.current.position.y = 0;
   }, []);
 
   // 3D 모델 크기 자동 정규화 + 추가 배율
@@ -70,10 +147,17 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
 
     const scaleFactor = desiredSize / maxAxis;
 
-    // 🔥 추가 배율(전체적으로 약간 크게) ★★크기 조정은 여기서★★
-    const finalScale = scaleFactor * 2.8;
+    // 전체 배율
+    const finalScale = scaleFactor * 2.5;
 
-    groupRef.current.scale.set(finalScale, finalScale, finalScale);
+    // ⭐ 원래 크기 저장
+    baseScaleRef.current = finalScale;
+
+    // ⭐ 소환 애니메이션 시작점 (뒤쪽)
+    groupRef.current.position.z = -0.8;
+
+    // ⭐ scale=0부터 시작 → 팡! 효과 가능
+    groupRef.current.scale.set(0, 0, 0);
   }, [scene]);
 
   // 회색 필터 적용 (owner + isMyTurn 조건 기반)
@@ -100,6 +184,22 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
     });
   }, [isMyTurn, owner, scene]);
 
+  // 🔥 카드 바닥 높이 저장
+  const modelBottomRef = useRef(0);
+
+  useEffect(() => {
+    if (!scene) return;
+
+    const box = new THREE.Box3().setFromObject(scene);
+
+    // 🔥 min.y = 카드 모델의 바닥 높이
+    const bottomY = box.min.y;
+
+    modelBottomRef.current = bottomY;
+
+    console.log("카드 바닥 높이:", modelBottomRef.current);
+  }, [scene]);
+
   // 애니메이션 상태 저장 (프레임마다 리셋되지 않도록)
   const hitPowerRef = useRef(0);
   const lastHitRef = useRef(false);
@@ -108,6 +208,80 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
   useFrame(({ clock }, delta) => {
     if (!groupRef.current) return;
 
+    // ⭐ 이펙트 위치를 카드와 동기화
+    if (effectGroupRef.current && groupRef.current) {
+      const worldPos = new THREE.Vector3();
+      groupRef.current.getWorldPosition(worldPos);
+
+      // 🔥 모델 스케일 적용한 실제 바닥 위치
+      const cardScale = groupRef.current.scale.y;
+      const bottomOffset = modelBottomRef.current * cardScale;
+
+      effectGroupRef.current.position.set(
+        worldPos.x,
+        worldPos.y + bottomOffset,
+        0.01 // ← Shockwave는 여기 기준
+      );
+
+      effectGroupRef.current.rotation.set(0, 0, 0);
+    }
+
+    // ===== 위에서 떨어지는 애니메이션 =====
+    if (!isDestroyed && spawnProgressRef.current < 1.2) {
+      spawnProgressRef.current += delta * 1.4;
+      const p = spawnProgressRef.current;
+
+      // ----- ① 떨어지는 구간 (scale 고정) -----
+      if (p <= 1.0) {
+        const startY = 5.0;
+        const endY = 0;
+
+        const fall = p * p; // 중력감
+        const posY = THREE.MathUtils.lerp(startY, endY, fall);
+
+        groupRef.current.position.y = posY;
+        groupRef.current.position.z = 0.55;
+
+        // ⭐ scale 고정
+        const s = baseScaleRef.current;
+        groupRef.current.scale.set(s, s, s);
+
+        // 약간의 모션 흔들림만 유지
+        groupRef.current.rotation.set(THREE.MathUtils.degToRad(20), THREE.MathUtils.degToRad(-25), Math.sin(p * 20) * 0.03);
+
+        return;
+      }
+
+      // 착지 순간 이펙트 실행
+      if (p >= 1.0 && p < 1.02 && !showShockwave) {
+        setShowShockwave(true);
+      }
+
+      // ----- ② 착지 순간 bounce -----
+      if (p > 1.0 && p <= 1.05) {
+        groupRef.current.position.y = -0.1;
+
+        // 살짝 커졌다가 줄어드는 bounce
+        const bounceScale = THREE.MathUtils.lerp(baseScaleRef.current * 1.15, baseScaleRef.current, (p - 1.0) / 0.05);
+
+        groupRef.current.scale.set(bounceScale, bounceScale, bounceScale);
+        return;
+      }
+
+      // ----- ③ 안정화 단계 -----
+      if (p > 1.05 && p < 1.2) {
+        const t = (p - 1.05) / 0.15;
+
+        groupRef.current.position.y = THREE.MathUtils.lerp(-0.1, 0, t);
+
+        const s = THREE.MathUtils.lerp(baseScaleRef.current * 1.05, baseScaleRef.current, t);
+        groupRef.current.scale.set(s, s, s);
+
+        return;
+      }
+    }
+
+    // ===== 소환 완료 후 기존 애니메이션 적용 =====
     const t = clock.getElapsedTime();
 
     // ===== 피격 애니메이션 =====
@@ -151,6 +325,12 @@ export default function SummonedCard3D({ card, owner, isMyTurn, isHit, isDestroy
   return (
     <>
       <group ref={groupRef}>{!isDestroyed && <primitive object={scene.clone()} />}</group>
+      {/* 🔥 착지 이펙트 (카드 위치 동기화됨) */}
+      {showShockwave && (
+        <group ref={effectGroupRef}>
+          <group position={[0, -0.25, -0.15]}>{ImpactByType(rawType, () => setShowShockwave(false))}</group>
+        </group>
+      )}
 
       {/* 🔥 3D 모델이 사라져도 연기가 독립적으로 남도록 group 밖에서 렌더링 */}
       {showSmoke &&

@@ -2192,6 +2192,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                           <SummonedCard3D
                             card={card}
                             owner="me"
+                            isMyTurn={isMyTurn}
+                            isHit={hitCardId === card.id}
+                            isDestroyed={!!card.isDestroyed}
                             getCardRect={() => document.getElementById(`card-${card.id}`)?.getBoundingClientRect()}
                           />
                         </Suspense>
@@ -2312,6 +2315,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
                             <SummonedCard3D
                               card={card}
                               owner="enemy"
+                              isMyTurn={isMyTurn}
+                              isHit={hitCardId === card.id}
+                              isDestroyed={!!card.isDestroyed}
                               getCardRect={() => document.getElementById(`card-${card.id}`)?.getBoundingClientRect()}
                             />
                           </Suspense>

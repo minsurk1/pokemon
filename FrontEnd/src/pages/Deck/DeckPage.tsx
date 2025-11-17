@@ -358,14 +358,12 @@ const DeckPage: React.FC<DeckPageProps> = ({ onDeckChange }) => {
                 <div key={index} className="selected-card" onClick={() => cardId && removeCard(index)}>
                   <img
                     src={
-                      card
-                        ? card.image.startsWith("http")
-                          ? card.image
-                          : `${IMAGE_URL}/images/${card.image}`
-                        : `${IMAGE_URL}/images/default.png`
+                      card ? (card.image.startsWith("http") ? card.image : `${IMAGE_URL}/images/${card.image}`) : `${IMAGE_URL}/images/default.png`
                     }
                     alt={card?.name || `카드 ${index + 1}`}
                   />
+                  {/* 카드가 없을 때만 표시 */}
+                  {!card && <div className="card-index-label">카드{index + 1}</div>}
                 </div>
               );
             })}

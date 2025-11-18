@@ -38,15 +38,7 @@ import rekuzaImage from "../../assets/images/legendtier6.png";
 import phantomImage from "../../assets/images/poisontier6.png";
 import ligiaImage from "../../assets/images/flytier7.png";
 
-const videoFiles = [
-  phantomVideo,
-  gaiogaVideo,
-  grandonVideo,
-  thunderVideo,
-  darkraiVideo,
-  lekuzaVideo,
-  lugiaVideo,
-];
+const videoFiles = [phantomVideo, gaiogaVideo, grandonVideo, thunderVideo, darkraiVideo, lekuzaVideo, lugiaVideo];
 
 const videoThemes = {
   [phantomVideo]: { name: "팬텀", color: "phantom", image: phantomImage },
@@ -79,18 +71,9 @@ function MainPage() {
 
   // ✅ CSS 변수로 테마 색상 주입
   useEffect(() => {
-    document.documentElement.style.setProperty(
-      "--theme-color",
-      `var(--${themeColorClass}-color)`
-    );
-    document.documentElement.style.setProperty(
-      "--theme-hover-color",
-      `var(--${themeColorClass}-hover-color)`
-    );
-    document.documentElement.style.setProperty(
-      "--theme-accent-color",
-      `var(--${themeColorClass}-accent-color)`
-    );
+    document.documentElement.style.setProperty("--theme-color", `var(--${themeColorClass}-color)`);
+    document.documentElement.style.setProperty("--theme-hover-color", `var(--${themeColorClass}-hover-color)`);
+    document.documentElement.style.setProperty("--theme-accent-color", `var(--${themeColorClass}-accent-color)`);
   }, [themeColorClass]);
 
   // ✅ axios 헤더에 토큰 반영
@@ -103,15 +86,15 @@ function MainPage() {
     }
   }, []);
 
-  // ✅ 새로고침 후 유저 정보 자동 불러오기
+  // ⭐ 로그인 직후 유저 + 덱 정보 강제 로딩 (최초 로딩 보장)
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!loading && token && !userInfo) {
-      refreshUser().then((data) => {
-        console.log("🎯 User + Deck loaded:", data);
-      });
-    }
-  }, [loading, userInfo, refreshUser]);
+    if (!token) return;
+
+    refreshUser().then(() => {
+      console.log("🎯 User + Deck 강제 로딩 완료");
+    });
+  }, []);
 
   // ✅ 핸들러들
   const handleLogout = useCallback(() => {
@@ -178,20 +161,12 @@ function MainPage() {
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton
-              onClick={handleRule}
-              marginBottom="4.3rem"
-              cursor="help"
-            >
+            <MenuButton onClick={handleRule} marginBottom="4.3rem" cursor="help">
               규칙 <FaBook />
             </MenuButton>
           </motion.li>
           <motion.li variants={item}>
-            <MenuButton
-              onClick={() => setShowRoomLobbyModal(true)}
-              marginBottom="4.3rem"
-              disabled={loading || !userInfo}
-            >
+            <MenuButton onClick={() => setShowRoomLobbyModal(true)} marginBottom="4.3rem" disabled={loading || !userInfo}>
               방 만들기/입장
               <MdMeetingRoom />
             </MenuButton>
@@ -210,11 +185,7 @@ function MainPage() {
           <div className="theme-card-container">
             <div className="theme-main-card">
               <CardAnimation>
-                <img
-                  src={themeImage}
-                  alt="대표 카드"
-                  className="theme-card-image"
-                />
+                <img src={themeImage} alt="대표 카드" className="theme-card-image" />
               </CardAnimation>
               <div className="theme-card-name">{themeName}</div>
             </div>
@@ -241,12 +212,8 @@ function MainPage() {
                 <span className="user-nickname">로딩 중...</span>
               ) : userInfo ? (
                 <>
-                  <span className="user-nickname">
-                    환영합니다, {userInfo.nickname}님
-                  </span>
-                  <span className="money-display">
-                    💰 {userInfo.money?.toLocaleString() ?? 0} G
-                  </span>
+                  <span className="user-nickname">환영합니다, {userInfo.nickname}님</span>
+                  <span className="money-display">💰 {userInfo.money?.toLocaleString() ?? 0} G</span>
                 </>
               ) : (
                 <span className="user-nickname">로그인 해주세요</span>
@@ -261,9 +228,7 @@ function MainPage() {
       </div>
 
       {/* ✅ 여기! RoomLobbyModal은 반드시 return 내부에 있어야 렌더링됨 */}
-      {showRoomLobbyModal && (
-        <RoomLobbyModal onClose={() => setShowRoomLobbyModal(false)} />
-      )}
+      {showRoomLobbyModal && <RoomLobbyModal onClose={() => setShowRoomLobbyModal(false)} />}
     </div>
   );
 }

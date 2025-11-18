@@ -243,51 +243,6 @@ export default function roomHandler(io: Server, socket: Socket) {
 
     socket.emit("userMap", room.userMap); // ✅ 프론트로 전체 userMap 전송
   });
-
-  /**
-   * 📦 덱 전달 받기
-   */
-  socket.on("sendDeck", ({ roomCode, deck }) => {
-    const room = rooms[roomCode];
-    if (!room || !deck || !Array.isArray(deck)) return;
-
-    // gameState가 없으면 초기 골격 생성
-    if (!room.gameState) {
-      // 🎯 플레이어 두 명을 추출 (항상 1번 = host, 2번 = participant)
-      const [player1, player2] = room.players;
-
-      const firstTurnDone: Record<string, boolean> = {
-        [player1]: false,
-      };
-
-      // 🔥 player2가 실제로 존재할 때만 추가
-      if (player2) {
-        firstTurnDone[player2] = false;
-      }
-      room.gameState = {
-        currentTurn: room.players[0],
-        hp: {},
-        cost: {},
-        decks: {},
-        hands: {},
-        graveyards: {},
-        cardsInZone: {},
-        turnCount: 1,
-        // ✅ 추가
-        activeEvent: null,
-        over: false,
-        firstTurnDone,
-      };
-    }
-
-    // ✅ 덱을 그대로 저장 (id 배열이 아님)
-    room.gameState.decks[socket.id] = deck;
-
-    console.log(
-      `📥 덱 수신 from ${socket.id}:`,
-      deck.map((c) => ({ id: c.id, name: c.name, atk: c.attack }))
-    );
-  });
 }
 
 // 방 정리 함수

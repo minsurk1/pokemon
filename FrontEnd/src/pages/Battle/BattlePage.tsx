@@ -477,7 +477,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
       }
 
       if (targetType === "enemyCard") {
-        setEnemyCardsInZone((prev) => prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card)));
+        setEnemyCardsInZone((prev) =>
+          prev.map((card) => (card.id === targetId ? { ...card, damagePopups: card.damagePopups?.slice(1) || [] } : card))
+        );
       }
 
       if (targetType === "event") {
@@ -651,15 +653,23 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
   useEffect(() => {
     if (!socket.connected) return;
     if (!selectedDeck || selectedDeck.length === 0) return;
-    const isIdArray = Array.isArray(selectedDeck) && selectedDeck.length > 0 && typeof selectedDeck[0] === "string";
-    if (isIdArray) return;
     if ((window as any)._deckSent) return;
+
+    // 🔥 selectedDeck이 ID 배열일 경우 → 서버에서 다시 카드 정보를 fetch해야 하므로 그대로 보내기
+    const deckPayload =
+      typeof selectedDeck[0] === "string"
+        ? selectedDeck // ID 배열 그대로
+        : selectedDeck.map(keepCardShape); // 카드 객체 배열인 경우
+
     socket.emit("sendDeck", {
       roomCode,
-      deck: selectedDeck.map(keepCardShape),
+      deck: deckPayload,
     });
+
     (window as any)._deckSent = true;
-    console.log("🚀 덱 서버 전송 완료:", selectedDeck);
+
+    console.log("🚀 덱 서버 전송 완료:", deckPayload);
+
   }, [socket.connected, selectedDeck, roomCode]);
 
   useEffect(() => {
@@ -850,7 +860,9 @@ function BattlePage({ selectedDeck }: { selectedDeck: Card[] }) {
         if (iAmAttacker) setEnemyHP(newHP);
         else setPlayerHP(newHP);
 
-        addMessageToLog(message ? `💥 ${attackerName}의 공격! ${message} (x${multiplier ?? 1})` : `💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`);
+        addMessageToLog(
+          message ? `💥 ${attackerName}의 공격! ${message} (x${multiplier ?? 1})` : `💥 ${attackerName}이(가) ${damage} 피해를 입혔습니다!`
+        );
       }
     };
 

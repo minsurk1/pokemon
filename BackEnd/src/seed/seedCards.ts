@@ -7,16 +7,6 @@ dotenv.config();
 
 const MONGO_URI = process.env.MONGO_URI as string; // DB 연결 URI
 
-const legendImageTiers: Record<string, number> = {
-  디아루가: 1,
-  펄기아: 2,
-  기라티나: 3,
-  제크로무: 4,
-  큐레무: 5,
-  레쿠쟈: 6,
-  아르세우스: 7,
-};
-
 const cardsSeed = [
   // fire
   {
@@ -885,34 +875,25 @@ const cardsSeed = [
 
 async function seedCards() {
   try {
+    // Atlas 연결
     await mongoose.connect(MONGO_URI);
     console.log("MongoDB Atlas 연결됨.");
 
+    // 모델 캐시 제거
     if (mongoose.models.Card) delete mongoose.models.Card;
 
+    // 컬렉션 삭제 (있으면)
     const db = mongoose.connection.db!;
     const collections = await db.listCollections({ name: "cards" }).toArray();
     if (collections.length > 0) {
       await db.dropCollection("cards");
       console.log("기존 cards 컬렉션 삭제 완료.");
+    } else {
+      console.log("cards 컬렉션 없음, 삭제 건너뜀.");
     }
 
-    // ⭐ 삽입 직전에 imageTier + image2D 자동 생성
-    const finalData = cardsSeed.map((card) => {
-      // legend면 imageTier는 1~7, 아니면 tier 그대로 사용
-      const imageTier =
-        card.cardType === "legend"
-          ? legendImageTiers[card.cardName]
-          : card.tier;
-
-      return {
-        ...card,
-        imageTier,
-        image2D: `${card.cardType}Tier${imageTier}.png`,
-      };
-    });
-
-    await Card.insertMany(finalData);
+    // 데이터 삽입
+    await Card.insertMany(cardsSeed);
     console.log("카드 시드 완료.");
 
     await mongoose.disconnect();

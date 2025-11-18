@@ -1,3 +1,4 @@
+// BackEnd/src/models/Card.ts
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ICard extends Document {
@@ -9,6 +10,7 @@ export interface ICard extends Document {
   hp: number;
   maxhp: number;
   cost: number;
+  imageTier: number | null;
   image2D: string;
 }
 
@@ -20,6 +22,7 @@ const CardSchema: Schema = new Schema({
   hp: { type: Number, required: true },
   maxhp: { type: Number, required: true },
   cost: { type: Number, required: true },
+  imageTier: { type: Number, default: null },
   image2D: { type: String, required: true },
 });
 

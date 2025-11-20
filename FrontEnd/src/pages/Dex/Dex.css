@@ -65,7 +65,7 @@
   flex-direction: row;
   transition: transform 0.3s ease;
   will-change: transform;
-  padding: 40px 0;
+  padding: 110px 0;
 }
 
 .cards-carousel:active {

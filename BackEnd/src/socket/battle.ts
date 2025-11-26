@@ -7,6 +7,7 @@ import UserDeck from "../models/UserDeck"; // ✅ 덱 로딩용 추가
 import { calcDamage } from "./battle/calcDamage";
 import { detectTypeByName } from "../utils/detectTypeByName";
 import { endGameCleanup } from "./room";
+import mongoose from "mongoose";
 
 // ======================= 🔁 공유 타이머 설정 =======================
 const TURN_TIME = 30; // 한 턴당 제한 시간 (초 단위)
@@ -378,63 +379,44 @@ export default function battleHandler(io: Server, socket: Socket) {
 
     if (room.gameState && (!room.gameState.decks[socket.id] || room.gameState.decks[socket.id].length === 0)) {
       try {
-        // 소켓에 저장된 userId를 사용 (로그인 시 저장되어 있어야 함)
         const userId = (socket as any).userId;
         if (!userId) console.warn("⚠️ userId 없음 - 덱 자동 로딩 불가");
+
         if (userId) {
           const userDeck = await UserDeck.findOne({ user: userId }).populate({
             path: "cards.card",
-            select: "cardName cardType tier attack hp maxhp cost image2D",
+            select: "cardName cardType tier attack hp cost image2D",
           });
 
           if (userDeck && userDeck.cards && userDeck.cards.length > 0) {
             const deckCards = userDeck.cards.map((c: any) => {
-              const card = c.card; // ✅ populate된 실제 카드 데이터
+              const card = c.card;
 
               return {
                 id: String(card._id),
                 name: card.cardName,
-                cardType: card.cardType,
+                cardType: card.cardType ?? "normal",
                 tier: card.tier,
                 attack: card.attack,
                 hp: card.hp,
                 maxhp: card.hp,
-                cost: card.cost,
-                image2D: card.image2D, // ✅ DB의 원본 이미지 사용
+                cost: card.cost ?? card.tier ?? 1,
+                image2D: card.image2D,
                 canAttack: true,
               };
             });
 
-            // 덱 셔플
-            const shuffled = [...deckCards].sort(() => Math.random() - 0.5);
+            const fullDeck = [...deckCards];
+            const { hand, deck: newDeck } = createStartingHand(fullDeck);
 
-            // 1코스트 카드 풀
-            const oneCostPool = shuffled.filter((c) => Number(c.cost) === 1);
+            room.gameState.hands[socket.id] = hand;
+            room.gameState.decks[socket.id] = newDeck;
 
-            let startingHand;
-            if (oneCostPool.length > 0) {
-              // 1코 카드 중 랜덤 1장
-              const guaranteed = oneCostPool[Math.floor(Math.random() * oneCostPool.length)];
-
-              // 나머지 덱에서 해당 카드 제외
-              const pool = shuffled.filter((c) => c.id !== guaranteed.id);
-
-              const { hand, deck } = createStartingHand(shuffled);
-              room.gameState.hands[socket.id] = hand;
-              room.gameState.decks[socket.id] = deck;
-            }
-            console.log(`✅ ${socket.id} 덱 자동 로딩 완료: ${deckCards.length}장`);
-            console.log(
-              "🎴 서버 덱 이미지 체크:",
-              deckCards.map((c) => ({
-                name: c.name,
-                image2D: c.image2D,
-              }))
-            );
+            console.log(`🟢 ${socket.id} 자동 덱 로딩 완료 | 손패 ${hand.length}장 / 덱 ${newDeck.length}장`);
           }
         }
-      } catch (error) {
-        console.error(`❌ 덱 로딩 실패 (${socket.id}):`, error);
+      } catch (err) {
+        console.error("❌ 자동 덱 로딩 실패:", err);
       }
     }
 
@@ -505,8 +487,7 @@ export default function battleHandler(io: Server, socket: Socket) {
     console.log(`🔁 ${socket.id} 요청 → 현재 게임 상태 재전송 완료`);
   });
 
-  // ==================== (재접속 후) 덱 전송 ====================
-  socket.on("sendDeck", ({ roomCode, deck }) => {
+  socket.on("sendDeck", async ({ roomCode, deck }) => {
     const room = rooms[roomCode];
     if (!room?.gameState) return;
 
@@ -514,70 +495,93 @@ export default function battleHandler(io: Server, socket: Socket) {
     const playerId = socket.id;
     const existingDeck = game.decks[playerId] || [];
 
-    // ================================
-    // 1️⃣ 이미 덱이 존재하는 경우 (재접속)
-    // ================================
+    // ==============================
+    // 0️⃣ 덱이 문자열 ID 배열이면 → DB에서 카드 정보 로드
+    // ==============================
+    let processedDeck = [];
+
+    if (typeof deck[0] === "string") {
+      const idList = deck as string[];
+
+      const ids = idList.map((id: string) => new mongoose.Types.ObjectId(id));
+
+      const cardList = await Card.find({ _id: { $in: ids } }).lean();
+
+      processedDeck = ids
+        .map((oid) => cardList.find((c) => c._id.equals(oid)))
+        .filter(Boolean)
+        .map((c: any) => ({
+          id: c._id.toString(),
+          name: c.cardName,
+          cardType: c.cardType ?? detectTypeByName(c.cardName),
+          attack: c.attack,
+          hp: c.hp,
+          maxhp: c.hp,
+          cost: c.cost ?? c.tier,
+          tier: c.tier,
+          image2D: c.image2D ?? null,
+          canAttack: true,
+        }));
+    } else {
+      // 객체 배열인 경우
+      processedDeck = deck.map((c: any) => ({
+        id: String(c.id ?? c._id ?? c.cardId ?? "unknown"),
+        name: String(c.name ?? c.cardName ?? "Unknown"),
+        cardType: c.cardType ?? detectTypeByName(c.name) ?? "normal",
+        attack: Number(c.attack ?? 0),
+        hp: Number(c.hp ?? 0),
+        maxhp: Number(c.maxhp ?? c.hp ?? 0),
+        cost: Number(c.cost ?? c.tier ?? 1),
+        tier: Number(c.tier ?? 1),
+        image2D: c.image2D ?? null,
+        canAttack: true,
+      }));
+    }
+
+    // ==============================
+    // 1️⃣ 재접속
+    // ==============================
     if (existingDeck.length > 0) {
       console.log(`⚠️ ${playerId}의 덱이 이미 존재함.`);
 
-      // 손패가 비어 있을 때만 새로 생성
       if (!game.hands[playerId] || game.hands[playerId].length === 0) {
         const fullDeck = [...existingDeck];
         const { hand, deck: newDeck } = createStartingHand(fullDeck);
 
         game.hands[playerId] = hand;
         game.decks[playerId] = newDeck;
-
-        io.to(playerId).emit("updateGameState", {
-          hp: game.hp,
-          decks: game.decks,
-          hands: game.hands,
-          graveyards: game.graveyards,
-          cost: game.cost,
-          turnCount: game.turnCount,
-          cardsInZone: game.cardsInZone,
-          activeEvent: game.activeEvent,
-          timeLeft: room.timeLeft,
-        });
       }
+
+      io.to(playerId).emit("updateGameState", {
+        hp: game.hp,
+        decks: game.decks,
+        hands: game.hands,
+        graveyards: game.graveyards,
+        cost: game.cost,
+        turnCount: game.turnCount,
+        cardsInZone: game.cardsInZone,
+        activeEvent: game.activeEvent,
+        timeLeft: room.timeLeft,
+      });
 
       return;
     }
 
-    // ================================
-    // 2️⃣ 처음 덱이 보내진 경우 (정상 게임 시작)
-    // ================================
-    game.decks[playerId] = deck.map((c: any) => ({
-      id: String(c.id ?? c._id ?? c.cardId ?? "unknown"),
-      name: String(c.name ?? c.cardName ?? "Unknown"),
-      cardType: c.cardType ?? detectTypeByName(c.name) ?? "normal",
-      attack: Number(c.attack ?? 0),
-      hp: Number(c.hp ?? 0),
-      maxhp: Number(c.maxhp ?? c.hp ?? 0),
-      cost: Number(c.cost ?? c.tier ?? 1),
-      tier: Number(c.tier ?? 1),
-      image2D: c.image2D ?? null,
-      canAttack: true,
-    }));
+    // ==============================
+    // 2️⃣ 정상 게임 시작
+    // ==============================
+    game.decks[playerId] = processedDeck;
 
-    const fullDeck = [...game.decks[playerId]];
-
-    // 덱 검증
-    if (fullDeck.length < 3) {
+    if (processedDeck.length < 3) {
       io.to(playerId).emit("message", "덱에 카드가 3장 이상 있어야 게임을 시작할 수 있습니다!");
       return;
     }
 
-    // ⭐ createStartingHand 단 1회 적용
-    const { hand, deck: newDeck } = createStartingHand(fullDeck);
+    const { hand, deck: newDeck } = createStartingHand([...processedDeck]);
 
     game.hands[playerId] = hand;
     game.decks[playerId] = newDeck;
 
-    console.log(`📥 ${playerId} 덱 저장 완료 (${deck.length}장)`);
-    console.log(`🎴 시작 손패: ${hand.map((c) => c.name).join(", ")} / 남은덱: ${newDeck.length}`);
-
-    // 내 화면 업데이트
     io.to(playerId).emit("updateGameState", {
       hp: game.hp,
       decks: game.decks,
@@ -590,7 +594,6 @@ export default function battleHandler(io: Server, socket: Socket) {
       timeLeft: room.timeLeft,
     });
 
-    // 전체 동기화
     io.to(roomCode).emit("updateGameState", {
       hp: game.hp,
       decks: game.decks,
@@ -603,6 +606,8 @@ export default function battleHandler(io: Server, socket: Socket) {
       timeLeft: room.timeLeft,
       serverTime: Date.now(),
     });
+
+    console.log(`📥 ${playerId} 덱 정상저장 완료 (${processedDeck.length}장)`);
   });
 
   // ==================== 🃏 카드 소환 ====================

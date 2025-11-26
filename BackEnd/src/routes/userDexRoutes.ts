@@ -38,6 +38,7 @@ router.get("/owned-cards", isAuthenticated, async (req: AuthenticatedRequest, re
       return {
         cardType: card.cardType.toLowerCase(), // ✅ fire, water, forest...
         tier: card.tier, // ✅ 1~7
+        cardName: card.cardName,
       };
     });
 

@@ -200,6 +200,16 @@ function WaitPage() {
     }
   };
 
+  // 🔥 socket.id가 변경되면 다시 ready 상태 서버에 전달
+  useEffect(() => {
+    if (!socket || !socket.id || !roomCode) return;
+
+    console.log("🔄 socket.id 변경 감지:", socket.id);
+
+    // 현재 isReady 상태를 다시 서버에 보내서 ready map에 반영
+    socket.emit("playerReady", { roomCode, isReady });
+  }, [socket.id]);
+
   const handleReturn = () => {
     navigate("/main");
   };

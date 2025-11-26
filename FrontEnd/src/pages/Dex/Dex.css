@@ -49,45 +49,44 @@
   padding: 0 40px;
 }
 
-/* 카드 뷰포트 - 보이는 영역 제한 */
+/* 뷰포트: 화면 크기에 상관없이 항상 3개만 보이도록 */
 .cards-viewport {
-  width: 1580px;
-  overflow: hidden;
+  width: 75vw; /* 카드 3개 + gap 포함 총 너비 */
+  max-width: 1400px; /* 너무 커지는 것 방지 */
+  overflow: hidden; /* 3개 밖은 숨김 */
   position: relative;
+  margin: 0 auto;
 }
 
-/* 카드 캐러셀 - 모든 카드를 포함하는 컨테이너 */
+/* 캐러셀: 내부에서만 움직임 */
 .cards-carousel {
   display: flex;
-  gap: 15vw;
+  gap: 5vw;
+  flex-direction: row;
+  transition: transform 0.3s ease;
   will-change: transform;
-  cursor: grab;
-  padding: 20px 0;
-  margin-left: 4vw;
-  height: 50vh;
-  margin-top: 10vh;
+  padding: 110px 0;
 }
 
 .cards-carousel:active {
   cursor: grabbing;
 }
 
+/* 카드: 3개가 딱 보이도록 width 33.33% 설정 */
 .dex-card {
-  font-family: "Do hyeon", serif;
-  min-width: 15vw;
-  height: 20vh;
-  background: transparent;
-  color: white;
-  font-size: 1.2rem;
+  width: 22vw; /* 🔥 화면 기준 약 1/4 크기 → 3개만 보임 */
+  max-width: 420px; /* 너무 커지지 않도록 */
+  height: 45vh; /* 🔥 모델을 크게 보여주기 위한 높이 증가 */
+  flex-shrink: 0; /* 크기 줄어드는 것 방지 */
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  border-radius: 15px;
-  padding: 0;
-  will-change: transform, opacity;
-  transition: all 0.3s ease;
   position: relative;
+}
+
+/* 마지막 카드의 오른쪽 마진 제거 */
+.dex-card:last-child {
+  margin-right: 0;
 }
 
 .dex-card.visible {

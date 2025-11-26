@@ -71,6 +71,12 @@ interface PokemonModelProps {
   isOwned: boolean;
 }
 
+interface OwnedCard {
+  cardType: string;
+  tier: number;
+  cardName: string;
+}
+
 function PokemonModel({ modelPath, isOwned }: PokemonModelProps) {
   const gltf = useGLTF(modelPath) as GLTF;
   const ref = useRef<THREE.Group>(null);
@@ -119,7 +125,7 @@ function Dex() {
   const [selectedType, setSelectedType] = useState<PokemonType>("fire");
   const [models, setModels] = useState(typeModels.fire);
 
-  const [ownedCards, setOwnedCards] = useState<{ cardType: string; tier: number }[]>([]);
+  const [ownedCards, setOwnedCards] = useState<OwnedCard[]>([]);
 
   useEffect(() => {
     console.log("✅ 서버에서 받은 ownedCards:", ownedCards);
@@ -197,9 +203,11 @@ function Dex() {
     setIsAnimating(false);
   };
 
-  const cardWidth = 220;
-  const cardGap = 200;
-  const totalCardWidth = cardWidth + cardGap;
+  // CSS와 동일한 비율 사용
+  const CARD_WIDTH_VW = 22; // .dex-card width: 22vw
+  const GAP_VW = 5; // .cards-carousel gap: 5vw
+
+  const totalCardWidth = (window.innerWidth * (CARD_WIDTH_VW + GAP_VW)) / 100;
   const x = -currentIndex * totalCardWidth;
 
   const handleNext = () => {
@@ -243,7 +251,7 @@ function Dex() {
       });
   }, []);
 
-  const normalize = (s: string) => s.toLowerCase().replace(/tier/g, "").replace(/[0-9]/g, "").trim();
+  const normalize = (s: string) => s.toLowerCase().trim();
 
   return (
     <div className="dex-page">
@@ -292,22 +300,40 @@ function Dex() {
                 {models.map((modelPath, index) => {
                   // ✅ glb 파일명 파싱
                   const file = modelPath.split("/").pop() || "";
-                  const match = file.match(/([a-z]+)tier(\d+)\.glb/i);
+                  const match = file.match(/^([a-z]+)tier([0-9]+)\.glb$/i);
 
-                  const modelType = normalize(match ? match[1] : "");
-                  let modelTier = match ? Number(match[2]) : 1;
+                  let modelType = "";
+                  let modelTier = 1;
 
-                  // ✅ glb 모델 tier는 1~7까지만 존재 → 8 이상은 7로 통일
-                  modelTier = Math.min(modelTier, 7);
+                  if (match) {
+                    modelType = match[1].toLowerCase();
+                    modelTier = Math.min(Number(match[2]), 7);
+                  } else {
+                    console.warn("❌ GLB 이름 파싱 실패:", file);
+                  }
 
-                  // ✅ owned 카드 매칭
+                  const legendNameMap: Record<number, string> = {
+                    1: "디아루가",
+                    2: "펄기아",
+                    3: "기라티나",
+                    4: "제크로무",
+                    5: "큐레무",
+                    6: "레쿠쟈",
+                    7: "아르세우스",
+                  };
+
+                  // modelTier = legendtierN.glb 의 N값
+                  const modelLegendName = modelType === "legend" ? legendNameMap[modelTier] : null;
+
                   const isOwned = ownedCards.some((c) => {
                     const cardType = normalize(c.cardType);
 
-                    // ✅ DB의 tier도 8 이상이면 7로 통일 (중요)
-                    const cardTier = Math.min(c.tier, 7);
+                    if (modelType === "legend") {
+                      const modelLegendName = legendNameMap[modelTier];
+                      return cardType === "legend" && c.cardName === modelLegendName;
+                    }
 
-                    return cardType === modelType && cardTier === modelTier;
+                    return cardType === modelType && Math.min(c.tier, 7) === modelTier;
                   });
 
                   // ✅ ✅ ✅ 디버그 로그 추가

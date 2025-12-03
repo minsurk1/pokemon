@@ -1,19 +1,27 @@
-# 🎮 실시간 멀티플레이 카드 배틀 게임
+<h1 align="center">
+  🎮 <span style="background-color:#a78bfa; color:#ffffff; padding:8px 16px; border-radius:6px;">SOCKET.IO 기반 실시간 웹 카드게임</span>
+</h1>
 
-Real-Time Multiplayer Card Battle Game
+<div align="center">
+  <em>Real-Time Multiplayer Card Battle Game</em>
+</div>
 
----
+<br />
 
 <p align="center">
   <img src="FrontEnd/src/assets/README/main.gif" width="800" />
 </p>
 
+<br />
+
 <p align="center">
-  <img src="https://img.shields.io/badge/Type-Fullstack-blue?style=flat-square" />
-  <img src="https://img.shields.io/badge/Stack-React·Node·MongoDB-green?style=flat-square" />
-  <img src="https://img.shields.io/badge/Team-4명-orange?style=flat-square" />
-  <img src="https://img.shields.io/badge/Period-11개월-red?style=flat-square" />
+  <img src="https://img.shields.io/badge/Type-Fullstack-4B8BF5?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Stack-React·Node·MongoDB-00A36C?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Team-4명-F97316?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Period-11개월-DC2626?style=for-the-badge" />
 </p>
+
+---
 
 # 📑 목차
 
